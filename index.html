@@ -332,6 +332,48 @@ const EVENTS = [
     L: { label: B('Ficar na base', 'Stay inside'), fx: {} },
     R: { label: B('Buscar a amostra', 'Get the sample'), fx: { rad: 4, sci: 1, outside: true }, pool: 'ice' } },
 ];
+/* Eventos reais adicionais de missões lunares e observatórios da NASA */
+const REAL_EVENTS = [
+  { id: 'ladee_dust', art: '☄️🧹',
+    date: '2013-12-14T00:00Z', source: 'NASA LADEE',
+    link: 'https://science.nasa.gov/mission/ladee/',
+    text: B('Chuva de meteoros Geminídeas! Pedrinhas espaciais levantaram poeira lunar e cobriram os painéis solares.',
+            'Geminid meteor shower! Space pebbles kicked up Moon dust and coated the solar panels.'),
+    record: B('Em dezembro de 2013, a sonda LADEE da NASA mediu um grande aumento de poeira ao redor da Lua durante a chuva de meteoros Geminídeas.',
+              'In December 2013, NASA\'s LADEE probe measured a sharp rise in dust around the Moon during the Geminid meteor shower.'),
+    L: { label: B('Deixar sujo', 'Leave dusty'), fx: { pw: -1 } },
+    R: { label: B('Limpar lá fora', 'Clean outside'), fx: { pw: 2, rad: 4, outside: true } } },
+
+  { id: 'eclipse_lro', art: '🌍🌑',
+    date: '2025-03-14T06:58Z', source: 'NASA LRO Diviner',
+    link: 'https://science.nasa.gov/mission/lro/',
+    text: B('Eclipse lunar! A Terra bloqueou o Sol e deixou a base no escuro e no frio por várias horas.',
+            'Lunar eclipse! Earth blocked the Sun, leaving the base in the dark and cold for hours.'),
+    record: B('Durante eclipses lunares totais, o instrumento Diviner da sonda LRO mediu quedas bruscas de mais de 150 °C na superfície da Lua.',
+              'During total lunar eclipses, the Diviner instrument on NASA\'s LRO probe measured sudden surface temperature drops of over 150 °C.'),
+    L: { label: B('Poupar aquecimento', 'Save heating'), fx: { air: -1 } },
+    R: { label: B('Manter base aquecida', 'Keep base warm'), fx: { pw: -2 } } },
+
+  { id: 'lro_impact', art: '💥🔧',
+    date: '2013-03-17T03:50Z', source: 'NASA LRO',
+    link: 'https://www.nasa.gov/solar-system/bright-explosion-on-the-moon/',
+    text: B('Um meteoroide bateu perto da base e jogou pedrinhas que furaram um cano de ar!',
+            'A meteoroid hit near the base and threw pebbles that punctured an air pipe!'),
+    record: B('Em 17 de março de 2013, telescópios da NASA registraram o clarão de um meteoroide batendo na Lua, formando uma cratera de 18 metros vista pela sonda LRO.',
+              'On March 17, 2013, NASA telescopes recorded the flash of a meteoroid hitting the Moon, carving an 18-meter crater imaged by LRO.'),
+    L: { label: B('Consertar depois', 'Fix later'), fx: { air: -2 } },
+    R: { label: B('Consertar agora', 'Fix now'), fx: { pw: -1 } } },
+
+  { id: 'donki_miss', art: '🔭☀️',
+    date: '2024-05-14T16:51Z', source: 'NASA DONKI',
+    link: 'https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/30854/-1',
+    text: B('Explosão solar gigante (classe X8.7) vista no Sol! A nuvem passou de raspão, mas o telescópio pode medir tudo.',
+            'Giant solar flare (class X8.7) seen on the Sun! The cloud passed wide of the Moon, and the telescope can measure it.'),
+    record: B('Em 14 de maio de 2024, o Sol produziu uma explosão classe X8.7 — uma das mais fortes do ciclo — na borda solar, sem atingir diretamente a Terra e a Lua.',
+              'On May 14, 2024, the Sun produced an X8.7 class flare — one of the strongest of the cycle — near the solar limb without hitting Earth and the Moon directly.'),
+    L: { label: B('Poupar energia', 'Save power'), fx: {} },
+    R: { label: B('Apontar telescópio', 'Point telescope'), fx: { pw: -1, sci: 1 }, pool: 'sun' } }
+];
 /* Descobertas: cada ponto de ciência vira um fato real sobre a Lua ou o Sol. */
 const DISC = [
   { id: 'regolith', pool: 'rock', ico: '🪨', name: B('Regolito', 'Regolith'),
@@ -425,14 +467,22 @@ function buildDay(G) {
   q.push(G.air <= R.AIR_USE ? LIFE[0] : pick(LIFE.flatMap(c => Array(c.w).fill(c))));
   if (s && s.flr) q.push(flareCard(s));
   q.push(s ? (s.flr ? ROVER_ALERT : LAB) : bag(G, 'sci', [LAB, ROVER]));
-  q.push(s ? (() => arrivalCard(G, s)) : bag(G, 'ev', EVENTS));
+  if (s) {
+    q.push(() => arrivalCard(G, s));
+  } else {
+    const ev = bag(G, 'ev', [...EVENTS, ...REAL_EVENTS]);
+    if (ev.source && !G.realLog.some(x => x.ev.id === ev.id)) {
+      G.realLog.push({ day: G.day, ev });
+    }
+    q.push(ev);
+  }
   G.queue = q;
 }
 
 function newGame() {
   const m = pickMission();
   const G = { day: 0, air: R.AIR_START, pw: R.PW_START, rad: 0, sci: 0, start: m.start, storms: m.storms,
-              phase: Math.floor(rnd() * R.SUN.length), bags: {}, met: [], over: null, card: null, queue: [], wasted: 0, found: [], trips: 0, tripRad: 0 };
+              phase: Math.floor(rnd() * R.SUN.length), bags: {}, met: [], over: null, card: null, queue: [], wasted: 0, found: [], trips: 0, tripRad: 0, realLog: [] };
   buildDay(G);
   G.card = G.queue.shift();
   return G;
@@ -650,9 +700,14 @@ function cardNote(c) {
   return '';
 }
 function cardReal(c) {
-  if (!c.storm) return '';
-  const s = c.storm, when = c.id === 'flare' ? s.flr : s.d;
-  return `${lang === 'pt' ? 'REAL' : 'REAL'} · ${fmtDate(Date.parse(when), { month: 'short' })} · ${fmtTime(when)} UTC · NASA DONKI`;
+  if (c.storm) {
+    const s = c.storm, when = c.id === 'flare' ? s.flr : s.d;
+    return `REAL · ${fmtDate(Date.parse(when), { month: 'short' })} · ${fmtTime(when)} UTC · NASA DONKI`;
+  }
+  if (c.source && c.date) {
+    return `REAL · ${fmtDate(Date.parse(c.date), { month: 'short' })} · ${c.source}`;
+  }
+  return '';
 }
 
 /* Ícones de efeito: setas em vez de números */
@@ -894,12 +949,20 @@ function renderEnd() {
   $('realIntro').textContent = pt
     ? `Sua missão aconteceu entre ${fmtDate(G.start)} e ${fmtDate(G.start + (R.DAYS - 1) * DAY)}. Nesses dias, o Sol fez isto de verdade:`
     : `Your mission took place between ${fmtDate(G.start)} and ${fmtDate(G.start + (R.DAYS - 1) * DAY)}. On those days, the Sun really did this:`;
-  $('realList').innerHTML = Object.keys(G.storms).map(Number).sort((a, b) => a - b).map(i => {
+  const stormHtml = Object.keys(G.storms).map(Number).sort((a, b) => a - b).map(i => {
     const s = G.storms[i], m = G.met.find(x => x.e === s);
     return `<div class="ev"><div class="when">${fmtDate(Date.parse(s.d))} · ${fmtTime(s.d)} UTC · ${pt ? 'tempestade' : 'storm'} ${sevTxt(s.sev)}</div>
       <div>${stormRecord(s)} <a href="${s.link}" target="_blank" rel="noopener">${pt ? 'Ver no DONKI' : 'See it on DONKI'}</a></div>
       <div class="you">🎮 ${stormYou(i, m)}</div></div>`;
   }).join('');
+
+  const extraHtml = (G.realLog || []).map(({ day, ev }) => `
+    <div class="ev"><div class="when">${fmtDate(Date.parse(ev.date))} · ${ev.source}</div>
+      <div>${tr(ev.record)} <a href="${ev.link}" target="_blank" rel="noopener">${pt ? 'Ver registro da NASA' : 'See NASA record'}</a></div>
+      <div class="you">🎮 ${pt ? `Aconteceu no Dia ${day + 1} da sua missão.` : `Happened on Day ${day + 1} of your mission.`}</div></div>
+  `).join('');
+
+  $('realList').innerHTML = stormHtml + extraHtml;
   $('srcBody').innerHTML = pt ? `
     <p><b>Dados reais:</b> ${STORMS.length} tempestades de partículas solares (eventos SEP) de 2024 e 2025, registradas no
       <a href="https://ccmc.gsfc.nasa.gov/tools/DONKI/" target="_blank" rel="noopener">DONKI</a> da NASA e baixadas pela <a href="https://api.nasa.gov/" target="_blank" rel="noopener">api.nasa.gov</a>.
