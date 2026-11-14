@@ -1,0 +1,4 @@
+# Dados brutos do DONKI: grandes e recriáveis com tools/fetch-donki.mjs
+data/raw/
+data/CME_*.json
+data/notifications_*.json

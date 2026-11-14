@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Base Lunar — Junior Astronaut Mission Trainer</title>
+<style>
+  :root { --bg:#070b1a; --panel:#141c33; --line:#2b3a63; --text:#f4f6fb; --muted:#a9b6d6;
+          --air:#38bdf8; --pw:#facc15; --rad:#f87171; --sci:#4ade80; --card:#fdf6e3; --ink:#1b2340; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
+  body { margin:0; font-family: ui-rounded, "Nunito", "Trebuchet MS", system-ui, sans-serif; color:var(--text);
+         background:radial-gradient(ellipse at top, #1a2550, var(--bg) 65%) fixed; overflow-x:hidden; }
+  main { max-width:460px; margin:0 auto; padding:.6rem .8rem 1.2rem; min-height:100%; display:flex; flex-direction:column; gap:.6rem; }
+  .hidden { display:none !important; }
+  button { font:inherit; border:none; cursor:pointer; color:var(--ink); font-weight:800; }
+  button:focus-visible, a:focus-visible, summary:focus-visible { outline:3px solid #fff; outline-offset:2px; }
+  a { color:#7dd3fc; }
+
+  /* ---------- topo ---------- */
+  .top { display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
+  .top .day { font-weight:800; font-size:1rem; }
+  .top .date { color:var(--muted); font-size:.85rem; }
+  .lang { background:#22305a; color:var(--text); border-radius:999px; padding:.35rem .8rem; font-size:.85rem; }
+
+  /* ---------- cena ---------- */
+  .scene { position:relative; height:150px; border-radius:22px; overflow:hidden; border:2px solid var(--line);
+           background:
+             radial-gradient(1.5px 1.5px at 20% 30%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 55% 18%, #fff 50%, transparent 51%),
+             radial-gradient(1.5px 1.5px at 78% 40%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 38% 55%, #fff 50%, transparent 51%),
+             radial-gradient(1px 1px at 90% 12%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 66% 60%, #fff 50%, transparent 51%),
+             linear-gradient(#040714, #131c3f); }
+  .sun { position:absolute; left:16px; top:14px; width:46px; height:46px; border-radius:50%;
+         background:radial-gradient(#fffbe0, #fbbf24 70%); box-shadow:0 0 calc(var(--sun,2) * 12px) calc(var(--sun,2) * 4px) rgba(251,191,36,.55);
+         opacity:calc(.45 + var(--sun,2) * .14); transform:scale(calc(.7 + var(--sun,2) * .1)); transition:all .6s; }
+  .scene.storm .sun { animation:flare .5s ease-in-out 3; }
+  @keyframes flare { 50% { box-shadow:0 0 60px 26px rgba(255,120,60,.9); background:radial-gradient(#fff, #fb7185 70%); } }
+  .ground { position:absolute; left:-12%; bottom:-78px; width:124%; height:124px; border-radius:50%;
+            background:radial-gradient(ellipse 26px 7px at 22% 14%, #6f758b 60%, transparent 62%), radial-gradient(ellipse 18px 5px at 44% 22%, #6f758b 60%, transparent 62%),
+                       radial-gradient(ellipse 22px 6px at 88% 16%, #6f758b 60%, transparent 62%), #9aa0b5; }
+  .base { position:absolute; right:22%; bottom:40px; width:84px; height:42px; border-radius:84px 84px 0 0; background:linear-gradient(#eef2ff, #b9c4e6);
+          display:flex; align-items:flex-end; justify-content:center; font-size:1.5rem; line-height:1.2; transition:background .3s; }
+  .base.hit { animation:hit .35s 4; }
+  @keyframes hit { 50% { background:#fb7185; } }
+  .shield { position:absolute; right:calc(22% - 26px); bottom:40px; width:136px; height:68px; border-radius:136px 136px 0 0;
+            border:3px dashed rgba(125,211,252,.22); border-bottom:none; transition:all .4s; }
+  .shield.ready { border:4px solid #67e8f9; border-bottom:none; background:rgba(103,232,249,.14); box-shadow:0 0 22px 4px rgba(103,232,249,.7); }
+  .shield.rush  { border:3px solid #fde047; border-bottom:none; background:rgba(253,224,71,.08); box-shadow:0 0 12px 2px rgba(253,224,71,.5); }
+  .rover { position:absolute; left:26%; bottom:38px; font-size:1.5rem; transition:opacity .4s, transform .6s; opacity:0; transform:translateX(60px) scaleX(-1); }
+  .rover.out { opacity:1; transform:translateX(0) scaleX(-1); }
+  .particle { position:absolute; left:0; top:0; width:6px; height:6px; border-radius:50%; background:#fb923c; box-shadow:0 0 6px 2px #f97316; pointer-events:none; }
+  .toast { position:absolute; left:0; right:0; top:8px; text-align:center; font-weight:800; font-size:.95rem; text-shadow:0 2px 6px #000; pointer-events:none; opacity:0; transition:opacity .3s; }
+  .toast.show { opacity:1; }
+
+  /* ---------- medidores ---------- */
+  .meters { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:.45rem; align-items:stretch; }
+  .meter { position:relative; background:var(--panel); border:2px solid var(--line); border-radius:14px; padding:.35rem .45rem .45rem; transition:border-color .2s, transform .2s; }
+  .meter .ico { font-size:1.15rem; line-height:1; display:flex; justify-content:space-between; align-items:center; }
+  .meter .ico small { font-size:.68rem; color:var(--muted); font-weight:700; }
+  .bar { height:12px; background:#26314f; border-radius:8px; overflow:hidden; margin-top:.3rem; }
+  .bar > div { height:100%; border-radius:8px; transition:width .5s, background .3s; }
+  .meter.low { animation:low 1s ease-in-out infinite; }
+  @keyframes low { 50% { border-color:#f87171; } }
+  .meter .pv { position:absolute; right:6px; top:-10px; font-size:.8rem; font-weight:900; padding:0 .3rem; border-radius:8px; opacity:0; transition:opacity .15s; }
+  .meter.up .pv, .meter.down .pv { opacity:1; }
+  .meter.up, .meter.down { transform:translateY(-2px); border-color:#fff; }
+  .pv.good { background:#14532d; color:#86efac; } .pv.bad { background:#7f1d1d; color:#fca5a5; }
+  .sci { display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:58px; }
+  .sci b { font-size:1.15rem; } .sci small { font-size:.68rem; color:var(--muted); }
+
+  /* ---------- carta ---------- */
+  .deck { position:relative; flex:1; min-height:250px; display:flex; align-items:center; justify-content:center; touch-action:pan-y; }
+  .card { position:relative; width:100%; max-width:330px; min-height:240px; background:var(--card); color:var(--ink); border-radius:24px; padding:1rem 1.1rem 1.1rem;
+          box-shadow:0 10px 0 #cbbf9a, 0 18px 30px rgba(0,0,0,.45); text-align:center; user-select:none; cursor:grab; touch-action:none;
+          display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.5rem; will-change:transform; }
+  .card.snap { transition:transform .25s ease-out; }
+  .card.fly { transition:transform .3s ease-in, opacity .3s; opacity:0; }
+  .card.in { animation:cardIn .28s ease-out; }
+  @keyframes cardIn { from { transform:translateY(24px) scale(.94); opacity:0; } }
+  .card.shake { animation:shake .3s; }
+  @keyframes shake { 25% { transform:translateX(-10px); } 75% { transform:translateX(10px); } }
+  .card .art { font-size:3.4rem; line-height:1.1; }
+  .card .txt { font-size:1.08rem; line-height:1.35; font-weight:700; }
+  .card .note { font-size:.8rem; color:#5b6485; font-weight:700; }
+  .card .real { font-size:.74rem; font-weight:800; background:#1b2340; color:#fde68a; border-radius:999px; padding:.2rem .65rem; }
+  .card.alert { background:#fff1f1; box-shadow:0 10px 0 #f3a3a3, 0 18px 30px rgba(0,0,0,.45); }
+  .tag { position:absolute; top:12px; font-size:.82rem; font-weight:900; padding:.25rem .6rem; border-radius:10px; opacity:0; color:#fff; max-width:60%; }
+  .tag.l { right:12px; background:#475569; transform:rotate(6deg); } .tag.r { left:12px; background:#0284c7; transform:rotate(-6deg); }
+
+  .card.hint { animation:nudge 1.5s ease-in-out .6s 2; }
+  @keyframes nudge { 20% { transform:translateX(26px) rotate(3deg); } 50% { transform:translateX(-26px) rotate(-3deg); } 80% { transform:none; } }
+  .learn { min-height:3.4rem; background:#12203f; border:2px dashed #33508f; border-radius:14px; padding:.45rem .7rem; font-size:.84rem; line-height:1.35;
+           opacity:0; transition:opacity .35s; display:flex; align-items:center; }
+  .learn.show { opacity:1; }
+  .learn.disc { border-color:var(--sci); background:#0f2a1e; }
+  .choices { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+  .choices.single { grid-template-columns:1fr; }
+  .choice { border-radius:16px; padding:.6rem .5rem; background:#e2e8f0; font-size:.95rem; min-height:64px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.2rem; box-shadow:0 4px 0 #94a3b8; }
+  .choice:active { transform:translateY(3px); box-shadow:0 1px 0 #94a3b8; }
+  .choice.r { background:#7dd3fc; box-shadow:0 4px 0 #0284c7; }
+  .choice .fx { font-size:.82rem; font-weight:800; letter-spacing:.02em; white-space:nowrap; }
+  .choice:disabled { opacity:.45; cursor:not-allowed; }
+  .hintSwipe { text-align:center; color:var(--muted); font-size:.78rem; margin:-.2rem 0 0; }
+
+  /* ---------- telas ---------- */
+  .panel { background:var(--panel); border:2px solid var(--line); border-radius:22px; padding:1.1rem; }
+  .panel h1 { font-size:1.5rem; margin:.2rem 0 .5rem; } .panel h2 { font-size:1.1rem; margin:1rem 0 .4rem; }
+  .panel p { line-height:1.45; margin:.5rem 0; }
+  .hero { font-size:3rem; text-align:center; letter-spacing:.3rem; }
+  .how { display:grid; gap:.4rem; margin:.7rem 0; padding:0; list-style:none; }
+  .how li { background:#0e1630; border-radius:12px; padding:.5rem .7rem; font-weight:700; }
+  .fact { background:#1e293b; border-left:5px solid var(--air); border-radius:10px; padding:.6rem .8rem; font-size:.92rem; margin:.7rem 0; }
+  .big { display:block; width:100%; font-size:1.2rem; padding:.9rem 1rem; border-radius:16px; background:#38bdf8; box-shadow:0 5px 0 #0369a1; margin-top:.8rem; }
+  .big:active { transform:translateY(3px); box-shadow:0 2px 0 #0369a1; }
+  .stars { font-size:2.4rem; text-align:center; letter-spacing:.25rem; }
+  .sum { display:flex; justify-content:center; gap:.8rem; font-weight:800; flex-wrap:wrap; }
+  .ev { background:#0e1630; border-radius:14px; padding:.65rem .8rem; margin:.5rem 0; font-size:.9rem; line-height:1.4; }
+  .ev .when { font-weight:800; color:#fde68a; }
+  .ev .you { margin-top:.35rem; padding-top:.35rem; border-top:1px dashed var(--line); }
+  .debrief { list-style:none; padding:0; margin:.6rem 0; display:grid; gap:.4rem; }
+  .debrief li { background:#0e1630; border-radius:12px; padding:.5rem .7rem; font-size:.92rem; line-height:1.35; }
+  .book { display:grid; gap:.4rem; }
+  .book .d { display:grid; grid-template-columns:auto 1fr; gap:.1rem .6rem; background:#0f2a1e; border-radius:12px; padding:.5rem .7rem; font-size:.88rem; line-height:1.35; }
+  .book .d .i { grid-row:span 2; font-size:1.6rem; align-self:center; }
+  .book .d b { color:#86efac; }
+  .coll { color:var(--muted); font-size:.85rem; font-weight:700; }
+  details { margin-top:1rem; font-size:.9rem; } summary { cursor:pointer; font-weight:800; }
+  footer { color:var(--muted); font-size:.75rem; text-align:center; }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<main>
+
+<!-- ===================== INÍCIO ===================== -->
+<section id="intro" class="panel">
+  <div style="text-align:right"><button class="lang" data-lang></button></div>
+  <div class="hero" aria-hidden="true">🌑🧑‍🚀☀️</div>
+  <h1 data-t="title"></h1>
+  <p data-t="intro1"></p>
+  <ul class="how">
+    <li data-t="how1"></li>
+    <li data-t="how2"></li>
+    <li data-t="how3"></li>
+    <li data-t="how4"></li>
+  </ul>
+  <div class="fact" data-t="introReal"></div>
+  <button class="big" id="startBtn" data-t="start"></button>
+</section>
+
+<!-- ===================== JOGO ===================== -->
+<section id="game" class="hidden" style="display:flex; flex-direction:column; gap:.6rem; flex:1">
+  <div class="top">
+    <div><div class="day" id="dayTxt"></div><div class="date" id="dateTxt"></div></div>
+    <div style="display:flex; gap:.4rem"><button class="lang" id="muteBtn" aria-label="Som / Sound"></button><button class="lang" data-lang></button></div>
+  </div>
+
+  <div class="scene" id="scene" aria-hidden="true">
+    <div class="sun" id="sun"></div>
+    <div class="ground"></div>
+    <div class="rover" id="rover">🚙</div>
+    <div class="shield" id="shield"></div>
+    <div class="base" id="base">🧑‍🚀</div>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <div class="meters">
+    <div class="meter" id="m_air"><div class="ico"><span>🫧</span><small data-t="mAir"></small></div><div class="bar"><div id="b_air" style="background:var(--air)"></div></div><span class="pv"></span></div>
+    <div class="meter" id="m_pw"><div class="ico"><span>⚡</span><small data-t="mPw"></small></div><div class="bar"><div id="b_pw" style="background:var(--pw)"></div></div><span class="pv"></span></div>
+    <div class="meter" id="m_rad"><div class="ico"><span>☢️</span><small data-t="mRad"></small></div><div class="bar"><div id="b_rad" style="background:var(--rad)"></div></div><span class="pv"></span></div>
+    <div class="meter sci" id="m_sci"><b>🔬 <span id="sciTxt">0</span></b><small data-t="mSci"></small><span class="pv"></span></div>
+  </div>
+
+  <div class="deck" id="deck">
+    <div class="card" id="card" tabindex="0" role="group" aria-live="polite">
+      <span class="tag l" id="tagL"></span><span class="tag r" id="tagR"></span>
+      <div class="art" id="cArt" aria-hidden="true"></div>
+      <div class="txt" id="cTxt"></div>
+      <div class="note" id="cNote"></div>
+      <div class="real hidden" id="cReal"></div>
+    </div>
+  </div>
+
+  <div class="learn" id="learn" aria-live="polite"></div>
+
+  <div class="choices" id="choices">
+    <button class="choice l" id="btnL"></button>
+    <button class="choice r" id="btnR"></button>
+  </div>
+  <p class="hintSwipe" data-t="swipe"></p>
+</section>
+
+<!-- ===================== FIM ===================== -->
+<section id="end" class="panel hidden" aria-live="polite">
+  <div style="text-align:right"><button class="lang" data-lang></button></div>
+  <div class="hero" id="endArt" aria-hidden="true"></div>
+  <h1 id="endTitle" style="text-align:center"></h1>
+  <div class="stars" id="stars" aria-hidden="true"></div>
+  <div class="sum" id="endSum"></div>
+  <p id="endText"></p>
+  <ul class="debrief" id="debrief"></ul>
+  <button class="big" id="againBtn" data-t="again"></button>
+  <div class="fact" id="endFact"></div>
+  <h2 id="bookTitle"></h2>
+  <p class="coll" id="bookColl"></p>
+  <div class="book" id="book"></div>
+  <h2 data-t="realTitle"></h2>
+  <p id="realIntro"></p>
+  <div id="realList"></div>
+  <details>
+    <summary data-t="srcTitle"></summary>
+    <div id="srcBody"></div>
+  </details>
+</section>
+
+<footer data-t="footer"></footer>
+</main>
+
+<script>
+/*ENGINE-START*/
+/* ====== MOTOR DO JOGO (sem DOM, para poder ser testado em Node: tools/sim.mjs) ====== */
+const Engine = (() => {
+'use strict';
+
+/* DADOS REAIS: tempestades de partículas solares (SEP) de 2024 e 2025 do DONKI (NASA).
+   Gerado por tools/build-storms.mjs + tools/embed-storms.mjs. Não editar à mão.
+   d = chegada das partículas (UTC) · sev: 3 = GOES >100 MeV, 2 = GOES >10 MeV, 1 = só outras sondas
+   flr = início da explosão ligada · cls = classe · warn = minutos entre explosão e chegada · cme = km/s */
+const STORMS = /*STORMS*/[
+  {"d":"2024-01-03T20:05Z","sev":2,"flr":null,"cls":null,"warn":null,"cme":null,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/28464/-1"},
+  {"d":"2024-01-22T13:42Z","sev":1,"flr":"2024-01-22T06:09Z","cls":null,"warn":453,"cme":1068,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/28685/-1"},
+  {"d":"2024-01-29T06:15Z","sev":2,"flr":"2024-01-29T03:54Z","cls":"M6.8","warn":141,"cme":1277,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/28842/-1"},
+  {"d":"2024-02-09T15:30Z","sev":2,"flr":"2024-02-09T12:53Z","cls":null,"warn":157,"cme":2534,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/29079/-1"},
+  {"d":"2024-02-12T08:05Z","sev":3,"flr":null,"cls":null,"warn":null,"cme":3529,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/29156/-1"},
+  {"d":"2024-03-15T20:50Z","sev":2,"flr":null,"cls":null,"warn":null,"cme":1201,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/29608/-1"},
+  {"d":"2024-03-23T08:15Z","sev":2,"flr":"2024-03-23T00:58Z","cls":"X1.1","warn":437,"cme":1613,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/29711/-1"},
+  {"d":"2024-05-10T13:35Z","sev":3,"flr":"2024-05-10T06:27Z","cls":"X3.9","warn":428,"cme":1330,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/30677/-1"},
+  {"d":"2024-05-13T14:00Z","sev":2,"flr":"2024-05-13T09:36Z","cls":"M6.6","warn":264,"cme":1456,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/30817/-1"},
+  {"d":"2024-06-08T02:55Z","sev":3,"flr":"2024-06-08T01:23Z","cls":"M9.7","warn":92,"cme":1106,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/31343/-1"},
+  {"d":"2024-06-12T00:21Z","sev":1,"flr":null,"cls":null,"warn":null,"cme":1312,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/31435/-1"},
+  {"d":"2024-07-23T03:00Z","sev":3,"flr":null,"cls":null,"warn":null,"cme":1299,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/32118/-1"},
+  {"d":"2024-08-05T17:26Z","sev":1,"flr":"2024-08-05T13:24Z","cls":"X1.7","warn":242,"cme":1095,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/32560/-1"},
+  {"d":"2024-09-01T23:14Z","sev":1,"flr":"2024-09-01T11:45Z","cls":"M5.5","warn":689,"cme":1247,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/33103/-1"},
+  {"d":"2024-09-05T15:51Z","sev":1,"flr":null,"cls":null,"warn":null,"cme":1577,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/33202/-1"},
+  {"d":"2024-09-09T08:50Z","sev":2,"flr":null,"cls":null,"warn":null,"cme":1452,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/33257/-1"},
+  {"d":"2024-09-17T07:35Z","sev":2,"flr":null,"cls":null,"warn":null,"cme":1070,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/33467/-1"},
+  {"d":"2024-10-09T05:05Z","sev":3,"flr":"2024-10-09T01:25Z","cls":"X1.8","warn":220,"cme":1509,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/33866/-1"},
+  {"d":"2024-10-26T18:05Z","sev":2,"flr":"2024-10-26T06:32Z","cls":"X1.8","warn":693,"cme":1606,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/34222/-1"},
+  {"d":"2024-11-21T19:25Z","sev":3,"flr":null,"cls":null,"warn":null,"cme":1560,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/35208/-1"},
+  {"d":"2024-12-18T12:01Z","sev":1,"flr":null,"cls":null,"warn":null,"cme":3161,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/35736/-1"},
+  {"d":"2024-12-21T16:12Z","sev":1,"flr":"2024-12-21T00:33Z","cls":null,"warn":939,"cme":897,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/35838/-1"},
+  {"d":"2025-01-04T22:15Z","sev":2,"flr":"2025-01-04T18:46Z","cls":null,"warn":209,"cme":1590,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/36263/-1"},
+  {"d":"2025-02-25T00:20Z","sev":2,"flr":"2025-02-24T21:50Z","cls":null,"warn":150,"cme":1627,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/37527/-1"},
+  {"d":"2025-03-01T03:22Z","sev":1,"flr":null,"cls":null,"warn":null,"cme":1177,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/37619/-1"},
+  {"d":"2025-03-31T11:05Z","sev":2,"flr":null,"cls":null,"warn":null,"cme":2212,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/38129/-1"},
+  {"d":"2025-05-13T18:14Z","sev":1,"flr":"2025-05-13T15:25Z","cls":"X1.2","warn":169,"cme":769,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/38846/-1"},
+  {"d":"2025-05-31T17:10Z","sev":2,"flr":"2025-05-30T23:31Z","cls":"M8.1","warn":1059,"cme":2371,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/39201/-1"},
+  {"d":"2025-08-25T13:20Z","sev":2,"flr":null,"cls":null,"warn":null,"cme":1657,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/40815/-1"},
+  {"d":"2025-10-22T00:09Z","sev":1,"flr":null,"cls":null,"warn":null,"cme":2077,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/41966/-1"},
+  {"d":"2025-11-10T11:25Z","sev":3,"flr":"2025-11-10T08:55Z","cls":"X1.2","warn":150,"cme":1856,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/42572/-1"},
+  {"d":"2025-11-14T09:20Z","sev":2,"flr":"2025-11-14T07:44Z","cls":"X4.0","warn":96,"cme":1082,"link":"https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/42704/-1"}
+]/*END-STORMS*/;
+
+/* REGRAS (números de jogo, não de engenharia) */
+const R = {
+  DAYS: 10,
+  AIR_START: 6, AIR_MAX: 10, AIR_USE: 2,
+  PW_START: 4, PW_MAX: 10, SUN: [3, 4, 2, 1, 2, 3, 4, 2, 1, 2],   // sombras das crateras do polo sul
+  RAD_LIMIT: 100, RAD_SAFE: 50, RAD_DAILY: 2,
+  SCI_GOAL: 8,
+  STORM: { 1: 20, 2: 40, 3: 70 },
+  BLOCK_READY: 0.9, BLOCK_RUSH: 0.5, OUTSIDE: 0.6,
+  SHIELD_PW: 3,
+};
+const DAY = 864e5;
+let rnd = Math.random;
+const day0 = iso => Date.parse(iso.slice(0, 10) + 'T00:00:00Z');
+const pick = a => a[Math.floor(rnd() * a.length)];
+const B = (pt, en) => ({ pt, en });
+
+function pickMission() {
+  // Janela real de 10 dias com pelo menos uma tempestade (nunca no dia 1).
+  const pivot = pick(STORMS);
+  const off = 1 + Math.floor(rnd() * (R.DAYS - 2));
+  const start = day0(pivot.d) - off * DAY;
+  const storms = {};
+  STORMS.forEach(e => {
+    const i = Math.round((day0(e.d) - start) / DAY);
+    if (i >= 1 && i < R.DAYS && (!storms[i] || e.sev > storms[i].sev)) storms[i] = e;
+  });
+  return { start, storms };
+}
+
+/* ---------- cartas ---------- */
+const LIFE = [
+  { id: 'o2', art: '🫧⚙️', w: 3,
+    text: B('A máquina de oxigênio usa eletricidade para tirar ar da água. Ligar hoje?', 'The oxygen machine uses electricity to pull air out of water. Turn it on today?'),
+    L: { label: B('Deixar desligada', 'Leave it off'), fx: {} },
+    R: { label: B('Ligar', 'Turn it on'), fx: { pw: -2, air: 4 } } },
+  { id: 'farm', art: '🌱💡', w: 1,
+    text: B('As plantas da estufa fazem ar para respirar, mas precisam de luz.', 'The greenhouse plants make air to breathe, but they need light.'),
+    L: { label: B('Apagar as luzes', 'Lights off'), fx: { pw: 1, air: -1 } },
+    R: { label: B('Acender as luzes', 'Lights on'), fx: { pw: -1, air: 2 } } },
+];
+const LAB = { id: 'lab', art: '🔬🪨',
+  text: B('O laboratório pode estudar as pedras da Lua hoje. Ele gasta bastante energia.', 'The lab can study Moon rocks today. It uses a lot of power.'),
+  L: { label: B('Guardar energia', 'Save power'), fx: {} },
+  R: { label: B('Pesquisar', 'Do research'), fx: { pw: -2, sci: 1 }, pool: 'rock' } };
+const ROVER = { id: 'rover', art: '🚙🕳️',
+  text: B('Uma cratera aqui perto pode ter gelo! Mas fora da base não tem escudo contra a radiação.', 'A nearby crater may have ice! But outside the base there is no shield against radiation.'),
+  L: { label: B('Ficar na base', 'Stay inside'), fx: {} },
+  R: { label: B('Explorar de jipe', 'Explore by rover'), fx: { pw: -1, sci: 2, rad: 5, outside: true }, pool: 'crater' } };
+const ROVER_ALERT = { id: 'roverAlert', art: '🚙⚠️',
+  text: B('O alerta solar está ligado. A cratera com gelo está logo ali… Sair de jipe mesmo assim?', 'The solar alert is on. The icy crater is right there… Drive out anyway?'),
+  L: { label: B('Ficar na base', 'Stay inside'), fx: {} },
+  R: { label: B('Explorar de jipe', 'Explore by rover'), fx: { pw: -1, sci: 2, rad: 5, outside: true }, pool: 'crater' } };
+const EVENTS = [
+  { id: 'dust', art: '🧹☀️',
+    text: B('A poeira da Lua cobriu os painéis solares.', 'Moon dust has covered the solar panels.'),
+    L: { label: B('Deixar assim', 'Leave it'), fx: { pw: -1 } },
+    R: { label: B('Sair para limpar', 'Go out and clean'), fx: { pw: 2, rad: 4, outside: true } } },
+  { id: 'leak', art: '🔧💨',
+    text: B('Um cano de ar está vazando um pouquinho.', 'An air pipe has a small leak.'),
+    L: { label: B('Consertar depois', 'Fix it later'), fx: { air: -2 } },
+    R: { label: B('Consertar agora', 'Fix it now'), fx: { pw: -1 } } },
+  { id: 'scope', art: '🔭☀️',
+    text: B('O telescópio pode observar o Sol hoje.', 'The telescope can watch the Sun today.'),
+    L: { label: B('Deixar desligado', 'Keep it off'), fx: {} },
+    R: { label: B('Observar', 'Observe'), fx: { pw: -1, sci: 1 }, pool: 'sun' } },
+  { id: 'ice', art: '🧊👣',
+    text: B('Um sensor achou gelo pertinho da base. Dá para ir a pé, mas lá fora tem mais radiação.', 'A sensor found ice close to the base. You can walk there, but there is more radiation outside.'),
+    L: { label: B('Ficar na base', 'Stay inside'), fx: {} },
+    R: { label: B('Buscar a amostra', 'Get the sample'), fx: { rad: 4, sci: 1, outside: true }, pool: 'ice' } },
+];
+/* Descobertas: cada ponto de ciência vira um fato real sobre a Lua ou o Sol. */
+const DISC = [
+  { id: 'regolith', pool: 'rock', ico: '🪨', name: B('Regolito', 'Regolith'),
+    fact: B('O chão da Lua é coberto de regolito: pó e pedrinhas feitos por bilhões de anos de batidas de meteoritos.', "The Moon's ground is covered in regolith: dust and small rocks made by billions of years of meteorite hits.") },
+  { id: 'old', pool: 'rock', ico: '⏳', name: B('Pedras muito antigas', 'Very old rocks'),
+    fact: B('Algumas pedras trazidas pelas missões Apollo têm mais de 4 bilhões de anos.', 'Some rocks brought back by the Apollo missions are more than 4 billion years old.') },
+  { id: 'glass', pool: 'rock', ico: '🟠', name: B('Vidro laranja', 'Orange glass'),
+    fact: B('Os astronautas da Apollo 17 acharam solo laranja: bolinhas de vidro feitas por vulcões antigos da Lua.', 'The Apollo 17 astronauts found orange soil: tiny glass beads made by ancient Moon volcanoes.') },
+  { id: 'plants', pool: 'rock', ico: '🌱', name: B('Plantas em solo lunar', 'Plants in Moon soil'),
+    fact: B('Em 2022, cientistas fizeram plantas crescerem em solo da Lua trazido pelas missões Apollo.', 'In 2022, scientists grew plants in Moon soil brought back by the Apollo missions.') },
+  { id: 'dust', pool: 'rock', ico: '✨', name: B('Poeira que arranha', 'Scratchy dust'),
+    fact: B('A poeira lunar é afiada como vidro moído, porque na Lua não há vento nem água para arredondar os grãos.', 'Moon dust is sharp like crushed glass, because the Moon has no wind or water to round off the grains.') },
+  { id: 'quake', pool: 'rock', ico: '〰️', name: B('A Lua treme', 'Moonquakes'),
+    fact: B('Aparelhos deixados pelas missões Apollo mostraram que a Lua também tem tremores.', 'Instruments left by the Apollo missions showed that the Moon has quakes too.') },
+  { id: 'shadow', pool: 'crater', ico: '🕳️', name: B('Sombra eterna', 'Eternal shadow'),
+    fact: B('Algumas crateras do polo sul não recebem luz do Sol há bilhões de anos.', 'Some craters at the south pole have not seen sunlight for billions of years.') },
+  { id: 'cold', pool: 'crater', ico: '🥶', name: B('Frio de recorde', 'Record cold'),
+    fact: B('A sonda LRO, da NASA, mediu cerca de 240 graus abaixo de zero dentro de crateras escuras da Lua.', "NASA's LRO probe measured about 240 degrees Celsius below zero inside dark Moon craters.") },
+  { id: 'prints', pool: 'crater', ico: '👣', name: B('Marcas que ficam', 'Tracks that stay'),
+    fact: B('Na Lua não há vento nem chuva. As marcas de botas e rodas podem durar milhões de anos.', 'The Moon has no wind or rain. Boot prints and wheel tracks can last for millions of years.') },
+  { id: 'gravity', pool: 'crater', ico: '🦘', name: B('Gravidade fraquinha', 'Weak gravity'),
+    fact: B('Na Lua tudo pesa seis vezes menos que na Terra.', 'On the Moon everything weighs six times less than on Earth.') },
+  { id: 'peaks', pool: 'crater', ico: '🏔️', name: B('Picos de luz', 'Peaks of light'),
+    fact: B('Perto do polo sul, alguns picos altos recebem luz do Sol quase o tempo todo. São bons lugares para painéis solares.', 'Near the south pole, some high peaks get sunlight almost all the time. They are good places for solar panels.') },
+  { id: 'lcross', pool: 'ice', ico: '💧', name: B('Água na Lua!', 'Water on the Moon!'),
+    fact: B('Em 2009, a missão LCROSS, da NASA, fez um foguete vazio bater numa cratera escura e achou água na nuvem que subiu.', "In 2009, NASA's LCROSS mission crashed an empty rocket into a dark crater and found water in the cloud that rose.") },
+  { id: 'iceuse', pool: 'ice', ico: '🚰', name: B('Gelo que vira ar', 'Ice that becomes air'),
+    fact: B('O gelo da Lua pode virar água para beber, oxigênio para respirar e até combustível de foguete.', 'Moon ice can become drinking water, oxygen to breathe and even rocket fuel.') },
+  { id: 'cycle', pool: 'sun', ico: '🔁', name: B('O ciclo do Sol', "The Sun's cycle"),
+    fact: B('O Sol tem um ciclo de cerca de 11 anos: às vezes fica calmo, às vezes cheio de explosões.', 'The Sun has a cycle of about 11 years: sometimes calm, sometimes full of explosions.') },
+  { id: 'spots', pool: 'sun', ico: '⚫', name: B('Manchas solares', 'Sunspots'),
+    fact: B('As manchas escuras do Sol são regiões um pouco mais frias. É perto delas que acontecem as explosões.', 'The dark spots on the Sun are slightly cooler regions. Explosions happen near them.') },
+  { id: 'light', pool: 'sun', ico: '⏱️', name: B('8 minutos', '8 minutes'),
+    fact: B('A luz do Sol leva cerca de 8 minutos para chegar até a Terra e a Lua.', 'Sunlight takes about 8 minutes to reach Earth and the Moon.') },
+];
+function discover(G, pool, n) {
+  const got = [];
+  for (let i = 0; i < n; i++) {
+    const left = DISC.filter(d => !G.found.includes(d.id));
+    if (!left.length) break;
+    const same = left.filter(d => d.pool === pool);
+    const d = pick(same.length ? same : left);
+    G.found.push(d.id); got.push(d);
+  }
+  return got;
+}
+
+const SUN_TXT = {
+  4: B('Sol cheio nos painéis!', 'Full Sun on the panels!'),
+  3: B('Bastante Sol hoje.', 'Plenty of Sun today.'),
+  2: B('Uma cratera fez um pouco de sombra.', 'A crater is casting some shadow.'),
+  1: B('Uma montanha fez sombra nos painéis. Pouca energia hoje.', 'A mountain is shading the panels. Little power today.'),
+};
+
+function dayCard(G) {
+  const sun = R.SUN[(G.day + G.phase) % R.SUN.length];
+  G.sun = sun;
+  return { id: 'day', kind: 'day', art: sun >= 3 ? '☀️🔆' : sun === 2 ? '🌤️' : '⛰️🌑', single: true, sun, first: G.day === 0,
+    text: SUN_TXT[sun],
+    R: { label: B('Começar o dia', 'Start the day'), fx: { pw: sun } } };
+}
+function flareCard(s) {
+  return { id: 'flare', kind: 'flare', art: '🚨☀️', alert: true, storm: s,
+    L: { label: B('Continuar a pesquisa', 'Keep doing research'), fx: { sci: 1 }, pool: 'rock' },
+    R: { label: B('Carregar o escudo', 'Charge the shield'), fx: { pw: -R.SHIELD_PW, prepared: true } } };
+}
+function arrivalCard(G, s) {
+  if (G.prepared) return { id: 'arriveReady', kind: 'arrive', art: '🛡️✨', alert: true, storm: s, single: true, resolve: true,
+    R: { label: B('Segurar firme!', 'Hold on tight!'), fx: {} } };
+  return { id: s.flr ? 'arriveLate' : 'arriveSurprise', kind: 'arrive', art: '☀️💥', alert: true, storm: s, resolve: true,
+    L: { label: B('Ficar sem escudo', 'No shield'), fx: {} },
+    R: { label: B('Escudo de emergência', 'Emergency shield'), fx: { pw: -R.SHIELD_PW, rush: true } } };
+}
+function resultCard(m) {
+  return { id: 'result', kind: 'result', art: m.mode === 'ready' ? '🛡️👍' : m.mode === 'rush' ? '🛡️😬' : '☢️😵', single: true, met: m, storm: m.e,
+    R: { label: B('Continuar', 'Continue'), fx: {} } };
+}
+
+function bag(G, key, items) {
+  if (!G.bags[key] || !G.bags[key].length) {
+    const a = items.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    G.bags[key] = a;
+  }
+  return G.bags[key].pop();
+}
+function buildDay(G) {
+  const s = G.storms[G.day];
+  G.prepared = false; G.rush = false; G.outside = false;
+  const q = [dayCard(G)];
+  q.push(G.air <= R.AIR_USE ? LIFE[0] : pick(LIFE.flatMap(c => Array(c.w).fill(c))));
+  if (s && s.flr) q.push(flareCard(s));
+  q.push(s ? (s.flr ? ROVER_ALERT : LAB) : bag(G, 'sci', [LAB, ROVER]));
+  q.push(s ? (() => arrivalCard(G, s)) : bag(G, 'ev', EVENTS));
+  G.queue = q;
+}
+
+function newGame() {
+  const m = pickMission();
+  const G = { day: 0, air: R.AIR_START, pw: R.PW_START, rad: 0, sci: 0, start: m.start, storms: m.storms,
+              phase: Math.floor(rnd() * R.SUN.length), bags: {}, met: [], over: null, card: null, queue: [], wasted: 0, found: [], trips: 0, tripRad: 0 };
+  buildDay(G);
+  G.card = G.queue.shift();
+  return G;
+}
+
+const locked = (G, opt) => G.pw + (opt.fx.pw || 0) < 0;
+
+function apply(G, fx) {
+  if (fx.pw) { const v = G.pw + fx.pw; if (v > R.PW_MAX) G.wasted += v - R.PW_MAX; G.pw = Math.max(0, Math.min(R.PW_MAX, v)); }
+  if (fx.air) G.air = Math.max(0, Math.min(R.AIR_MAX, G.air + fx.air));
+  if (fx.rad) G.rad += fx.rad;
+  if (fx.sci) G.sci += fx.sci;
+  if (fx.prepared) G.prepared = true;
+  if (fx.rush) G.rush = true;
+  if (fx.outside) { G.outside = true; G.trips++; G.tripRad += fx.rad || 0; }
+}
+
+function choose(G, side) {
+  if (G.over) return null;
+  const c = G.card, opt = c.single ? c.R : c[side];
+  if (!opt || locked(G, opt)) return null;
+  apply(G, opt.fx);
+  const out = { card: c, side: c.single ? 'R' : side, opt };
+  if (opt.fx.sci) out.found = discover(G, opt.pool, opt.fx.sci);
+  if (c.resolve) {
+    const s = c.storm, dose = R.STORM[s.sev];
+    const mode = G.prepared ? 'ready' : G.rush ? 'rush' : 'none';
+    const block = mode === 'ready' ? R.BLOCK_READY : mode === 'rush' ? R.BLOCK_RUSH : 0;
+    const inside = Math.round(dose * (1 - block));
+    const extra = G.outside ? Math.round(dose * R.OUTSIDE) : 0;
+    const m = { e: s, day: G.day, mode, block, inside, extra, outside: G.outside };
+    G.rad += inside + extra; G.tripRad += extra;
+    G.met.push(m);
+    out.storm = m;
+    G.queue.unshift(resultCard(m));
+  }
+  if (G.rad >= R.RAD_LIMIT) { G.over = 'rad'; G.card = null; return out; }
+  if (!G.queue.length) {
+    // Noite: a tripulação respira e os raios cósmicos continuam chegando.
+    G.air -= R.AIR_USE; G.rad += R.RAD_DAILY;
+    out.night = true;
+    if (G.air <= 0) { G.air = 0; G.over = 'air'; G.card = null; return out; }
+    if (G.rad >= R.RAD_LIMIT) { G.over = 'rad'; G.card = null; return out; }
+    G.day++;
+    if (G.day >= R.DAYS) { G.over = 'win'; G.card = null; return out; }
+    buildDay(G);
+  }
+  const next = G.queue.shift();
+  G.card = typeof next === 'function' ? next() : next;
+  return out;
+}
+
+function stars(G) {
+  if (G.over !== 'win') return 0;
+  const a = G.sci >= R.SCI_GOAL, b = G.rad < R.RAD_SAFE;
+  return a && b ? 3 : a || b ? 2 : 1;
+}
+
+return { R, STORMS, DISC, newGame, choose, locked, stars, setRng: f => { rnd = f; } };
+})();
+/*ENGINE-END*/
+
+/* ====== INTERFACE ====== */
+(() => {
+'use strict';
+const { R, STORMS, DISC, newGame, choose, locked, stars } = Engine;
+const $ = id => document.getElementById(id);
+const DAY = 864e5;
+let lang = (navigator.language || 'pt').toLowerCase().startsWith('pt') ? 'pt' : 'en';
+let G = null, busy = false, lockHits = 0, prog = null, learnFn = null;
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+let muted = store.get('lb_mute') === '1';
+
+/* Sons simples feitos na hora (sem arquivos) */
+let ac = null;
+function tone(f, t0, dur, type, vol) {
+  const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + t0;
+  o.type = type || 'sine'; o.frequency.value = f;
+  g.gain.setValueAtTime(vol || .08, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + .02);
+}
+const SFX = {
+  swipe: () => tone(320, 0, .06, 'triangle', .05),
+  lock: () => tone(140, 0, .16, 'square', .05),
+  disc: () => [523, 659, 784].forEach((f, i) => tone(f, i * .09, .14)),
+  alert: () => [0, 1, 2].forEach(i => { tone(880, i * .3, .13, 'square', .04); tone(660, i * .3 + .15, .13, 'square', .04); }),
+  storm: () => { for (let i = 0; i < 10; i++) tone(80 + Math.random() * 70, i * .12, .2, 'sawtooth', .06); },
+  win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .13, .25)),
+  lose: () => [392, 330, 262].forEach((f, i) => tone(f, i * .18, .3, 'triangle')),
+};
+function sfx(k) {
+  if (muted) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    SFX[k]();
+  } catch (e) {}
+}
+
+/* Dicas curtas: aparecem uma vez só, na hora em que o assunto acontece */
+const TIPS = {
+  night: ['Raios cósmicos são partículas que vêm de muito longe no espaço. Na Terra, o ar e o campo magnético nos protegem. Na Lua, não.',
+          'Cosmic rays are particles from very far away in space. On Earth, the air and the magnetic field protect us. On the Moon, they do not.'],
+  low: ['No polo sul da Lua o Sol fica sempre baixo no horizonte. Por isso as montanhas fazem sombras bem compridas.',
+        "At the Moon's south pole the Sun always stays low on the horizon. That is why mountains cast very long shadows."],
+  'o2:R': ['Na Estação Espacial é assim de verdade: uma máquina usa eletricidade para separar a água em oxigênio e hidrogênio.',
+           'This is real on the Space Station: a machine uses electricity to split water into oxygen and hydrogen.'],
+  'farm:R': ['As plantas trocam o gás que soltamos ao respirar por oxigênio. Em viagens longas, elas também viram comida.',
+             'Plants swap the gas we breathe out for oxygen. On long trips, they also become food.'],
+  'dust:R': ['Fora da base, só o traje protege. Por isso os astronautas contam cada minuto que passam lá fora.',
+             'Outside the base, only the suit protects you. That is why astronauts count every minute they spend out there.'],
+  'dust:L': ['Painel sujo recebe menos luz e faz menos energia.', 'A dirty panel gets less light and makes less power.'],
+  'leak:L': ['Fora da base não existe ar. Qualquer furinho deixa o ar de dentro escapar para o espaço.',
+             'There is no air outside the base. Any tiny hole lets the air inside escape into space.'],
+  'leak:R': ['Fora da base não existe ar. Qualquer furinho deixa o ar de dentro escapar para o espaço.',
+             'There is no air outside the base. Any tiny hole lets the air inside escape into space.'],
+  'flare:R': ['O escudo do jogo representa um abrigo de paredes grossas. Astronautas de verdade se escondem na parte mais protegida da nave.',
+              'The shield in the game stands for a thick-walled shelter. Real astronauts hide in the most protected part of their spacecraft.'],
+  'arriveSurprise:L': ['A Lua não tem ar nem campo magnético para segurar as partículas do Sol. Elas chegam direto ao chão.',
+                       'The Moon has no air or magnetic field to stop particles from the Sun. They reach the ground directly.'],
+  'arriveLate:L': ['A Lua não tem ar nem campo magnético para segurar as partículas do Sol. Elas chegam direto ao chão.',
+                   'The Moon has no air or magnetic field to stop particles from the Sun. They reach the ground directly.'],
+  locked: ['Energia é limitada: não dá para ligar tudo ao mesmo tempo. Guardar para depois também é uma escolha.',
+           'Power is limited: you cannot turn everything on at once. Saving it for later is a choice too.'],
+};
+const seen = new Set();
+function showLearn(fn, disc) {
+  learnFn = fn;
+  const e = $('learn');
+  e.innerHTML = fn ? fn() : '';
+  e.className = 'learn' + (fn ? ' show' : '') + (disc ? ' disc' : '');
+}
+function tip(keys) {
+  const k = keys.find(x => TIPS[x] && !seen.has(x));
+  if (!k) return false;
+  seen.add(k);
+  showLearn(() => '<span>💡 ' + TIPS[k][lang === 'pt' ? 0 : 1] + '</span>');
+  return true;
+}
+
+const T = {
+  title: ['Base Lunar: você no comando', 'Moon Base: you are in command'],
+  intro1: ['Você comanda uma base no <b>polo sul da Lua</b> por <b>10 dias</b>. A cada carta, você decide: deslize para um lado ou para o outro.',
+           'You command a base at the <b>Moon\'s south pole</b> for <b>10 days</b>. Each card is a decision: swipe one way or the other.'],
+  how1: ['🫧 <b>Ar:</b> a tripulação respira todo dia. Se acabar, a missão termina.', '🫧 <b>Air:</b> the crew breathes every day. If it runs out, the mission ends.'],
+  how2: ['⚡ <b>Energia:</b> vem do Sol. Tudo gasta energia, e ela nunca dá para tudo.', '⚡ <b>Power:</b> comes from the Sun. Everything uses power, and there is never enough for everything.'],
+  how3: ['☢️ <b>Radiação:</b> partículas invisíveis que fazem mal. Se o medidor encher, é hora de voltar para casa.', '☢️ <b>Radiation:</b> invisible particles that harm the body. If the meter fills up, it is time to go home.'],
+  how4: ['🔬 <b>Descobertas:</b> o motivo de estar na Lua!', '🔬 <b>Discoveries:</b> the reason to be on the Moon!'],
+  introReal: ['☀️ <b>As tempestades solares deste jogo aconteceram de verdade</b>, em 2024 e 2025. As datas e as horas vêm do DONKI, o banco de dados de clima espacial da NASA. Os dados estão guardados no jogo (não são ao vivo).',
+              '☀️ <b>The solar storms in this game really happened</b>, in 2024 and 2025. Dates and times come from DONKI, NASA\'s space weather database. The data is stored in the game (it is not live).'],
+  start: ['🚀 Começar missão', '🚀 Start mission'],
+  again: ['🔁 Jogar outra missão', '🔁 Play another mission'],
+  mAir: ['ar', 'air'], mPw: ['energia', 'power'], mRad: ['radiação', 'radiation'], mSci: ['descobertas', 'discoveries'],
+  swipe: ['Deslize a carta, toque nos botões ou use as setas ← →', 'Swipe the card, tap the buttons or use the ← → keys'],
+  realTitle: ['☀️ Isso aconteceu de verdade!', '☀️ This really happened!'],
+  srcTitle: ['📚 Dados da NASA usados e simplificações', '📚 NASA data used and simplifications'],
+  footer: ['NASA Space Apps Challenge 2026 · Junior Astronaut Mission Trainer · equipe Fly ITACUBE', 'NASA Space Apps Challenge 2026 · Junior Astronaut Mission Trainer · team Fly ITACUBE'],
+  day: ['Dia', 'Day'], of: ['de', 'of'],
+  locked: ['🔒 Falta energia', '🔒 Not enough power'],
+};
+const t = k => T[k][lang === 'pt' ? 0 : 1];
+const tr = x => x[lang];
+const fmtDate = (ts, opt) => new Date(ts).toLocaleDateString(lang === 'pt' ? 'pt-BR' : 'en-US', Object.assign({ day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }, opt));
+const fmtTime = iso => iso.slice(11, 16);
+const num = n => n.toLocaleString(lang === 'pt' ? 'pt-BR' : 'en-US');
+function warnTxt(min) {
+  if (min < 120) return lang === 'pt' ? `${min} minutos` : `${min} minutes`;
+  const h = Math.round(min / 60);
+  return lang === 'pt' ? `${h} horas` : `${h} hours`;
+}
+const SEV = { 1: ['fraca', 'weak'], 2: ['média', 'medium'], 3: ['forte', 'strong'] };
+const sevTxt = s => SEV[s][lang === 'pt' ? 0 : 1];
+function clsTxt(cls) {
+  if (!cls) return '';
+  const x = cls[0] === 'X';
+  return lang === 'pt' ? ` de classe ${cls} (${x ? 'o tipo mais forte' : 'um tipo forte'})` : ` of class ${cls} (${x ? 'the strongest kind' : 'a strong kind'})`;
+}
+
+/* Texto das cartas que dependem dos dados reais */
+function cardText(c) {
+  const s = c.storm, pt = lang === 'pt';
+  switch (c.id) {
+    case 'flare': return pt
+      ? `ALERTA! Às ${fmtTime(s.flr)} os cientistas viram uma explosão${clsTxt(s.cls)} no Sol. Partículas perigosas podem chegar em pouco tempo!`
+      : `ALERT! At ${fmtTime(s.flr)} scientists saw an explosion${clsTxt(s.cls)} on the Sun. Dangerous particles may arrive soon!`;
+    case 'arriveReady': return pt
+      ? `As partículas do Sol chegaram, ${warnTxt(s.warn)} depois da explosão. O escudo está carregado!`
+      : `The Sun's particles arrived, ${warnTxt(s.warn)} after the explosion. The shield is charged!`;
+    case 'arriveLate': return pt
+      ? `As partículas chegaram só ${warnTxt(s.warn)} depois da explosão, e o escudo não foi carregado! Ligado às pressas, ele bloqueia só metade.`
+      : `The particles arrived just ${warnTxt(s.warn)} after the explosion, and the shield was not charged! Turned on in a rush, it blocks only half.`;
+    case 'arriveSurprise': return pt
+      ? 'Tempestade solar sem aviso! Ninguém viu a explosão que causou esta. Ligado às pressas, o escudo bloqueia só metade.'
+      : 'A solar storm with no warning! Nobody saw the explosion that caused this one. Turned on in a rush, the shield blocks only half.';
+    case 'result': {
+      const m = c.met, pct = Math.round(m.block * 100);
+      let a = pt ? `Tempestade ${sevTxt(s.sev)}! ` : `A ${sevTxt(s.sev)} storm! `;
+      a += m.mode === 'none' ? (pt ? 'Sem escudo, as partículas atravessaram a base.' : 'With no shield, the particles went right through the base.')
+                             : (pt ? `O escudo bloqueou ${pct}% das partículas.` : `The shield blocked ${pct}% of the particles.`);
+      if (m.outside) a += pt ? ' E o jipe estava lá fora, sem proteção!' : ' And the rover was outside, with no protection!';
+      return a;
+    }
+    default: return tr(c.text);
+  }
+}
+function cardNote(c) {
+  const pt = lang === 'pt';
+  if ((c.id === 'o2' || c.id === 'farm') && G.air <= R.AIR_USE) return pt ? '⚠️ O ar só dá para esta noite!' : '⚠️ There is only enough air for tonight!';
+  if (c.kind === 'day') {
+    const d = `${t('day')} ${G.day + 1} ${t('of')} ${R.DAYS} · ${fmtDate(G.start + G.day * DAY)}`;
+    return c.first ? d : d + (pt ? ' · 🌙 À noite a tripulação respirou e os raios cósmicos passaram pela base.' : ' · 🌙 Overnight the crew breathed and cosmic rays passed through the base.');
+  }
+  if (c.id === 'flare') return pt ? 'Carregar o escudo leva tempo e gasta energia.' : 'Charging the shield takes time and uses power.';
+  if (c.kind === 'result') return `☢️ +${c.met.inside + c.met.extra}`;
+  return '';
+}
+function cardReal(c) {
+  if (!c.storm) return '';
+  const s = c.storm, when = c.id === 'flare' ? s.flr : s.d;
+  return `${lang === 'pt' ? 'REAL' : 'REAL'} · ${fmtDate(Date.parse(when), { month: 'short' })} · ${fmtTime(when)} UTC · NASA DONKI`;
+}
+
+/* Ícones de efeito: setas em vez de números */
+function fxIcons(fx) {
+  const arrows = (n, per) => (n > 0 ? '▲' : '▼').repeat(Math.min(3, Math.max(1, Math.round(Math.abs(n) / per))));
+  const p = [];
+  if (fx.prepared || fx.rush) p.push('🛡️');
+  if (fx.pw) p.push('⚡' + arrows(fx.pw, 1));
+  if (fx.air) p.push('🫧' + arrows(fx.air, 1));
+  if (fx.sci) p.push('🔬' + arrows(fx.sci, 1));
+  if (fx.rad) p.push('☢️' + arrows(fx.rad, 5));
+  return p.join(' ');
+}
+
+/* ---------- desenho ---------- */
+function setTexts() {
+  document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
+  document.querySelectorAll('[data-t]').forEach(e => { e.innerHTML = t(e.dataset.t); });
+  document.querySelectorAll('[data-lang]').forEach(b => { b.textContent = lang === 'pt' ? '🌐 English' : '🌐 Português'; });
+  $('muteBtn').textContent = muted ? '🔇' : '🔊';
+  if (learnFn) $('learn').innerHTML = learnFn();
+}
+function renderMeters() {
+  const w = (id, v, max) => { $(id).style.width = Math.max(0, Math.min(100, v / max * 100)) + '%'; };
+  w('b_air', G.air, R.AIR_MAX); w('b_pw', G.pw, R.PW_MAX); w('b_rad', G.rad, R.RAD_LIMIT);
+  $('b_rad').style.background = G.rad >= R.RAD_SAFE ? '#ef4444' : '#fb923c';
+  $('sciTxt').textContent = G.sci;
+  $('m_air').classList.toggle('low', G.air <= R.AIR_USE);
+  $('m_rad').classList.toggle('low', G.rad >= 75);
+  $('dayTxt').textContent = `${t('day')} ${Math.min(G.day + 1, R.DAYS)} ${t('of')} ${R.DAYS}`;
+  $('dateTxt').textContent = '📅 ' + fmtDate(G.start + Math.min(G.day, R.DAYS - 1) * DAY);
+  $('sun').style.setProperty('--sun', G.sun);
+  $('shield').className = 'shield' + (G.prepared ? ' ready' : G.rush ? ' rush' : '');
+  $('rover').classList.toggle('out', !!G.outside);
+  // A cara da tripulação mostra como a base está, sem precisar ler os medidores.
+  $('base').textContent = G.air <= R.AIR_USE ? '😮‍💨' : G.rad >= 75 ? '🤒' : G.rad >= R.RAD_SAFE ? '😟' : '🧑‍🚀';
+}
+function renderCard(animate) {
+  const c = G.card; if (!c) return;
+  const card = $('card');
+  card.className = 'card' + (c.alert ? ' alert' : '') + (animate ? ' in' : '');
+  card.style.transform = '';
+  $('cArt').textContent = c.art;
+  $('cTxt').textContent = cardText(c);
+  $('cNote').textContent = cardNote(c);
+  const real = cardReal(c);
+  $('cReal').textContent = real; $('cReal').classList.toggle('hidden', !real);
+  $('choices').classList.toggle('single', !!c.single);
+  $('btnL').classList.toggle('hidden', !!c.single);
+  const fill = (btn, opt, arrow) => {
+    const lk = locked(G, opt);
+    btn.disabled = lk;
+    btn.innerHTML = `<span>${arrow === 'l' ? '← ' : ''}${tr(opt.label)}${arrow === 'r' ? ' →' : ''}</span><span class="fx">${lk ? t('locked') : fxIcons(opt.fx)}</span>`;
+  };
+  if (!c.single) { fill($('btnL'), c.L, 'l'); $('tagL').textContent = tr(c.L.label); }
+  fill($('btnR'), c.R, c.single ? '' : 'r'); $('tagR').textContent = tr(c.R.label);
+  $('tagL').style.opacity = 0; $('tagR').style.opacity = 0;
+  preview(null);
+}
+function preview(side) {
+  const c = G && G.card;
+  const fx = side && c ? (c.single ? c.R.fx : c[side].fx) : {};
+  [['air', 1], ['pw', 1], ['rad', -1], ['sci', 1]].forEach(([k, goodDir]) => {
+    const m = $('m_' + k), v = fx[k] || 0, pv = m.querySelector('.pv');
+    m.classList.toggle('up', v > 0); m.classList.toggle('down', v < 0);
+    if (v) { pv.textContent = v > 0 ? '▲' : '▼'; pv.className = 'pv ' + (v * goodDir > 0 ? 'good' : 'bad'); }
+  });
+  if (side && (fx.prepared || fx.rush)) $('shield').className = 'shield ' + (fx.prepared ? 'ready' : 'rush');
+  else if (G) $('shield').className = 'shield' + (G.prepared ? ' ready' : G.rush ? ' rush' : '');
+}
+function toast(msg) {
+  const e = $('toast'); e.textContent = msg; e.classList.add('show');
+  clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), 1800);
+}
+
+/* ---------- tempestade: partículas do Sol contra o escudo ---------- */
+const wait = ms => new Promise(r => setTimeout(r, ms));
+async function playStorm(m) {
+  const scene = $('scene');
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || !scene.animate) return;
+  const sr = scene.getBoundingClientRect(), su = $('sun').getBoundingClientRect(), ba = $('base').getBoundingClientRect(), sh = $('shield').getBoundingClientRect();
+  const x0 = su.left - sr.left + su.width / 2, y0 = su.top - sr.top + su.height / 2;
+  const bx = ba.left - sr.left + ba.width / 2, by = ba.top - sr.top + ba.height * .6;
+  const rad = sh.width / 2 + 2;
+  scene.classList.add('storm');
+  const n = 14 + m.e.sev * 10;
+  let hits = 0;
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement('div'); p.className = 'particle'; scene.appendChild(p);
+    const tx = bx + (Math.random() - .5) * 60, ty = by + (Math.random() - .5) * 16;
+    const blocked = Math.random() < m.block;
+    let ex = tx, ey = ty;
+    if (blocked) { const dx = tx - x0, dy = ty - y0, len = Math.hypot(dx, dy), k = (len - rad) / len; ex = x0 + dx * k; ey = y0 + dy * k; } else hits++;
+    const a = p.animate([
+      { transform: `translate(${x0}px, ${y0}px)`, opacity: 1 },
+      { transform: `translate(${ex}px, ${ey}px)`, opacity: 1, offset: .85 },
+      { transform: `translate(${ex}px, ${ey}px) scale(${blocked ? 2.4 : .4})`, opacity: 0 },
+    ], { duration: 900, delay: i * 38, easing: 'ease-in', fill: 'both' });
+    a.onfinish = () => p.remove();
+  }
+  await wait(700);
+  if (hits) { $('base').classList.add('hit'); }
+  await wait(n * 38 + 500);
+  $('base').classList.remove('hit'); scene.classList.remove('storm');
+}
+
+/* ---------- jogar ---------- */
+async function act(side) {
+  if (busy || !G || G.over) return;
+  const c = G.card, opt = c.single ? c.R : c[side];
+  const card = $('card');
+  if (locked(G, opt)) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); toast(t('locked')); sfx('lock'); lockHits++; tip(['locked']); return; }
+  busy = true;
+  const dir = side === 'L' ? -1 : 1;
+  card.classList.add('fly'); card.style.transform = `translateX(${dir * 420}px) rotate(${dir * 24}deg)`;
+  const out = choose(G, side);
+  sfx(out.storm ? 'storm' : 'swipe');
+  if (out.storm) { preview(null); await playStorm(out.storm); }
+  else await wait(240);
+  renderMeters();
+  if (out.night && !G.over) toast('🌙 🫧▼  ☢️▲');
+  if (G.over) { await wait(500); busy = false; return finish(); }
+  if (out.found && out.found.length) {
+    const f = out.found;
+    showLearn(() => `<span>🔬 <b>${lang === 'pt' ? 'Nova descoberta' : 'New discovery'}: ${f.map(d => d.ico + ' ' + tr(d.name)).join(' + ')}</b><br>${tr(f[0].fact)}</span>`, true);
+    sfx('disc');
+  } else {
+    const keys = [c.id + ':' + out.side];
+    if (out.night) keys.push('night');
+    if (G.card.kind === 'day' && G.card.sun === 1) keys.push('low');
+    if (!tip(keys)) showLearn(null);
+  }
+  if (G.card.kind === 'flare') sfx('alert');
+  renderCard(true);
+  busy = false;
+}
+
+function start() {
+  G = newGame(); lockHits = 0; prog = null; showLearn(null);
+  $('intro').classList.add('hidden'); $('end').classList.add('hidden'); $('game').classList.remove('hidden');
+  renderMeters(); renderCard(true);
+  if (!seen.has('hint')) { seen.add('hint'); $('card').classList.add('hint'); }
+  window.scrollTo(0, 0);
+}
+
+/* ---------- fim ---------- */
+const FACTS = [
+  ['A Lua não tem um campo magnético global nem uma atmosfera grossa como a Terra. Por isso, quem está lá fica mais exposto às partículas do Sol.',
+   'The Moon has no global magnetic field and no thick atmosphere like Earth. That is why people there are more exposed to particles from the Sun.'],
+  ['No polo sul da Lua o Sol fica sempre baixinho no horizonte. Montanhas e crateras fazem sombra, então a energia solar muda de um dia para o outro.',
+   'At the Moon\'s south pole the Sun always stays low on the horizon. Mountains and craters cast shadows, so solar power changes from day to day.'],
+  ['Água e plásticos com muito hidrogênio são ótimos para bloquear radiação. Por isso as naves guardam água perto de onde os astronautas dormem.',
+   'Water and hydrogen-rich plastics are great at blocking radiation. That is why spacecraft store water near where astronauts sleep.'],
+  ['Nas tempestades solares mais rápidas, as partículas podem chegar em menos de uma hora. Os avisos dão pouco tempo para se proteger.',
+   'In the fastest solar storms, particles can arrive in less than an hour. Warnings leave little time to take cover.'],
+  ['Algumas crateras do polo sul nunca recebem luz do Sol. Lá dentro pode ter gelo de água, um dos motivos para a NASA querer ir para essa região.',
+   'Some craters at the south pole never get sunlight. There may be water ice inside, one reason NASA wants to go to that region.'],
+  ['Na Estação Espacial Internacional, aparelhos chamados dosímetros medem quanta radiação os astronautas recebem todos os dias.',
+   'On the International Space Station, devices called dosimeters measure how much radiation astronauts receive every day.'],
+  ['2024 e 2025 ficaram perto do “máximo solar”, a fase em que o Sol tem mais manchas e mais explosões. Por isso aconteceram tantas tempestades.',
+   '2024 and 2025 were near "solar maximum", the phase when the Sun has the most spots and explosions. That is why there were so many storms.'],
+  ['Fazer oxigênio na base gasta energia: uma máquina separa a água em hidrogênio e oxigênio usando eletricidade.',
+   'Making oxygen at the base takes power: a machine splits water into hydrogen and oxygen using electricity.'],
+];
+let factIdx = Math.floor(Math.random() * FACTS.length);
+
+function stormRecord(s) {
+  const pt = lang === 'pt';
+  let a = s.sev === 3 ? (pt ? 'Partículas muito energéticas (acima de 100 MeV) detectadas pelo satélite GOES.' : 'Very energetic particles (above 100 MeV) detected by the GOES satellite.')
+        : s.sev === 2 ? (pt ? 'Partículas energéticas (acima de 10 MeV) detectadas pelo satélite GOES.' : 'Energetic particles (above 10 MeV) detected by the GOES satellite.')
+        : (pt ? 'Partículas detectadas só por sondas longe da Terra, como a SOHO e a STEREO-A.' : 'Particles detected only by probes far from Earth, such as SOHO and STEREO-A.');
+  a += ' ';
+  a += s.flr ? (pt ? `A explosão${s.cls ? ' de classe ' + s.cls : ''} começou às ${fmtTime(s.flr)} UTC de ${fmtDate(Date.parse(s.flr), { year: undefined })}: ${warnTxt(s.warn)} de aviso.`
+                   : `The${s.cls ? ' class ' + s.cls : ''} explosion began at ${fmtTime(s.flr)} UTC on ${fmtDate(Date.parse(s.flr), { year: undefined })}: ${warnTxt(s.warn)} of warning.`)
+             : (pt ? 'O registro não liga nenhuma explosão a esta tempestade: não houve aviso.' : 'The record links no explosion to this storm: there was no warning.');
+  if (s.cme) a += pt ? ` Uma nuvem de gás saiu do Sol a ${num(s.cme)} km por segundo.` : ` A cloud of gas left the Sun at ${num(s.cme)} km per second.`;
+  return a;
+}
+function stormYou(i, m) {
+  const pt = lang === 'pt';
+  if (!m) return pt ? `Dia ${i + 1}: a missão já tinha terminado.` : `Day ${i + 1}: the mission had already ended.`;
+  const sh = m.mode === 'ready' ? (pt ? 'escudo carregado a tempo (bloqueou 90%)' : 'shield charged in time (blocked 90%)')
+           : m.mode === 'rush' ? (pt ? 'escudo de emergência (bloqueou 50%)' : 'emergency shield (blocked 50%)')
+           : (pt ? 'sem escudo' : 'no shield');
+  return (pt ? `Dia ${i + 1}: ${sh}` : `Day ${i + 1}: ${sh}`) + (m.outside ? (pt ? ', com o jipe lá fora' : ', with the rover outside') : '') + `. ☢️ +${m.inside + m.extra}`;
+}
+
+function finish() {
+  // Coleção de descobertas e melhor resultado ficam guardados só neste navegador.
+  let all = [];
+  try { all = JSON.parse(store.get('lb_disc') || '[]'); } catch (e) {}
+  all = [...new Set(all.concat(G.found))];
+  const best = Math.max(+store.get('lb_best') || 0, stars(G));
+  store.set('lb_disc', JSON.stringify(all)); store.set('lb_best', best);
+  prog = { n: all.length, best };
+  sfx(G.over === 'win' ? 'win' : 'lose');
+  $('game').classList.add('hidden'); $('end').classList.remove('hidden');
+  renderEnd(); window.scrollTo(0, 0); $('againBtn').focus();
+}
+function renderEnd() {
+  if (!G || !G.over) return;
+  const pt = lang === 'pt', st = stars(G), sciOk = G.sci >= R.SCI_GOAL, healthOk = G.rad < R.RAD_SAFE;
+  $('stars').textContent = G.over === 'win' ? '⭐'.repeat(st) + '☆'.repeat(3 - st) : '';
+  $('endSum').innerHTML = `<span>🔬 ${G.sci}</span><span>☢️ ${Math.min(100, G.rad)}%</span><span>📅 ${Math.min(G.day + (G.over === 'win' ? 0 : 1), R.DAYS)}/${R.DAYS}</span>`;
+  let art, title, text;
+  if (G.over === 'win') {
+    art = '🧑‍🚀🎉🌍'; title = pt ? 'Missão cumprida!' : 'Mission complete!';
+    text = sciOk && healthOk ? (pt ? 'Muitas descobertas e uma tripulação bem protegida. Equilíbrio de comandante!' : 'Lots of discoveries and a well-protected crew. A true commander\'s balance!')
+         : sciOk ? (pt ? `Muitas descobertas! Mas a tripulação recebeu bastante radiação. Astronautas de verdade tentam receber o mínimo possível. Para 3 estrelas, mantenha o medidor abaixo da metade.` : `Lots of discoveries! But the crew took a lot of radiation. Real astronauts try to get as little as possible. For 3 stars, keep the meter below half.`)
+         : healthOk ? (pt ? `A tripulação ficou bem protegida! Para 3 estrelas, faça ${R.SCI_GOAL} descobertas.` : `The crew stayed well protected! For 3 stars, make ${R.SCI_GOAL} discoveries.`)
+         : (pt ? `Vocês voltaram para casa! Para mais estrelas: ${R.SCI_GOAL} descobertas e radiação abaixo da metade.` : `You made it home! For more stars: ${R.SCI_GOAL} discoveries and radiation below half.`);
+  } else if (G.over === 'air') {
+    art = '🫧🚀🌍'; title = pt ? 'O ar acabou: voltando para casa' : 'Out of air: heading home';
+    text = pt ? 'A tripulação voltou em segurança, mas a missão terminou mais cedo. Isso acontece até com bons comandantes! Dica: a tripulação respira todo dia, então guarde energia para a máquina de oxigênio.'
+              : 'The crew got back safely, but the mission ended early. It happens to good commanders too! Tip: the crew breathes every day, so save power for the oxygen machine.';
+  } else {
+    art = '☢️🚀🌍'; title = pt ? 'Radiação demais: voltando para casa' : 'Too much radiation: heading home';
+    text = pt ? 'A tripulação voltou para a Terra para se cuidar. Tente de novo com outra estratégia! Dica: deixe sempre um pouco de energia guardada. Uma tempestade solar pode chegar com pouco aviso, ou sem aviso nenhum.'
+              : 'The crew returned to Earth to recover. Try again with another strategy! Tip: always keep some power in reserve. A solar storm can arrive with little warning, or none at all.';
+  }
+  $('endArt').textContent = art; $('endTitle').textContent = title; $('endText').textContent = text;
+  // O que esta missão mostrou: frases curtas tiradas do que a criança fez.
+  const has = m => G.met.some(x => x.mode === m), times = n => pt ? (n > 1 ? n + ' vezes' : '1 vez') : (n > 1 ? n + ' times' : 'once');
+  const b = [];
+  if (has('ready')) b.push(pt ? '🛡️ Você carregou o escudo antes da tempestade. Custou energia, mas bloqueou quase tudo.' : '🛡️ You charged the shield before the storm. It cost power, but it blocked almost everything.');
+  if (has('rush')) b.push(pt ? '⏱️ Ligado às pressas, o escudo bloqueou só metade. Em uma tempestade de verdade, o aviso é curto.' : '⏱️ Turned on in a rush, the shield blocked only half. In a real storm, the warning is short.');
+  if (has('none')) b.push(pt ? '☢️ Sem escudo, a tempestade atravessou a base. Um pouco de energia guardada teria ajudado.' : '☢️ With no shield, the storm went through the base. A little saved power would have helped.');
+  if (G.trips) b.push(pt ? `🚙 Você saiu da base ${times(G.trips)}. Lá fora não há escudo: +${G.tripRad} de radiação.` : `🚙 You left the base ${times(G.trips)}. There is no shield outside: +${G.tripRad} radiation.`);
+  if (lockHits) b.push(pt ? `🔒 Faltou energia ${times(lockHits)} para o que você queria. Não dá para ligar tudo ao mesmo tempo.` : `🔒 You ran short of power ${times(lockHits)} for what you wanted. You cannot turn everything on at once.`);
+  if (G.wasted) b.push(pt ? `🔋 A bateria encheu e ${G.wasted} de energia do Sol se perdeu.` : `🔋 The battery filled up and ${G.wasted} of the Sun's power was lost.`);
+  $('debrief').innerHTML = b.slice(0, 4).map(x => '<li>' + x + '</li>').join('');
+  const found = G.found.map(id => DISC.find(d => d.id === id));
+  $('bookTitle').textContent = (pt ? '📓 Caderno de descobertas' : '📓 Discovery notebook') + ` (${found.length})`;
+  $('bookColl').textContent = prog ? (pt ? `Coleção neste aparelho: ${prog.n} de ${DISC.length} · Melhor missão: ${'⭐'.repeat(prog.best) || '—'}` : `Collection on this device: ${prog.n} of ${DISC.length} · Best mission: ${'⭐'.repeat(prog.best) || '—'}`) : '';
+  $('book').innerHTML = found.length ? found.map(d => `<div class="d"><span class="i">${d.ico}</span><b>${tr(d.name)}</b><span>${tr(d.fact)}</span></div>`).join('')
+    : `<p>${pt ? 'Nenhuma descoberta desta vez. O laboratório, o telescópio e o jipe fazem descobertas.' : 'No discoveries this time. The lab, the telescope and the rover make discoveries.'}</p>`;
+  $('endFact').classList.toggle('hidden', found.length > 0);
+  $('endFact').innerHTML = (pt ? '💡 <b>Você sabia?</b> ' : '💡 <b>Did you know?</b> ') + FACTS[factIdx % FACTS.length][pt ? 0 : 1];
+  $('realIntro').textContent = pt
+    ? `Sua missão aconteceu entre ${fmtDate(G.start)} e ${fmtDate(G.start + (R.DAYS - 1) * DAY)}. Nesses dias, o Sol fez isto de verdade:`
+    : `Your mission took place between ${fmtDate(G.start)} and ${fmtDate(G.start + (R.DAYS - 1) * DAY)}. On those days, the Sun really did this:`;
+  $('realList').innerHTML = Object.keys(G.storms).map(Number).sort((a, b) => a - b).map(i => {
+    const s = G.storms[i], m = G.met.find(x => x.e === s);
+    return `<div class="ev"><div class="when">${fmtDate(Date.parse(s.d))} · ${fmtTime(s.d)} UTC · ${pt ? 'tempestade' : 'storm'} ${sevTxt(s.sev)}</div>
+      <div>${stormRecord(s)} <a href="${s.link}" target="_blank" rel="noopener">${pt ? 'Ver no DONKI' : 'See it on DONKI'}</a></div>
+      <div class="you">🎮 ${stormYou(i, m)}</div></div>`;
+  }).join('');
+  $('srcBody').innerHTML = pt ? `
+    <p><b>Dados reais:</b> ${STORMS.length} tempestades de partículas solares (eventos SEP) de 2024 e 2025, registradas no
+      <a href="https://ccmc.gsfc.nasa.gov/tools/DONKI/" target="_blank" rel="noopener">DONKI</a> da NASA e baixadas pela <a href="https://api.nasa.gov/" target="_blank" rel="noopener">api.nasa.gov</a>.
+      De cada uma usamos: a hora em que as partículas chegaram, a explosão solar ligada a ela (hora e classe) e a velocidade da nuvem de gás (CME).
+      Os dados foram baixados antes e guardados no jogo: <b>não são ao vivo</b>. As horas estão em UTC (hora universal).</p>
+    <p><b>Por que esses dados:</b> o tempo entre ver a explosão e a chegada das partículas é o tempo real que uma tripulação teria para se proteger. No jogo, esse aviso decide se dá para carregar o escudo.</p>
+    <p><b>Força da tempestade:</b> “forte” = o satélite GOES, perto da Terra e da Lua, detectou partículas acima de 100 MeV; “média” = acima de 10 MeV; “fraca” = só sondas mais distantes detectaram.
+      MeV mede a energia das partículas: quanto maior, mais fácil elas atravessam paredes.</p>
+    <p><b>Simplificações:</b> os números de ar, energia e radiação são de jogo, não de engenharia. O “escudo” representa um abrigo protegido. Registros com menos de 48 horas de diferença contam como uma tempestade só.
+      Quando o DONKI não liga nenhuma explosão a uma tempestade, o jogo mostra a tempestade sem aviso.</p>` : `
+    <p><b>Real data:</b> ${STORMS.length} solar particle storms (SEP events) from 2024 and 2025, recorded in NASA's
+      <a href="https://ccmc.gsfc.nasa.gov/tools/DONKI/" target="_blank" rel="noopener">DONKI</a> and downloaded through <a href="https://api.nasa.gov/" target="_blank" rel="noopener">api.nasa.gov</a>.
+      From each one we use: the time the particles arrived, the solar flare linked to it (time and class) and the speed of the gas cloud (CME).
+      The data was downloaded in advance and stored in the game: <b>it is not live</b>. Times are in UTC.</p>
+    <p><b>Why this data:</b> the time between seeing the flare and the particles arriving is the real time a crew would have to take cover. In the game, that warning decides whether the shield can be charged.</p>
+    <p><b>Storm strength:</b> "strong" = the GOES satellite, near Earth and the Moon, detected particles above 100 MeV; "medium" = above 10 MeV; "weak" = only more distant probes detected it.
+      MeV measures particle energy: the higher it is, the more easily particles pass through walls.</p>
+    <p><b>Simplifications:</b> the air, power and radiation numbers are game numbers, not engineering values. The "shield" stands for a protected shelter. Records less than 48 hours apart count as a single storm.
+      When DONKI links no flare to a storm, the game shows that storm with no warning.</p>`;
+}
+
+/* ---------- eventos ---------- */
+const card = $('card');
+let drag = null;
+card.addEventListener('pointerdown', e => { if (busy || !G || G.over) return; drag = { x: e.clientX, dx: 0 }; card.setPointerCapture(e.pointerId); card.classList.remove('snap', 'in', 'shake'); });
+card.addEventListener('pointermove', e => {
+  if (!drag) return;
+  drag.dx = e.clientX - drag.x;
+  card.style.transform = `translateX(${drag.dx}px) rotate(${drag.dx / 16}deg)`;
+  const side = drag.dx > 25 ? 'R' : drag.dx < -25 ? 'L' : null, k = Math.min(1, Math.abs(drag.dx) / 90);
+  $('tagR').style.opacity = side === 'R' ? k : 0;
+  $('tagL').style.opacity = side === 'L' && !G.card.single ? k : 0;
+  preview(side);
+});
+const drop = () => {
+  if (!drag) return;
+  const dx = drag.dx; drag = null;
+  if (Math.abs(dx) > 90) { act(dx > 0 ? 'R' : 'L'); if (!busy) { card.classList.add('snap'); card.style.transform = ''; preview(null); } }
+  else { card.classList.add('snap'); card.style.transform = ''; $('tagL').style.opacity = 0; $('tagR').style.opacity = 0; preview(null); }
+};
+card.addEventListener('pointerup', drop); card.addEventListener('pointercancel', drop);
+[['btnL', 'L'], ['btnR', 'R']].forEach(([id, s]) => {
+  const b = $(id);
+  b.addEventListener('click', () => act(s));
+  b.addEventListener('pointerenter', () => { if (!busy) preview(s); });
+  b.addEventListener('pointerleave', () => { if (!busy) preview(null); });
+  b.addEventListener('focus', () => { if (!busy) preview(s); });
+  b.addEventListener('blur', () => { if (!busy) preview(null); });
+});
+document.addEventListener('keydown', e => {
+  if ($('game').classList.contains('hidden')) return;
+  if (e.key === 'ArrowLeft') act('L'); else if (e.key === 'ArrowRight') act('R');
+});
+$('muteBtn').addEventListener('click', () => { muted = !muted; store.set('lb_mute', muted ? '1' : '0'); setTexts(); if (!muted) sfx('swipe'); });
+$('startBtn').addEventListener('click', start);
+$('againBtn').addEventListener('click', () => { factIdx++; start(); });
+document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click', () => {
+  lang = lang === 'pt' ? 'en' : 'pt'; setTexts();
+  if (G) { renderMeters(); if (G.over) renderEnd(); else renderCard(false); }
+}));
+setTexts();
+window.__game = { get G() { return G; }, R, STORMS, Engine, act, setLang: l => { lang = l; setTexts(); } };   // para testes
+})();
+</script>
+</body>
+</html>

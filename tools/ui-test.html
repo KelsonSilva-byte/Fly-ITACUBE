@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<!-- Teste da interface: abre o jogo num iframe e joga sozinho.
+     Servir a pasta do projeto (python -m http.server 8765) e abrir
+     http://localhost:8765/tools/ui-test.html?games=20   (joga 20 partidas e mostra o resumo)
+     ?stop=7 para na 7ª carta (útil para tirar print) · ?lang=en troca o idioma · ?storm=1 para na primeira tempestade -->
+<meta charset="UTF-8">
+<style>body{margin:0;background:#000;color:#0f0;font:12px monospace} iframe{width:420px;height:860px;border:0;display:block} pre{white-space:pre-wrap;margin:4px}</style>
+<iframe id="f" src="../index.html"></iframe>
+<pre id="out">running</pre>
+<script>
+const q = new URLSearchParams(location.search);
+const games = +(q.get('games') || 1), stop = +(q.get('stop') || 0), wantStorm = q.get('storm');
+const f = document.getElementById('f'), errors = [];
+f.addEventListener('load', async () => {
+  const w = f.contentWindow, d = f.contentDocument;
+  w.addEventListener('error', e => errors.push(e.message));
+  w.addEventListener('unhandledrejection', e => errors.push('rejection: ' + e.reason));
+  if (q.get('lang')) w.__game.setLang(q.get('lang'));
+  const res = { win: 0, air: 0, rad: 0, cards: 0, storms: 0 };
+  let halted = false;
+  for (let g = 0; g < games && !halted; g++) {
+    d.getElementById(g ? 'againBtn' : 'startBtn').click();
+    let n = 0;
+    while (!w.__game.G.over) {
+      const c = w.__game.G.card;
+      if (stop && n >= stop) { halted = true; break; }
+      if (wantStorm && c.kind === (wantStorm === '1' ? 'flare' : wantStorm)) { halted = true; break; }
+      if (!d.getElementById('cTxt').textContent.trim()) errors.push('carta sem texto: ' + c.id);
+      let side = Math.random() < .5 ? 'L' : 'R';
+      if (!c.single && w.__game.Engine.locked(w.__game.G, c[side])) side = side === 'L' ? 'R' : 'L';
+      if (c.kind === 'arrive') res.storms++;
+      await w.__game.act(side); n++; res.cards++;
+      if (n > 300) { errors.push('loop'); break; }
+    }
+    if (!halted) {
+      res[w.__game.G.over]++;
+      if (d.getElementById('end').classList.contains('hidden')) errors.push('tela final não apareceu');
+      if (!d.querySelectorAll('#realList .ev a[href*="DONKI"]').length) errors.push('sem links do DONKI no final');
+    }
+  }
+  document.getElementById('out').textContent = 'DONE ' + JSON.stringify({ res, errors });
+});
+</script>
