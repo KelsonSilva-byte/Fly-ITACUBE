@@ -520,6 +520,7 @@ function choose(G, side) {
     G.queue.unshift(resultCard(m));
   }
   if (G.rad >= R.RAD_LIMIT) { G.over = 'rad'; G.card = null; return out; }
+  if (G.pw <= 0) { G.pw = 0; G.over = 'pw'; G.card = null; return out; }
   if (!G.queue.length) {
     // Noite: a tripulação respira e os raios cósmicos continuam chegando.
     G.air -= R.AIR_USE; G.rad += R.RAD_DAILY;
@@ -923,6 +924,10 @@ function renderEnd() {
     art = '🫧🚀🌍'; title = pt ? 'O ar acabou: voltando para casa' : 'Out of air: heading home';
     text = pt ? 'A tripulação voltou em segurança, mas a missão terminou mais cedo. Isso acontece até com bons comandantes! Dica: a tripulação respira todo dia, então guarde energia para a máquina de oxigênio.'
               : 'The crew got back safely, but the mission ended early. It happens to good commanders too! Tip: the crew breathes every day, so save power for the oxygen machine.';
+  } else if (G.over === 'pw') {
+    art = '⚡🚀🌍'; title = pt ? 'A energia acabou: voltando para casa' : 'Out of power: heading home';
+    text = pt ? 'Sem energia para aquecer a base e manter os equipamentos ligados, a tripulação voltou em segurança para a Terra. Isso acontece até com bons comandantes! Dica: nunca zere a bateria — deixe sempre uma reserva para emergências e dias de sombra.'
+              : 'With no power left to heat the base and run vital systems, the crew returned safely to Earth. It happens to good commanders too! Tip: never drain the battery to zero — always keep a reserve for emergencies and shadowy days.';
   } else {
     art = '☢️🚀🌍'; title = pt ? 'Radiação demais: voltando para casa' : 'Too much radiation: heading home';
     text = pt ? 'A tripulação voltou para a Terra para se cuidar. Tente de novo com outra estratégia! Dica: deixe sempre um pouco de energia guardada. Uma tempestade solar pode chegar com pouco aviso, ou sem aviso nenhum.'
