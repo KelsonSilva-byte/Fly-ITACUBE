@@ -171,12 +171,14 @@ const STORMS = /*STORMS*/[
 const R = {
   DAYS: 10,
   AIR_START: 6, AIR_MAX: 10, AIR_USE: 2,
-  PW_START: 4, PW_MAX: 10, SUN: [3, 4, 2, 1, 2, 3, 4, 2, 1, 2],   // sombras das crateras do polo sul
+  PW_START: 4, PW_MAX: 10, SUN: [0, 1, 1, 1, 1, 2, 2, 2, 2, 2],   // 0 = sem sol(10%), 1 = parcial(40%), 2 = normal(50%)
   RAD_LIMIT: 100, RAD_SAFE: 50, RAD_DAILY: 2,
   SCI_GOAL: 8,
   STORM: { 1: 20, 2: 40, 3: 70 },
   BLOCK_READY: 0.9, BLOCK_RUSH: 0.5, OUTSIDE: 0.6,
   SHIELD_PW: 3,
+  QUIZ_OK_AIR: 3, QUIZ_OK_PW: 2,
+  QUIZ_FAIL_AIR: 2, QUIZ_FAIL_PW: 2,
   RESCUE_PW: 2,              // com energia até aqui, a carta de ciência troca a pesquisa de dentro por "Recarregar baterias"
   PROBLEM_CHANCE: 0.5,       // fim do dia sem tempestade: 50% problema,
   GOOD_CHANCE: 0.25,         // 25% boa notícia, 25% nada
@@ -753,16 +755,15 @@ function discover(G, pool) {
 }
 
 const SUN_TXT = {
-  4: B('Sol cheio nos painéis!', 'Full Sun on the panels!'),
-  3: B('Bastante Sol hoje.', 'Plenty of Sun today.'),
-  2: B('Uma cratera fez um pouco de sombra.', 'A crater is casting some shadow.'),
-  1: B('Uma montanha fez sombra nos painéis. Pouca energia hoje.', 'A mountain is shading the panels. Little power today.'),
+  2: B('Sol direto nos painéis! Energia normal hoje.', 'Direct Sun on the panels! Normal power today.'),
+  1: B('Uma cratera fez um pouco de sombra. Energia parcial hoje.', 'A crater is casting some shadow. Partial power today.'),
+  0: B('Uma montanha fez sombra nos painéis. Nenhuma energia hoje.', 'A mountain is shading the panels. No power today.'),
 };
 
 function dayCard(G) {
-  const sun = R.SUN[(G.day + G.phase) % R.SUN.length];
+  const sun = pick(R.SUN);
   G.sun = sun;
-  return { id: 'day', kind: 'day', art: sun >= 3 ? '☀️🔆' : sun === 2 ? '🌤️' : '⛰️🌑', single: true, sun, first: G.day === 0,
+  return { id: 'day', kind: 'day', art: sun === 2 ? '☀️🔆' : sun === 1 ? '🌤️' : '⛰️🌑', single: true, sun, first: G.day === 0,
     text: SUN_TXT[sun],
     R: { label: B('Começar o dia', 'Start the day'), fx: { pw: sun } } };
 }
@@ -852,14 +853,14 @@ function choose(G, side) {
   const out = { card: c, side: c.single ? 'R' : side, opt, fx };
   if (c.quiz) {
     if (opt.ok) {
-      G.air = Math.min(R.AIR_MAX, G.air + 3);
-      G.pw = Math.max(1, G.pw + 2);
+      G.air = Math.min(R.AIR_MAX, G.air + R.QUIZ_OK_AIR);
+      G.pw = Math.min(R.PW_MAX, G.pw + R.QUIZ_OK_PW);
       out.quizOk = true;
     } else {
       // Perde um pouco de ar e energia, mas trava acima do limite letal para não encerrar o jogo
-      G.pw = Math.max(1, G.pw - 2);
+      G.pw = Math.max(1, G.pw - R.QUIZ_FAIL_PW);
       const safeAirFloor = Math.min(G.air, R.AIR_USE + 1);
-      G.air = Math.max(safeAirFloor, G.air - 2);
+      G.air = Math.max(safeAirFloor, G.air - R.QUIZ_FAIL_AIR);
       out.quizOk = false;
     }
   }
@@ -1289,7 +1290,7 @@ async function act(side) {
   }
   if (c.quiz) {
     if (out.quizOk) {
-      showLearn(() => `<span>🎉 <b>${lang === 'pt' ? 'Você lembrou! A solução recupera ar e reduz radiação, com um pequeno custo de energia.' : 'You remembered! Your solution restores air and reduces radiation at a small power cost.'}</b><br>${tr(c.disc.fact)}</span>`, true);
+      showLearn(() => `<span>🎉 <b>${lang === 'pt' ? 'Você lembrou! A solução recupera ar, com um pequeno custo de energia.' : 'You remembered! Your solution restores air and reduces radiation at a small power cost.'}</b><br>${tr(c.disc.fact)}</span>`, true);
       sfx('disc');
     } else {
       showLearn(() => `<span>🤔 <b>${lang === 'pt' ? 'Quase! A base gastou um pouco de ar e energia.' : 'Close! The base spent a little air and power.'}</b><br>${tr(c.disc.fact)}</span>`, false);
