@@ -77,10 +77,16 @@ Tela final: estrelas, resumo, "o que esta missão mostrou", o caderno de descobe
 o que a criança fez) e a seção "Dados da NASA usados e simplificações".
 
 Aprendizado sem texto obrigatório (nada disso trava o jogo; é uma faixa de uma frase abaixo da carta):
-- **Descobertas com nome:** cada ponto de ciência vira um fato real sobre a Lua ou o Sol (16 no total, lista `DISC`
-  no motor): regolito, vidro laranja da Apollo 17, água achada pela LCROSS, frio medido pela LRO, ciclo de 11 anos do Sol etc.
-  O laboratório puxa fatos de pedras, o jipe de crateras, o telescópio do Sol, a caminhada do gelo.
-  No fim aparecem no caderno; a coleção (X de 16) e o melhor resultado ficam no `localStorage` do navegador.
+- **Descobertas com nome:** 40 fatos reais de páginas da NASA (lista `DISC` no motor), 10 por grupo:
+  laboratório (pedras, solo e corpo humano), jipe (crateras e terreno), gelo e água, telescópio (Sol e radiação).
+  Cada uma tem o fato, uma frase "Na base:" que liga o fato a uma restrição da missão (ar, energia, radiação, comida)
+  e o link da fonte (`src`), mostrado no álbum. Cada uma também tem uma pergunta de memória (`DISC_QUIZ`).
+- **Uma descoberta por dia:** a primeira ação de ciência do dia revela uma descoberta do grupo dela. Se o dia passa sem ciência,
+  à noite a equipe revisa os dados e ganha uma descoberta de um grupo sorteado. Os pontos de ciência (meta de 8 para as estrelas)
+  continuam contando à parte. Uma missão completa dá exatamente 10 descobertas, então completar o álbum leva pelo menos 4 missões.
+- **Sorteio:** dentro do grupo, descobertas que ainda não estão no álbum têm o dobro de chance (`newGame(seen)` recebe o álbum).
+  A coleção e o melhor resultado ficam no `localStorage` do navegador. O álbum também abre durante a missão (botão do frasco
+  no topo), menos quando há uma carta de pergunta.
 - **Dicas de contexto:** na primeira vez que um assunto aparece (máquina de oxigênio, raios cósmicos, sombra no polo sul,
   vazamento, abrigo, energia travada), uma frase explica o termo. Cada dica aparece uma vez só por sessão (lista `TIPS`).
 - **"O que esta missão mostrou":** até 4 frases no fim, tiradas do que a criança fez (escudo a tempo ou às pressas,

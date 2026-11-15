@@ -16,7 +16,7 @@ f.addEventListener('load', async () => {
   w.addEventListener('error', e => errors.push(e.message));
   w.addEventListener('unhandledrejection', e => errors.push('rejection: ' + e.reason));
   if (q.get('lang')) w.__game.setLang(q.get('lang'));
-  const res = { win: 0, air: 0, rad: 0, cards: 0, storms: 0 };
+  const res = { win: 0, air: 0, pw:0, rad: 0, cards: 0, storms: 0 };
   let halted = false;
   for (let g = 0; g < games && !halted; g++) {
     d.getElementById(g ? 'againBtn' : 'startBtn').click();

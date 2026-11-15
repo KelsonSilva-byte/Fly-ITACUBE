@@ -30,7 +30,7 @@
 <section id="game" class="hidden">
   <div class="top">
     <div><div class="day" id="dayTxt"></div><div class="date"><img src="assets/hud/calendario.png" alt=""><span id="dateTxt"></span></div></div>
-    <div style="display:flex; gap:.4rem"><button class="lang" id="muteBtn" aria-label="Som / Sound"><img src="assets/hud/som-ligado.png" alt=""></button><button class="lang" data-lang></button></div>
+    <div style="display:flex; gap:.4rem"><button class="lang" id="albumGameBtn" aria-label="Descobertas"><img src="assets/hud/album-descobertas.png" alt=""></button><button class="lang" id="muteBtn" aria-label="Som / Sound"><img src="assets/hud/som-ligado.png" alt=""></button><button class="lang" data-lang></button></div>
   </div>
 
   <div class="scene" id="scene" aria-hidden="true">
@@ -211,7 +211,7 @@ function pickMission() {
 const LIFE = [
   { id: 'o2', art: '🫧⚙️', w: 3,
     text: B('A máquina de oxigênio usa eletricidade para tirar ar da água. Ligar hoje?', 'The oxygen machine uses electricity to pull air out of water. Turn it on today?'),
-    L: { label: B('Poupar energia', 'Save power'), fx: { pw: 1, air: -1 } },
+    L: { label: B('Poupar energia', 'Save power'), fx: { pw: 1, air: -2 } },
     R: { label: B('Ligar', 'Turn it on'), fx: { pw: -2, air: 4 } } },
   { id: 'farm', art: '🌱💡', w: 1,
     text: B('As plantas da estufa fazem ar para respirar, mas precisam de luz.', 'The greenhouse plants make air to breathe, but they need light.'),
@@ -220,36 +220,36 @@ const LIFE = [
 ];
 const LAB = { id: 'lab', art: '🔬🪨',
   text: B('O laboratório pode estudar as pedras da Lua hoje. Ele gasta bastante energia.', 'The lab can study Moon rocks today. It uses a lot of power.'),
-  L: { label: B('Recarregar baterias', 'Recharge batteries'), fx: { pw: 1, air: -1 } },
+  L: { label: B('Recarregar baterias', 'Recharge batteries'), fx: { pw: 1, air: -2 } },
   R: { label: B('Pesquisar', 'Do research'), fx: { pw: -2, sci: 1 }, pool: 'rock' } };
 const ROVER = { id: 'rover', art: '🚙🕳️',
   text: B('Uma cratera aqui perto pode ter gelo! Mas fora da base não tem escudo contra a radiação.', 'A nearby crater may have ice! But outside the base there is no shield against radiation.'),
-  L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -1 } },
-  R: { label: B('Explorar de jipe', 'Explore by rover'), fx: { pw: -1, sci: 2, rad: 5, outside: true }, pool: 'crater' } };
+  L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -2 } },
+  R: { label: B('Explorar de jipe', 'Explore by rover'), fx: { pw: -1, sci: 1, rad: 4, outside: true }, pool: 'crater' } };
 const ROVER_ALERT = { id: 'roverAlert', art: '🚙⚠️',
   text: B('O alerta solar está ligado. A cratera com gelo está logo ali… Sair de jipe mesmo assim?', 'The solar alert is on. The icy crater is right there… Drive out anyway?'),
-  L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -1 } },
-  R: { label: B('Explorar de jipe', 'Explore by rover'), fx: { pw: -1, sci: 2, rad: 5, outside: true }, pool: 'crater' } };
+  L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -2 } },
+  R: { label: B('Explorar de jipe', 'Explore by rover'), fx: { pw: -1, sci: 1, rad: 3, outside: true }, pool: 'crater' } };
 const EVENTS = [
   { id: 'reserveAir', art: '🫧⚙️',
     text: B('O compressor pode ligar a reserva de ar. Quanto menos ar resta na base, mais espaço há para receber a reserva.',
             'The compressor can connect the backup air supply. The less air the base has, the more room there is for the reserve.'),
-    L: { label: B('Desligar o compressor', 'Switch off the compressor'), fx: { pw: 1, air: -1 } },
+    L: { label: B('Desligar o compressor', 'Switch off the compressor'), fx: { pw: 1, air: -2 } },
     R: { label: B('Acionar a reserva', 'Connect the reserve'), fx: { pw: -2 }, adjust: G => ({ air: G.air <= 3 ? 5 : 2 }) } },
   { id: 'reservePower', art: '🔋',
     text: B('A bateria auxiliar rende mais quando a carga da base está baixa. Para ligá-la, é preciso gastar ar na câmara de manutenção.',
             'The backup battery helps more when the base is low on charge. Connecting it uses air in the maintenance chamber.'),
-    L: { label: B('Isolar a bateria', 'Isolate the battery'), fx: { air: 1, pw: -1 } },
-    R: { label: B('Ligar a bateria', 'Connect the battery'), fx: { air: -1 }, adjust: G => ({ pw: G.pw <= 3 ? 4 : 2 }) } },
+    L: { label: B('Isolar a bateria', 'Isolate the battery'), fx: { air: 2, pw: -1 } },
+    R: { label: B('Ligar a bateria', 'Connect the battery'), fx: { air: -3 }, adjust: G => ({ pw: G.pw <= 3 ? 4 : 2 }) } },
   { id: 'signal', art: '📡',
     text: B('A antena captou um sinal fraco. O laboratório ainda não sabe se ele traz dados úteis.',
             'The antenna picked up a weak signal. The lab does not yet know whether it carries useful data.'),
-    L: { label: B('Desligar o receptor', 'Switch off the receiver'), fx: { pw: 1, air: -1 } },
-    R: { label: B('Analisar o sinal', 'Analyze the signal'), fx: { pw: -1 }, hidden: true, resolveFx: () => ({ sci: rnd() < .55 ? 1 : 0 }), pool: 'sun' } },
+    L: { label: B('Desligar o receptor', 'Switch off the receiver'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Analisar o sinal', 'Analyze the signal'), fx: { pw: -1 }, hidden: true, resolveFx: () => ({ sci: rnd() < .40 ? 1 : 0 }), pool: 'sun' } },
   { id: 'airlock', art: '🥾🧹',
     text: B('Os trajes voltaram cheios de poeira lunar afiada na câmara de ar. Limpar agora?',
             'The spacesuits came back covered in sharp Moon dust in the airlock. Clean them now?'),
-    L: { label: B('Limpar amanhã', 'Clean tomorrow'), fx: { air: -2 } },
+    L: { label: B('Limpar amanhã', 'Clean tomorrow'), fx: { air: -3 } },
     R: { label: B('Aspirar agora', 'Vacuum now'), fx: { pw: -1 } } },
   { id: 'filter', art: '🚰⚙️',
     text: B('O filtro que recicla a água e o ar da tripulação está ficando entupido.',
@@ -260,23 +260,23 @@ const EVENTS = [
     text: B('Um módulo de carga pousou pertinho da base com cilindros extras de ar e água!',
             'A cargo pod landed close to the base with extra air and water tanks!'),
     L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -1 } },
-    R: { label: B('Buscar de jipe', 'Fetch by rover'), fx: { pw: -1, air: 3, rad: 4, outside: true } } },
+    R: { label: B('Buscar de jipe', 'Fetch by rover'), fx: { pw: -1, air: 3, rad: 3, outside: true } } },
   { id: 'dust', art: '🧹☀️',
     text: B('A poeira da Lua cobriu os painéis solares.', 'Moon dust has covered the solar panels.'),
-    L: { label: B('Deixar assim', 'Leave it'), fx: { pw: -1 } },
-    R: { label: B('Sair para limpar', 'Go out and clean'), fx: { pw: 2, rad: 4, outside: true } } },
+    L: { label: B('Deixar assim', 'Leave it'), fx: { pw: -2 } },
+    R: { label: B('Sair para limpar', 'Go out and clean'), fx: { pw: 2, rad: 6, outside: true } } },
   { id: 'leak', art: '🔧💨',
     text: B('Um cano de ar está vazando um pouquinho.', 'An air pipe has a small leak.'),
-    L: { label: B('Consertar depois', 'Fix it later'), fx: { air: -2 } },
+    L: { label: B('Consertar depois', 'Fix it later'), fx: { air: -3 } },
     R: { label: B('Consertar agora', 'Fix it now'), fx: { pw: -1 } } },
   { id: 'scope', art: '🔭☀️',
     text: B('O telescópio pode observar o Sol hoje.', 'The telescope can watch the Sun today.'),
-    L: { label: B('Poupar energia', 'Save power'), fx: { pw: 1, air: -1 } },
+    L: { label: B('Poupar energia', 'Save power'), fx: { pw: 1, air: -3 } },
     R: { label: B('Observar', 'Observe'), fx: { pw: -2, sci: 1 }, pool: 'sun' } },
   { id: 'ice', art: '🧊👣',
     text: B('Um sensor achou gelo pertinho da base. Dá para ir a pé, mas lá fora tem mais radiação.', 'A sensor found ice close to the base. You can walk there, but there is more radiation outside.'),
-    L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -1 } },
-    R: { label: B('Buscar a amostra', 'Get the sample'), fx: { rad: 3, sci: 1, outside: true }, pool: 'ice' } },
+    L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Buscar a amostra', 'Get the sample'), fx: { rad: 6, sci: 1, outside: true }, pool: 'ice' } },
 ];
 /* Eventos reais de 2024–2025 mapeados pela data exata (só aparecem no dia civil correspondente) */
 const DATED_EVENTS = [
@@ -297,8 +297,8 @@ const DATED_EVENTS = [
             'Giant solar flare (class X8.7) seen on the Sun! The cloud passed wide of the Moon, and the telescope can measure it.'),
     record: B('Em 14 de maio de 2024, o Sol produziu uma explosão classe X8.7 — a mais forte daquele período — sem atingir diretamente a Terra e a Lua.',
               'On May 14, 2024, the Sun produced an X8.7 class flare — the strongest of that period — without hitting Earth and the Moon directly.'),
-    L: { label: B('Poupar energia', 'Save power'), fx: { pw: 1, air: -1 } },
-    R: { label: B('Apontar telescópio', 'Point telescope'), fx: { pw: -1, sci: 1 }, pool: 'sun' } },
+    L: { label: B('Poupar energia', 'Save power'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Apontar telescópio', 'Point telescope'), fx: { pw: -2, sci: 1 }, pool: 'sun' } },
 
   { id: 'eclipse_2024_09', art: '🌍🌑',
     d: '2024-09-18T02:44Z', source: 'NASA / Eclipse Lunar',
@@ -317,8 +317,8 @@ const DATED_EVENTS = [
             'Peak of the Geminid meteor shower! Micrometeorites kicked up Moon dust onto the solar panels.'),
     record: B('Em 14 de dezembro de 2024 ocorreu o pico anual das Geminídeas; na Lua sem atmosfera, esses grãos levantam poeira eletrostática.',
               'On December 14, 2024, the annual Geminids peaked; on the airless Moon, these grains kick up electrostatic dust.'),
-    L: { label: B('Deixar sujo', 'Leave dusty'), fx: { pw: -1 } },
-    R: { label: B('Limpar lá fora', 'Clean outside'), fx: { pw: 2, rad: 4, outside: true } } },
+    L: { label: B('Deixar sujo', 'Leave dusty'), fx: { pw: -2 } },
+    R: { label: B('Limpar lá fora', 'Clean outside'), fx: { pw: 2, rad: 6, outside: true } } },
 
   { id: 'quadrantids_2025_01', art: '☄️🧹',
     d: '2025-01-03T15:00Z', source: 'NASA Meteor Watch',
@@ -328,7 +328,7 @@ const DATED_EVENTS = [
     record: B('Em 3 de janeiro de 2025 ocorreu o pico das Quadrântidas, um dia antes da tempestade solar de 4 de janeiro.',
               'On January 3, 2025, the Quadrantids peaked, one day before the January 4 solar storm.'),
     L: { label: B('Deixar sujo', 'Leave dusty'), fx: { pw: -1 } },
-    R: { label: B('Limpar lá fora', 'Clean outside'), fx: { pw: 2, rad: 4, outside: true } } },
+    R: { label: B('Limpar lá fora', 'Clean outside'), fx: { pw: 2, rad: 6, outside: true } } },
 
   { id: 'eclipse_2025_03', art: '🌍🌑',
     d: '2025-03-14T06:58Z', source: 'NASA / Eclipse Lunar',
@@ -340,138 +340,336 @@ const DATED_EVENTS = [
     L: { label: B('Poupar energia e apagar as luzes', 'Save power and turn off the lights'), fx: { air: -1 } },
     R: { label: B('Manter aquecimento e luzes', 'Keep heating and lights on'), fx: { pw: -2 } } },
 ];
-/* Descobertas: cada ponto de ciência vira um fato real sobre a Lua ou o Sol. */
+/* Descobertas: cada uma é um fato real da NASA ligado a uma restrição da base (ar, energia, radiação, comida, construção).
+   10 por grupo: rock = laboratório, crater = jipe, ice = gelo e água, sun = telescópio. `src` é a página da NASA citada no álbum. */
 const DISC = [
+  /* ---------- 🪨 Laboratório: pedras, solo e corpo humano ---------- */
   { id: 'regolith', pool: 'rock', ico: '🪨', name: B('Regolito', 'Regolith'),
-    fact: B('O chão da Lua é coberto de regolito: pó e pedrinhas feitos por bilhões de anos de batidas de meteoritos.', "The Moon's ground is covered in regolith: dust and small rocks made by billions of years of meteorite hits.") },
+    fact: B('O chão da Lua é coberto de regolito: pó e pedrinhas feitos por bilhões de anos de batidas de meteoritos.', "The Moon's ground is covered in regolith: dust and small rocks made by billions of years of meteorite hits."),
+    base: B('Uma camada grossa de regolito por cima da base ajuda a bloquear a radiação.', 'A thick layer of regolith on top of the base helps block radiation.'),
+    src: 'https://science.nasa.gov/moon/composition/' },
   { id: 'old', pool: 'rock', ico: '⏳', name: B('Pedras muito antigas', 'Very old rocks'),
-    fact: B('Algumas pedras trazidas pelas missões Apollo têm mais de 4 bilhões de anos.', 'Some rocks brought back by the Apollo missions are more than 4 billion years old.') },
+    fact: B('Algumas pedras trazidas pelas missões Apollo têm mais de 4 bilhões de anos.', 'Some rocks brought back by the Apollo missions are more than 4 billion years old.'),
+    src: 'https://curator.jsc.nasa.gov/lunar/' },
   { id: 'glass', pool: 'rock', ico: '🟠', name: B('Vidro laranja', 'Orange glass'),
-    fact: B('Os astronautas da Apollo 17 acharam solo laranja: bolinhas de vidro feitas por vulcões antigos da Lua.', 'The Apollo 17 astronauts found orange soil: tiny glass beads made by ancient Moon volcanoes.') },
+    fact: B('Os astronautas da Apollo 17 acharam solo laranja: bolinhas de vidro feitas por vulcões antigos da Lua.', 'The Apollo 17 astronauts found orange soil: tiny glass beads made by ancient Moon volcanoes.'),
+    src: 'https://curator.jsc.nasa.gov/lunar/' },
   { id: 'plants', pool: 'rock', ico: '🌱', name: B('Plantas em solo lunar', 'Plants in Moon soil'),
-    fact: B('Em 2022, cientistas fizeram plantas crescerem em solo da Lua trazido pelas missões Apollo.', 'In 2022, scientists grew plants in Moon soil brought back by the Apollo missions.') },
+    fact: B('Em 2022, cientistas fizeram plantas crescerem em solo da Lua trazido pelas missões Apollo. Elas cresceram, mas mais fracas que na terra comum.', 'In 2022, scientists grew plants in Moon soil brought back by the Apollo missions. They grew, but weaker than in Earth soil.'),
+    base: B('Plantar comida na Lua é possível, mas o solo precisa de ajuda.', 'Growing food on the Moon is possible, but the soil needs help.'),
+    src: 'https://www.nasa.gov/humans-in-space/scientists-grow-plants-in-lunar-soil/' },
   { id: 'dust', pool: 'rock', ico: '✨', name: B('Poeira que arranha', 'Scratchy dust'),
-    fact: B('A poeira lunar é afiada como vidro moído, porque na Lua não há vento nem água para arredondar os grãos.', 'Moon dust is sharp like crushed glass, because the Moon has no wind or water to round off the grains.') },
+    fact: B('A poeira lunar é afiada como vidro moído, porque na Lua não há vento nem água para arredondar os grãos.', 'Moon dust is sharp like crushed glass, because the Moon has no wind or water to round off the grains.'),
+    base: B('A poeira gasta os trajes, entope filtros e suja os painéis solares.', 'Dust wears out spacesuits, clogs filters and covers the solar panels.'),
+    src: 'https://science.nasa.gov/moon/composition/' },
   { id: 'quake', pool: 'rock', ico: '〰️', name: B('A Lua treme', 'Moonquakes'),
-    fact: B('Aparelhos deixados pelas missões Apollo mostraram que a Lua também tem tremores.', 'Instruments left by the Apollo missions showed that the Moon has quakes too.') },
-  { id: 'shadow', pool: 'crater', ico: '🕳️', name: B('Sombra eterna', 'Eternal shadow'),
-    fact: B('Algumas crateras do polo sul não recebem luz do Sol há bilhões de anos.', 'Some craters at the south pole have not seen sunlight for billions of years.') },
+    fact: B('Aparelhos deixados pelas missões Apollo mostraram que a Lua também tem tremores.', 'Instruments left by the Apollo missions showed that the Moon has quakes too.'),
+    base: B('A base precisa ser construída para aguentar os tremores.', 'The base must be built to withstand the quakes.'),
+    src: 'https://science.nasa.gov/moon/moonquakes/' },
+  { id: 'oxyrock', pool: 'rock', ico: '🫧', name: B('Oxigênio nas pedras', 'Oxygen in the rocks'),
+    fact: B('Quase metade do peso do solo da Lua é oxigênio, preso dentro dos minerais.', "Almost half the weight of the Moon's soil is oxygen, locked inside the minerals."),
+    base: B('Um dia, máquinas poderão tirar ar para respirar das próprias pedras da Lua.', 'Someday, machines could get breathing air out of the Moon rocks themselves.'),
+    src: 'https://science.nasa.gov/moon/composition/' },
+  { id: 'lavatube', pool: 'rock', ico: '🕳️', name: B('Cavernas de lava', 'Lava caves'),
+    fact: B('A sonda LRO, da NASA, achou mais de 200 buracos fundos na Lua. Alguns podem levar a cavernas feitas por lava antiga.', "NASA's LRO probe found more than 200 deep pits on the Moon. Some may lead to caves made by ancient lava."),
+    base: B('Dentro de uma caverna, a rocha grossa protegeria a tripulação da radiação.', 'Inside a cave, the thick rock would protect the crew from radiation.'),
+    src: 'https://www.nasa.gov/solar-system/lunar-pits-could-shelter-astronauts-reveal-details-of-how-man-in-the-moon-formed/' },
+  { id: 'lettuce', pool: 'rock', ico: '🥬', name: B('Alface espacial', 'Space lettuce'),
+    fact: B('Em 2015, astronautas da Estação Espacial comeram alface que eles mesmos cultivaram lá em cima.', 'In 2015, astronauts on the Space Station ate lettuce they grew up there themselves.'),
+    base: B('Plantar comida na base diminui o que precisa vir da Terra.', 'Growing food at the base means less has to come from Earth.'),
+    src: 'https://www.nasa.gov/technology/tech-transfer-spinoffs/plants-to-feed-this-and-other-worlds/' },
+  { id: 'bones', pool: 'rock', ico: '🦴', name: B('Ossos mais fracos', 'Weaker bones'),
+    fact: B('Com pouca gravidade, os ossos dos astronautas perdem de 1% a 1,5% da força a cada mês.', "With little gravity, astronauts' bones lose 1% to 1.5% of their strength every month."),
+    base: B('Por isso a tripulação precisa fazer exercício todos os dias.', 'That is why the crew needs to exercise every day.'),
+    src: 'https://www.nasa.gov/reference/risk-of-spaceflight-induced-bone-changes/' },
+
+  /* ---------- 🕳️ Jipe: crateras e terreno ---------- */
+  { id: 'shadow', pool: 'crater', ico: '🌑', name: B('Sombra eterna', 'Eternal shadow'),
+    fact: B('Algumas crateras do polo sul não recebem luz do Sol há bilhões de anos.', 'Some craters at the south pole have not seen sunlight for billions of years.'),
+    base: B('Painel solar dentro dessas crateras não gera energia nenhuma.', 'Solar panels inside these craters make no power at all.'),
+    src: 'https://science.nasa.gov/moon/weather-on-the-moon/' },
   { id: 'cold', pool: 'crater', ico: '🥶', name: B('Frio de recorde', 'Record cold'),
-    fact: B('A sonda LRO, da NASA, mediu cerca de 240 graus abaixo de zero dentro de crateras escuras da Lua.', "NASA's LRO probe measured about 240 degrees Celsius below zero inside dark Moon craters.") },
+    fact: B('A sonda LRO, da NASA, mediu cerca de 240 graus abaixo de zero dentro de crateras escuras da Lua.', "NASA's LRO probe measured about 240 degrees Celsius below zero inside dark Moon craters."),
+    base: B('Entrar nessas crateras exige aquecer o jipe, e isso gasta energia.', 'Going into these craters means heating the rover, which uses power.'),
+    src: 'https://science.nasa.gov/moon/weather-on-the-moon/' },
   { id: 'prints', pool: 'crater', ico: '👣', name: B('Marcas que ficam', 'Tracks that stay'),
-    fact: B('Na Lua não há vento nem chuva. As marcas de botas e rodas podem durar milhões de anos.', 'The Moon has no wind or rain. Boot prints and wheel tracks can last for millions of years.') },
+    fact: B('Na Lua não há vento nem chuva. As marcas de botas e rodas podem durar milhões de anos.', 'The Moon has no wind or rain. Boot prints and wheel tracks can last for millions of years.'),
+    src: 'https://science.nasa.gov/moon/weather-on-the-moon/' },
   { id: 'gravity', pool: 'crater', ico: '🦘', name: B('Gravidade fraquinha', 'Weak gravity'),
-    fact: B('Na Lua tudo pesa seis vezes menos que na Terra.', 'On the Moon everything weighs six times less than on Earth.') },
+    fact: B('Na Lua tudo pesa seis vezes menos que na Terra.', 'On the Moon everything weighs six times less than on Earth.'),
+    base: B('Carregar peso é mais fácil, mas é mais difícil ter firmeza ao andar.', 'Carrying loads is easier, but keeping your balance is harder.'),
+    src: 'https://science.nasa.gov/moon/facts/' },
   { id: 'peaks', pool: 'crater', ico: '🏔️', name: B('Picos de luz', 'Peaks of light'),
-    fact: B('Perto do polo sul, alguns picos altos recebem luz do Sol quase o tempo todo. São bons lugares para painéis solares.', 'Near the south pole, some high peaks get sunlight almost all the time. They are good places for solar panels.') },
+    fact: B('Perto do polo sul, alguns picos altos recebem luz do Sol quase o tempo todo.', 'Near the south pole, some high peaks get sunlight almost all the time.'),
+    base: B('São os melhores lugares para os painéis solares da base.', "They are the best places for the base's solar panels."),
+    src: 'https://www.nasa.gov/reference/moonbase-environment/' },
+  { id: 'aitken', pool: 'crater', ico: '🌐', name: B('A cratera gigante', 'The giant crater'),
+    fact: B('A bacia Polo Sul–Aitken tem cerca de 2.500 km de largura. É uma das maiores crateras de todo o Sistema Solar.', 'The South Pole–Aitken basin is about 2,500 km wide. It is one of the largest craters in the whole Solar System.'),
+    base: B('A região da base fica nessa área: o jipe pode achar pedras de dentro da Lua.', 'The base region is in this area: the rover may find rocks from deep inside the Moon.'),
+    src: 'https://science.nasa.gov/moon/lunar-craters/what-is-the-south-pole-aitken-basin/' },
+  { id: 'shackleton', pool: 'crater', ico: '⭕', name: B('Cratera Shackleton', 'Shackleton crater'),
+    fact: B('A cratera Shackleton fica bem no polo sul e tem 21 km de largura. A borda pega Sol, mas o fundo vive no escuro.', 'Shackleton crater sits right at the south pole and is 21 km wide. Its rim gets sunlight, but its floor stays dark.'),
+    base: B('Na borda dá para gerar energia; no fundo pode haver gelo.', 'The rim can make power; the floor may hold ice.'),
+    src: 'https://science.nasa.gov/image-detail/faces-of-shackleton/' },
+  { id: 'lromap', pool: 'crater', ico: '🛰️', name: B('O fotógrafo da Lua', 'The Moon photographer'),
+    fact: B('A sonda LRO fotografa a Lua desde 2009. Ela conseguiu ver até os locais de pouso das missões Apollo.', 'The LRO probe has photographed the Moon since 2009. It could even see the Apollo landing sites.'),
+    base: B('Os mapas da LRO ajudam a escolher lugares seguros para pousar e montar bases.', 'LRO maps help choose safe places to land and build bases.'),
+    src: 'https://science.nasa.gov/mission/lro/' },
+  { id: 'swing', pool: 'crater', ico: '🌡️', name: B('Calor e frio extremos', 'Extreme heat and cold'),
+    fact: B('Perto do meio da Lua, o chão passa de 120 °C de dia e cai para 130 °C abaixo de zero à noite.', "Near the Moon's middle, the ground goes above 120 °C by day and drops to 130 °C below zero at night."),
+    base: B('A base precisa gastar energia para não esquentar nem esfriar demais.', 'The base must spend power to keep from getting too hot or too cold.'),
+    src: 'https://science.nasa.gov/moon/weather-on-the-moon/' },
+  { id: 'lunarday', pool: 'crater', ico: '📆', name: B('O dia lunar', 'The lunar day'),
+    fact: B('De um nascer do Sol ao outro, a Lua leva cerca de 29 dias e meio da Terra. A noite dura umas duas semanas.', 'From one sunrise to the next, the Moon takes about 29 and a half Earth days. Night lasts about two weeks.'),
+    base: B('Na noite longa, os painéis não geram nada: é preciso guardar energia.', 'During the long night, the panels make nothing: power must be stored.'),
+    src: 'https://science.nasa.gov/moon/moon-phases/' },
+
+  /* ---------- 🧊 Gelo e água ---------- */
   { id: 'lcross', pool: 'ice', ico: '💧', name: B('Água na Lua!', 'Water on the Moon!'),
-    fact: B('Em 2009, a missão LCROSS, da NASA, fez um foguete vazio bater numa cratera escura e achou água na nuvem que subiu.', "In 2009, NASA's LCROSS mission crashed an empty rocket into a dark crater and found water in the cloud that rose.") },
+    fact: B('Em 2009, a missão LCROSS, da NASA, fez um foguete vazio bater numa cratera escura e achou água na nuvem que subiu.', "In 2009, NASA's LCROSS mission crashed an empty rocket into a dark crater and found water in the cloud that rose."),
+    base: B('Água na Lua significa menos água para trazer da Terra.', 'Water on the Moon means less water to bring from Earth.'),
+    src: 'https://science.nasa.gov/mission/lcross/' },
   { id: 'iceuse', pool: 'ice', ico: '🚰', name: B('Gelo que vira ar', 'Ice that becomes air'),
-    fact: B('O gelo da Lua pode virar água para beber, oxigênio para respirar e até combustível de foguete.', 'Moon ice can become drinking water, oxygen to breathe and even rocket fuel.') },
+    fact: B('O gelo da Lua pode virar água para beber, oxigênio para respirar e até combustível de foguete.', 'Moon ice can become drinking water, oxygen to breathe and even rocket fuel.'),
+    base: B('Mas transformar gelo em ar e combustível gasta muita energia.', 'But turning ice into air and fuel takes a lot of power.'),
+    src: 'https://science.nasa.gov/moon/moon-water-and-ices/' },
+  { id: 'sofia', pool: 'ice', ico: '✈️', name: B('Água até no Sol', 'Water even in sunlight'),
+    fact: B('Em 2020, o SOFIA, um telescópio dentro de um avião da NASA, achou água numa cratera iluminada pelo Sol, a Clavius.', "In 2020, SOFIA, a NASA telescope inside an airplane, found water in a sunlit crater called Clavius."),
+    base: B('É bem pouquinha: um metro cúbico de solo tem água de uma garrafinha.', 'It is very little: a cubic meter of soil holds about a small bottle of water.'),
+    src: 'https://www.nasa.gov/news-release/nasas-sofia-discovers-water-on-sunlit-surface-of-moon/' },
+  { id: 'm3', pool: 'ice', ico: '🧊', name: B('Gelo nos polos', 'Ice at the poles'),
+    fact: B('Em 2018, cientistas usaram um instrumento da NASA, o M3, para confirmar gelo nas sombras dos polos da Lua.', "In 2018, scientists used a NASA instrument called M3 to confirm ice in the shadows at the Moon's poles."),
+    base: B('Por isso a base fica no polo sul: perto do gelo.', 'That is why the base is at the south pole: close to the ice.'),
+    src: 'https://science.nasa.gov/moon/moon-water-and-ices/' },
+  { id: 'prospector', pool: 'ice', ico: '📡', name: B('A primeira pista', 'The first clue'),
+    fact: B('Em 1998, a sonda Lunar Prospector, da NASA, mediu hidrogênio nos dois polos da Lua: a primeira pista de que havia gelo.', "In 1998, NASA's Lunar Prospector probe measured hydrogen at both of the Moon's poles: the first clue that there was ice."),
+    base: B('Medir de longe ajuda a decidir onde vale a pena mandar o jipe.', 'Measuring from far away helps decide where to send the rover.'),
+    src: 'https://science.nasa.gov/mission/lunar-prospector/' },
+  { id: 'lamp', pool: 'ice', ico: '🔦', name: B('Geada no escuro', 'Frost in the dark'),
+    fact: B('Um instrumento da sonda LRO usa a luz fraquinha das estrelas para enxergar dentro das crateras escuras. Ele achou sinais de geada.', 'An instrument on the LRO probe uses faint starlight to see inside dark craters. It found signs of frost.'),
+    base: B('Mesmo sem Sol, dá para procurar água usando outros tipos de luz.', 'Even without sunlight, water can be found using other kinds of light.'),
+    src: 'https://science.nasa.gov/image-detail/lampwaterpsr/' },
+  { id: 'icesoil', pool: 'ice', ico: '⛏️', name: B('Gelo misturado no chão', 'Ice mixed into the ground'),
+    fact: B('O gelo da Lua não forma lagos nem pistas de patinação. Ele fica misturado aos grãos do solo, em lugares muito frios.', 'Moon ice does not form lakes or skating rinks. It is mixed into the soil grains, in very cold places.'),
+    base: B('Para usar o gelo, é preciso cavar e aquecer o solo, e isso gasta energia.', 'To use the ice, the soil must be dug up and heated, which uses power.'),
+    src: 'https://science.nasa.gov/moon/moon-water-and-ices/' },
+  { id: 'artemis', pool: 'ice', ico: '🚀', name: B('Artemis no polo sul', 'Artemis at the south pole'),
+    fact: B('O programa Artemis, da NASA, escolheu a região do polo sul da Lua para pousar astronautas, por causa do gelo nas crateras.', "NASA's Artemis program chose the Moon's south pole region to land astronauts, because of the ice in the craters."),
+    base: B('Nossa base fica justamente nessa região.', 'Our base is right in that region.'),
+    src: 'https://www.nasa.gov/reference/moonbase-environment/' },
+  { id: 'recycle', pool: 'ice', ico: '♻️', name: B('98% da água de volta', '98% of the water back'),
+    fact: B('A Estação Espacial recicla 98% da água: até o suor e o xixi viram água limpa para beber.', 'The Space Station recycles 98% of its water: even sweat and pee become clean drinking water.'),
+    base: B('Reciclar água é essencial quando a Terra está longe.', 'Recycling water is essential when Earth is far away.'),
+    src: 'https://www.nasa.gov/missions/station/iss-research/nasa-achieves-water-recovery-milestone-on-international-space-station/' },
+  { id: 'o2water', pool: 'ice', ico: '⚡', name: B('Ar feito de água', 'Air made from water'),
+    fact: B('Na Estação Espacial, uma máquina usa eletricidade para separar a água em oxigênio e hidrogênio. O oxigênio vira ar para respirar.', 'On the Space Station, a machine uses electricity to split water into oxygen and hydrogen. The oxygen becomes air to breathe.'),
+    base: B('É como a máquina de oxigênio da base: ar novo custa energia.', "It works like the base's oxygen machine: new air costs power."),
+    src: 'https://www.nasa.gov/podcasts/houston-we-have-a-podcast/advanced-oxygen-generation/' },
+
+  /* ---------- ☀️ Telescópio: Sol e radiação ---------- */
   { id: 'cycle', pool: 'sun', ico: '🔁', name: B('O ciclo do Sol', "The Sun's cycle"),
-    fact: B('O Sol tem um ciclo de cerca de 11 anos: às vezes fica calmo, às vezes cheio de explosões.', 'The Sun has a cycle of about 11 years: sometimes calm, sometimes full of explosions.') },
+    fact: B('O Sol tem um ciclo de cerca de 11 anos: às vezes fica calmo, às vezes cheio de explosões.', 'The Sun has a cycle of about 11 years: sometimes calm, sometimes full of explosions.'),
+    base: B('Nos anos agitados, a tripulação precisa usar o escudo mais vezes.', 'In busy years, the crew needs the shield more often.'),
+    src: 'https://science.nasa.gov/sun/sunspots/' },
   { id: 'spots', pool: 'sun', ico: '⚫', name: B('Manchas solares', 'Sunspots'),
-    fact: B('As manchas escuras do Sol são regiões um pouco mais frias. É perto delas que acontecem as explosões.', 'The dark spots on the Sun are slightly cooler regions. Explosions happen near them.') },
+    fact: B('As manchas escuras do Sol são regiões um pouco mais frias. É perto delas que acontecem as explosões.', 'The dark spots on the Sun are slightly cooler regions. Explosions happen near them.'),
+    base: B('Vigiar as manchas ajuda a saber quando uma tempestade pode vir.', 'Watching the spots helps tell when a storm may come.'),
+    src: 'https://science.nasa.gov/sun/sunspots/' },
   { id: 'light', pool: 'sun', ico: '⏱️', name: B('8 minutos', '8 minutes'),
-    fact: B('A luz do Sol leva cerca de 8 minutos para chegar até a Terra e a Lua.', 'Sunlight takes about 8 minutes to reach Earth and the Moon.') },
+    fact: B('A luz do Sol leva cerca de 8 minutos para chegar até a Terra e a Lua.', 'Sunlight takes about 8 minutes to reach Earth and the Moon.'),
+    base: B('A luz da explosão chega antes das partículas. Esse é o tempo de aviso para carregar o escudo.', 'The light from a flare arrives before the particles. That is the warning time to charge the shield.'),
+    src: 'https://science.nasa.gov/sun/facts/' },
+  { id: 'aurora', pool: 'sun', ico: '🌌', name: B('As auroras de maio de 2024', 'The auroras of May 2024'),
+    fact: B('Em maio de 2024, a maior tempestade magnética em 20 anos criou auroras vistas em lugares onde elas quase nunca aparecem.', 'In May 2024, the biggest magnetic storm in 20 years made auroras seen in places where they almost never appear.'),
+    base: B('Tempestades como essa estão nos dados reais deste jogo.', 'Storms like this one are in the real data of this game.'),
+    src: 'https://science.nasa.gov/science-research/heliophysics/what-nasa-is-learning-from-the-biggest-geomagnetic-storm-in-20-years/' },
+  { id: 'cme', pool: 'sun', ico: '☁️', name: B('Nuvens de gás do Sol', 'Gas clouds from the Sun'),
+    fact: B('Uma ejeção de massa coronal (CME) é uma nuvem de gás que o Sol lança no espaço. Uma só pode ter bilhões de toneladas.', 'A coronal mass ejection (CME) is a cloud of gas the Sun throws into space. A single one can weigh billions of tons.'),
+    base: B('No final da missão, você vê a velocidade real das CMEs das suas tempestades.', 'At the end of the mission, you see the real speed of the CMEs from your storms.'),
+    src: 'https://science.nasa.gov/sun/solar-storms-and-flares/' },
+  { id: 'wind', pool: 'sun', ico: '💨', name: B('Vento solar', 'Solar wind'),
+    fact: B('O Sol sopra o tempo todo um vento de partículas, o vento solar. Como a Lua não tem ar, ele bate direto no chão.', 'The Sun always blows a wind of particles, the solar wind. Since the Moon has no air, it hits the ground directly.'),
+    base: B('Mesmo sem tempestade, a radiação na Lua nunca é zero.', 'Even without a storm, radiation on the Moon is never zero.'),
+    src: 'https://science.nasa.gov/moon/solar-wind/' },
+  { id: 'sdo', pool: 'sun', ico: '🔭', name: B('Olho no Sol', 'Eye on the Sun'),
+    fact: B('O satélite SDO, da NASA, tira uma foto do Sol a cada 12 segundos, desde 2010.', "NASA's SDO satellite has taken a picture of the Sun every 12 seconds since 2010."),
+    base: B('Vigiar o Sol sem parar é o que permite avisar a tripulação a tempo.', 'Watching the Sun nonstop is what lets the crew be warned in time.'),
+    src: 'https://science.nasa.gov/mission/sdo/' },
+  { id: 'issdose', pool: 'sun', ico: '☢️', name: B('Radiação dos astronautas', "Astronauts' radiation"),
+    fact: B('Na Estação Espacial, um astronauta recebe em um só dia tanta radiação quanto uma pessoa na Terra recebe em alguns meses.', 'On the Space Station, an astronaut gets as much radiation in one day as a person on Earth gets in a few months.'),
+    base: B('Por isso a radiação é medida o tempo todo, como no medidor da base.', "That is why radiation is measured all the time, like the base's meter."),
+    src: 'https://www.nasa.gov/humans-in-space/the-human-body-in-space/' },
+  { id: 'nofield', pool: 'sun', ico: '🧲', name: B('A Lua não tem escudo', 'The Moon has no shield'),
+    fact: B('A Terra tem um campo magnético que desvia as partículas do Sol. A Lua não tem esse escudo.', "Earth has a magnetic field that pushes away the Sun's particles. The Moon has no such shield."),
+    base: B('Na Lua, o escudo precisa ser construído pela tripulação.', 'On the Moon, the crew has to build its own shield.'),
+    src: 'https://science.nasa.gov/science-research/heliophysics/how-nasa-will-protect-astronauts-from-space-radiation-at-the-moon/' },
+  { id: 'parker', pool: 'sun', ico: '🛸', name: B('A sonda que tocou o Sol', 'The probe that touched the Sun'),
+    fact: B('A Parker Solar Probe, da NASA, passa a cerca de 6 milhões de km do Sol, a uns 700.000 km/h. É a nave mais rápida já feita.', "NASA's Parker Solar Probe passes about 6 million km from the Sun at about 700,000 km/h. It is the fastest spacecraft ever made."),
+    base: B('Ela estuda o vento solar para ajudar a prever tempestades.', 'It studies the solar wind to help predict storms.'),
+    src: 'https://science.nasa.gov/mission/parker-solar-probe/' },
 ];
-/* Desafios de memória: aparecem 1 ou 2 dias após a descoberta correspondente */
+/* Desafios de memória: aparecem alguns dias após a descoberta correspondente */
 const DISC_QUIZ = {
   regolith: { art: '🪨🏗️',
-    text: B('Queremos cobrir o teto da base com regolito. Do que ele é feito?',
-            'We want to cover the base roof with regolith. What is it made of?'),
+    text: B('Queremos cobrir o teto da base com regolito. Do que ele é feito?', 'We want to cover the base roof with regolith. What is it made of?'),
     L: { label: B('Gelo derretido', 'Melted ice'), ok: false },
     R: { label: B('Pó e pedrinhas de meteoritos', 'Dust & meteorite pebbles'), ok: true } },
-
   old: { art: '⏳🪨',
-    text: B('A Terra pediu nossa pedra lunar mais antiga para estudo. Qual idade ela pode ter?',
-            'Earth asked for our oldest Moon rock to study. How old can it be?'),
+    text: B('A Terra pediu nossa pedra lunar mais antiga para estudo. Qual idade ela pode ter?', 'Earth asked for our oldest Moon rock to study. How old can it be?'),
     L: { label: B('Mais de 4 bilhões de anos', 'Over 4 billion years old'), ok: true },
     R: { label: B('Uns 500 anos', 'About 500 years old'), ok: false } },
-
   glass: { art: '🟠🌋',
-    text: B('O jipe achou bolinhas de vidro laranja no solo! Como elas se formaram?',
-            'The rover found tiny orange glass beads in the soil! How were they formed?'),
+    text: B('O jipe achou bolinhas de vidro laranja no solo! Como elas se formaram?', 'The rover found tiny orange glass beads in the soil! How were they formed?'),
     L: { label: B('Por vulcões antigos da Lua', 'By ancient Moon volcanoes'), ok: true },
     R: { label: B('Deixadas por foguetes', 'Left behind by rockets'), ok: false } },
-
   plants: { art: '🌱🪨',
-    text: B('Faltou terra trazida da Terra para a estufa. Dá para plantar direto no solo lunar?',
-            'We ran out of Earth soil in the greenhouse. Can plants grow in Moon soil?'),
+    text: B('Faltou terra trazida da Terra para a estufa. Dá para plantar direto no solo lunar?', 'We ran out of Earth soil in the greenhouse. Can plants grow in Moon soil?'),
     L: { label: B('Não, nada cresce nele', 'No, nothing grows in it'), ok: false },
     R: { label: B('Sim, cientistas já conseguiram!', 'Yes, scientists already did it!'), ok: true } },
-
   dust: { art: '✨🥾',
-    text: B('Por que a poeira lunar gruda e arranha tanto os trajes espaciais?',
-            'Why does Moon dust stick to and scratch spacesuits so much?'),
+    text: B('Por que a poeira lunar gruda e arranha tanto os trajes espaciais?', 'Why does Moon dust stick to and scratch spacesuits so much?'),
     L: { label: B('É afiada, pois não há vento nem água', 'It is sharp, with no wind or water'), ok: true },
     R: { label: B('Porque é molhada e pegajosa', 'Because it is wet and sticky'), ok: false } },
-
   quake: { art: '〰️🏠',
-    text: B('Os sensores da base tremeram! A Lua tem tremores de verdade?',
-            'The base sensors shook! Does the Moon really have moonquakes?'),
+    text: B('Os sensores da base tremeram! A Lua tem tremores de verdade?', 'The base sensors shook! Does the Moon really have moonquakes?'),
     L: { label: B('Não, a Lua é totalmente parada', 'No, the Moon never shakes'), ok: false },
     R: { label: B('Sim, a Apollo já mediu vários', 'Yes, Apollo measured many'), ok: true } },
-
-  shadow: { art: '🕳️🔦',
-    text: B('Vamos mandar o jipe a uma cratera escura do polo sul. Há quanto tempo não bate Sol lá?',
-            'We are sending the rover into a dark south pole crater. How long has it been without Sun?'),
+  oxyrock: { art: '🪨🫧',
+    text: B('O engenheiro quer tirar ar das pedras da Lua. Tem oxigênio nelas?', 'The engineer wants to get air from Moon rocks. Is there oxygen in them?'),
+    L: { label: B('Sim, quase metade do peso', 'Yes, almost half their weight'), ok: true },
+    R: { label: B('Não, nenhum', 'No, none at all'), ok: false } },
+  lavatube: { art: '🕳️🛡️',
+    text: B('Uma tempestade forte vem aí. Por que uma caverna de lava seria um bom abrigo?', 'A strong storm is coming. Why would a lava cave be a good shelter?'),
+    L: { label: B('Porque lá dentro é quentinho', 'Because it is warm inside'), ok: false },
+    R: { label: B('A rocha grossa bloqueia a radiação', 'Thick rock blocks the radiation'), ok: true } },
+  lettuce: { art: '🥬🛰️',
+    text: B('Dá para cultivar verdura no espaço e comer?', 'Can vegetables be grown in space and eaten?'),
+    L: { label: B('Sim, astronautas já comeram alface', 'Yes, astronauts already ate lettuce'), ok: true },
+    R: { label: B('Não, plantas só crescem na Terra', 'No, plants only grow on Earth'), ok: false } },
+  bones: { art: '🦴🏋️',
+    text: B('Por que a tripulação precisa se exercitar todo dia na Lua?', 'Why does the crew need to exercise every day on the Moon?'),
+    L: { label: B('Para não sentir frio', 'To keep from feeling cold'), ok: false },
+    R: { label: B('Com pouca gravidade os ossos enfraquecem', 'With little gravity, bones get weaker'), ok: true } },
+  shadow: { art: '🌑🔦',
+    text: B('Vamos mandar o jipe a uma cratera escura do polo sul. Há quanto tempo não bate Sol lá?', 'We are sending the rover into a dark south pole crater. How long has it been without Sun?'),
     L: { label: B('Desde ontem à noite', 'Since last night'), ok: false },
     R: { label: B('Há bilhões de anos', 'For billions of years'), ok: true } },
-
   cold: { art: '🥶🌡️',
-    text: B('Vamos descer no fundo de uma cratera escura. Que frio vamos enfrentar lá?',
-            'We are going down into a dark crater. How cold will it be down there?'),
+    text: B('Vamos descer no fundo de uma cratera escura. Que frio vamos enfrentar lá?', 'We are going down into a dark crater. How cold will it be down there?'),
     L: { label: B('Cerca de 240 °C abaixo de zero', 'About 240 °C below zero'), ok: true },
     R: { label: B('Uns 5 °C abaixo de zero', 'About 5 °C below zero'), ok: false } },
-
   prints: { art: '👣🚙',
-    text: B('O vento lunar vai apagar as trilhas do jipe para não nos perdermos?',
-            'Will lunar wind erase the rover tracks so we might get lost?'),
+    text: B('O vento lunar vai apagar as trilhas do jipe para não nos perdermos?', 'Will lunar wind erase the rover tracks so we might get lost?'),
     L: { label: B('Sim, em poucas horas', 'Yes, in a few hours'), ok: false },
     R: { label: B('Não há vento: duram milhões de anos', 'No wind: they last millions of years'), ok: true } },
-
   gravity: { art: '🦘📦',
-    text: B('Precisamos carregar uma caixa pesada na Lua. Quanto ela pesa aqui comparada à Terra?',
-            'We need to carry a heavy box on the Moon. How much does it weigh compared to Earth?'),
+    text: B('Precisamos carregar uma caixa pesada na Lua. Quanto ela pesa aqui comparada à Terra?', 'We need to carry a heavy box on the Moon. How much does it weigh compared to Earth?'),
     L: { label: B('Seis vezes menos', 'Six times less'), ok: true },
     R: { label: B('Duas vezes mais', 'Two times more'), ok: false } },
-
   peaks: { art: '🏔️☀️',
-    text: B('Onde devemos instalar os novos painéis solares no polo sul da Lua?',
-            'Where should we place the new solar panels at the Moon\'s south pole?'),
+    text: B('Onde devemos instalar os novos painéis solares no polo sul da Lua?', "Where should we place the new solar panels at the Moon's south pole?"),
     L: { label: B('No fundo de um buraco', 'At the bottom of a pit'), ok: false },
     R: { label: B('Nos picos altos iluminados', 'On high sunlit peaks'), ok: true } },
-
+  aitken: { art: '🌐🚙',
+    text: B('Qual é o tamanho da cratera gigante Polo Sul–Aitken?', 'How big is the giant South Pole–Aitken crater?'),
+    L: { label: B('Cerca de 2.500 km', 'About 2,500 km'), ok: true },
+    R: { label: B('Do tamanho de um campo de futebol', 'The size of a soccer field'), ok: false } },
+  shackleton: { art: '⭕🔋',
+    text: B('Na cratera Shackleton, onde dá para gerar energia solar?', 'At Shackleton crater, where can solar power be made?'),
+    L: { label: B('No fundo escuro', 'On the dark floor'), ok: false },
+    R: { label: B('Na borda iluminada', 'On the sunlit rim'), ok: true } },
+  lromap: { art: '🛰️🗺️',
+    text: B('Precisamos de um lugar seguro para o próximo pouso. Quem pode ajudar?', 'We need a safe place for the next landing. Who can help?'),
+    L: { label: B('Os mapas da sonda LRO', "The LRO probe's maps"), ok: true },
+    R: { label: B('Ninguém, é só sorte', 'No one, it is just luck'), ok: false } },
+  swing: { art: '🌡️🏠',
+    text: B('Por que a base gasta energia com a temperatura?', 'Why does the base spend power on temperature?'),
+    L: { label: B('A Lua tem sempre 20 °C', 'The Moon is always 20 °C'), ok: false },
+    R: { label: B('Fica muito quente de dia e muito fria à noite', 'It gets very hot by day and very cold at night'), ok: true } },
+  lunarday: { art: '📆🌙',
+    text: B('Quanto tempo dura a noite na Lua?', 'How long does night last on the Moon?'),
+    L: { label: B('Umas duas semanas', 'About two weeks'), ok: true },
+    R: { label: B('Umas 8 horas, como na Terra', 'About 8 hours, like on Earth'), ok: false } },
   lcross: { art: '💧🚀',
-    text: B('Como a missão LCROSS da NASA confirmou que existe água nas crateras escuras?',
-            'How did NASA\'s LCROSS mission confirm there is water in dark craters?'),
+    text: B('Como a missão LCROSS da NASA confirmou que existe água nas crateras escuras?', "How did NASA's LCROSS mission confirm there is water in dark craters?"),
     L: { label: B('Mergulhando um submarino', 'Diving a submarine'), ok: false },
     R: { label: B('Analisando a nuvem de um impacto', 'Analyzing the cloud from an impact'), ok: true } },
-
   iceuse: { art: '🧊⚙️',
-    text: B('Trouxemos bastante gelo lunar para a base! Além de beber, o que ele pode virar?',
-            'We brought lots of Moon ice to the base! Besides drinking water, what can it become?'),
+    text: B('Trouxemos bastante gelo lunar para a base! Além de beber, o que ele pode virar?', 'We brought lots of Moon ice to the base! Besides drinking water, what can it become?'),
     L: { label: B('Oxigênio e combustível', 'Oxygen and rocket fuel'), ok: true },
     R: { label: B('Apenas gelo para refrescos', 'Only ice for cold drinks'), ok: false } },
-
+  sofia: { art: '✈️💧',
+    text: B('Só existe água nas crateras escuras da Lua?', 'Is there water only in dark Moon craters?'),
+    L: { label: B('Sim, só no escuro', 'Yes, only in the dark'), ok: false },
+    R: { label: B('Não, o SOFIA achou até no Sol', 'No, SOFIA found some in sunlight'), ok: true } },
+  m3: { art: '🧊🌑',
+    text: B('Onde o instrumento M3 confirmou gelo na Lua?', 'Where did the M3 instrument confirm ice on the Moon?'),
+    L: { label: B('Nas sombras dos polos', 'In the shadows at the poles'), ok: true },
+    R: { label: B('No meio, sob o Sol forte', 'In the middle, under strong Sun'), ok: false } },
+  prospector: { art: '📡🧊',
+    text: B('Qual foi a primeira pista de gelo nos polos da Lua?', "What was the first clue of ice at the Moon's poles?"),
+    L: { label: B('Uma foto de um lago', 'A photo of a lake'), ok: false },
+    R: { label: B('Hidrogênio medido de longe', 'Hydrogen measured from far away'), ok: true } },
+  lamp: { art: '🔦✨',
+    text: B('Como dá para enxergar dentro de uma cratera onde o Sol nunca bate?', 'How can you see inside a crater the Sun never reaches?'),
+    L: { label: B('Com a luz fraquinha das estrelas', 'With faint starlight'), ok: true },
+    R: { label: B('Não dá, é impossível', 'You cannot, it is impossible'), ok: false } },
+  icesoil: { art: '⛏️🧊',
+    text: B('Achamos gelo! Como ele está guardado no chão da Lua?', 'We found ice! How is it stored in the Moon ground?'),
+    L: { label: B('Num lago congelado', 'In a frozen lake'), ok: false },
+    R: { label: B('Misturado aos grãos do solo', 'Mixed into the soil grains'), ok: true } },
+  artemis: { art: '🚀🧊',
+    text: B('Por que a NASA quer pousar o Artemis perto do polo sul?', 'Why does NASA want to land Artemis near the south pole?'),
+    L: { label: B('Por causa do gelo nas crateras', 'Because of the ice in the craters'), ok: true },
+    R: { label: B('Porque lá é mais quente', 'Because it is warmer there'), ok: false } },
+  recycle: { art: '♻️💧',
+    text: B('A água da base está acabando. O que a Estação Espacial faz para não faltar?', 'The base is running low on water. What does the Space Station do so it never runs out?'),
+    L: { label: B('Joga fora e pede mais', 'Throws it away and asks for more'), ok: false },
+    R: { label: B('Recicla 98% da água', 'Recycles 98% of the water'), ok: true } },
+  o2water: { art: '⚡🫧',
+    text: B('A máquina de oxigênio quebra água para fazer ar. O que ela precisa para funcionar?', 'The oxygen machine splits water to make air. What does it need to work?'),
+    L: { label: B('Eletricidade', 'Electricity'), ok: true },
+    R: { label: B('Nada, funciona sozinha', 'Nothing, it runs by itself'), ok: false } },
   cycle: { art: '🔁☀️',
-    text: B('O Sol anda cheio de explosões este ano. Quanto dura o ciclo de atividade do Sol?',
-            'The Sun has lots of explosions this year. How long is the Sun\'s activity cycle?'),
+    text: B('O Sol anda cheio de explosões este ano. Quanto dura o ciclo de atividade do Sol?', "The Sun has lots of explosions this year. How long is the Sun's activity cycle?"),
     L: { label: B('Cerca de 11 anos', 'About 11 years'), ok: true },
     R: { label: B('Apenas 1 mês', 'Only 1 month'), ok: false } },
-
   spots: { art: '⚫🔭',
-    text: B('O telescópio viu manchas escuras no Sol! O que acontece perto delas?',
-            'The telescope spotted dark sunspots on the Sun! What happens near them?'),
+    text: B('O telescópio viu manchas escuras no Sol! O que acontece perto delas?', 'The telescope spotted dark sunspots on the Sun! What happens near them?'),
     L: { label: B('O Sol esfria e apaga', 'The Sun cools down and goes dark'), ok: false },
     R: { label: B('Acontecem explosões solares', 'Solar explosions happen'), ok: true } },
-
   light: { art: '⏱️☀️',
-    text: B('Vimos um clarão no Sol pelo telescópio! Quanto tempo a luz levou para chegar até nós?',
-            'We saw a flash on the Sun through the telescope! How long did its light take to reach us?'),
+    text: B('Vimos um clarão no Sol pelo telescópio! Quanto tempo a luz levou para chegar até nós?', 'We saw a flash on the Sun through the telescope! How long did its light take to reach us?'),
     L: { label: B('Cerca de 8 minutos', 'About 8 minutes'), ok: true },
     R: { label: B('Cerca de 8 dias', 'About 8 days'), ok: false } },
+  aurora: { art: '🌌🌍',
+    text: B('O que uma tempestade solar forte pode criar no céu da Terra?', "What can a strong solar storm create in Earth's sky?"),
+    L: { label: B('Arco-íris à noite', 'Rainbows at night'), ok: false },
+    R: { label: B('Auroras coloridas', 'Colorful auroras'), ok: true } },
+  cme: { art: '☁️☀️',
+    text: B('O que é uma CME?', 'What is a CME?'),
+    L: { label: B('Uma nuvem de gás lançada pelo Sol', 'A gas cloud thrown by the Sun'), ok: true },
+    R: { label: B('Uma nuvem de chuva', 'A rain cloud'), ok: false } },
+  wind: { art: '💨🌑',
+    text: B('Hoje não tem tempestade. A radiação na Lua fica zero?', 'There is no storm today. Does radiation on the Moon drop to zero?'),
+    L: { label: B('Sim, fica zero', 'Yes, it drops to zero'), ok: false },
+    R: { label: B('Não, o vento solar nunca para', 'No, the solar wind never stops'), ok: true } },
+  sdo: { art: '🔭📸',
+    text: B('Como a NASA consegue avisar quando o Sol explode?', 'How can NASA warn us when the Sun explodes?'),
+    L: { label: B('Vigiando o Sol sem parar', 'By watching the Sun nonstop'), ok: true },
+    R: { label: B('Olhando uma vez por ano', 'By looking once a year'), ok: false } },
+  issdose: { art: '☢️🛰️',
+    text: B('No espaço, a radiação é maior ou menor que na Terra?', 'In space, is radiation higher or lower than on Earth?'),
+    L: { label: B('Menor', 'Lower'), ok: false },
+    R: { label: B('Muito maior', 'Much higher'), ok: true } },
+  nofield: { art: '🧲🌍',
+    text: B('Por que na Terra estamos mais protegidos das partículas do Sol do que na Lua?', "Why are we better protected from the Sun's particles on Earth than on the Moon?"),
+    L: { label: B('O campo magnético da Terra desvia', "Earth's magnetic field pushes them away"), ok: true },
+    R: { label: B('A Terra fica mais longe do Sol', 'Earth is farther from the Sun'), ok: false } },
+  parker: { art: '🛸☀️',
+    text: B('Para que serve a sonda Parker, que passa pertinho do Sol?', 'What is the Parker probe, which flies close to the Sun, for?'),
+    L: { label: B('Para buscar gelo', 'To look for ice'), ok: false },
+    R: { label: B('Estudar o vento solar e prever tempestades', 'To study the solar wind and predict storms'), ok: true } },
 };
 
 function quizCard(discId) {
@@ -482,20 +680,24 @@ function quizCard(discId) {
     R: { label: q.R.label, ok: q.R.ok, fx: {} },
   };
 }
-function discover(G, pool, n) {
-  const got = [];
-  for (let i = 0; i < n; i++) {
-    const left = DISC.filter(d => !G.found.includes(d.id));
-    if (!left.length) break;
-    const same = left.filter(d => d.pool === pool);
-    const d = pick(same.length ? same : left);
-    G.found.push(d.id);
-    if (DISC_QUIZ[d.id] && !G.recall.some(x => x.id === d.id)) {
-      G.recall.push({ id: d.id, dueDay: G.day + 1 + Math.floor(rnd() * Math.min(4, Math.max(1, R.DAYS - 1 - G.day))) });
-    }
-    got.push(d);
+/* Uma descoberta por dia. Dentro do grupo, as que ainda não estão no álbum (G.seen) têm o dobro de chance. */
+const DISC_POOLS = ['rock', 'crater', 'ice', 'sun'];
+function discover(G, pool) {
+  if (G.discDay === G.day) return [];
+  const left = DISC.filter(d => !G.found.includes(d.id));
+  if (!left.length) return [];
+  const same = left.filter(d => d.pool === pool);
+  const options = same.length ? same : left;
+  const weights = options.map(d => G.seen.includes(d.id) ? 1 : 2);
+  let r = rnd() * weights.reduce((a, b) => a + b, 0), i = 0;
+  while (r >= weights[i] && i < options.length - 1) r -= weights[i++];
+  const d = options[i];
+  G.found.push(d.id);
+  G.discDay = G.day;
+  if (DISC_QUIZ[d.id] && !G.recall.some(x => x.id === d.id)) {
+    G.recall.push({ id: d.id, dueDay: G.day + 1 + Math.floor(rnd() * Math.min(4, Math.max(1, R.DAYS - 1 - G.day))) });
   }
-  return got;
+  return [d];
 }
 
 const SUN_TXT = {
@@ -562,10 +764,12 @@ function buildDay(G) {
   G.queue = q;
 }
 
-function newGame(eventCard) {
+// seen: ids das descobertas que o jogador já tem no álbum (vem do navegador; no Node fica vazio).
+function newGame(eventCard, seen = []) {
   const m = eventCard ? {start:day0(eventCard.d),storms:{},dated:{0:eventCard}} : pickMission();
   const G = { day: 0, air: R.AIR_START, pw: R.PW_START, rad: 0, sci: 0, start: m.start, storms: m.storms, dated: m.dated || {},
-              phase: Math.floor(rnd() * R.SUN.length), bags: {}, met: [], over: null, card: null, queue: [], wasted: 0, found: [], trips: 0, tripRad: 0, realLog: [], recall: [] };
+              phase: Math.floor(rnd() * R.SUN.length), bags: {}, met: [], over: null, card: null, queue: [], wasted: 0, found: [], trips: 0, tripRad: 0, realLog: [], recall: [],
+              seen: [...seen], discDay: -1 };
   buildDay(G);
   G.card = G.queue.shift();
   return G;
@@ -595,8 +799,7 @@ function choose(G, side) {
   if (c.quiz) {
     if (opt.ok) {
       G.air = Math.min(R.AIR_MAX, G.air + 3);
-      G.pw = Math.max(1, G.pw - 1);
-      G.rad = Math.max(0, G.rad - 12);
+      G.pw = Math.max(1, G.pw + 2);
       out.quizOk = true;
     } else {
       // Perde um pouco de ar e energia, mas trava acima do limite letal para não encerrar o jogo
@@ -606,7 +809,8 @@ function choose(G, side) {
       out.quizOk = false;
     }
   }
-  if (fx.sci) out.found = discover(G, opt.pool, fx.sci);
+  // Só a primeira ação de ciência do dia revela uma descoberta; os pontos de ciência continuam contando.
+  if (fx.sci) out.found = discover(G, opt.pool);
   if (c.resolve) {
     const s = c.storm, dose = R.STORM[s.sev];
     const mode = G.prepared ? 'ready' : G.rush ? 'rush' : 'none';
@@ -625,6 +829,11 @@ function choose(G, side) {
     // Noite: a tripulação respira e os raios cósmicos continuam chegando.
     G.air -= R.AIR_USE; G.rad += R.RAD_DAILY;
     out.night = true;
+    // Dia sem ciência: à noite a equipe revisa os dados do dia e faz uma descoberta de um grupo sorteado.
+    if (G.discDay !== G.day) {
+      const nightFound = discover(G, pick(DISC_POOLS));
+      if (nightFound.length) { out.found = (out.found || []).concat(nightFound); out.nightDisc = true; }
+    }
     if (G.air <= 0) { G.air = 0; G.over = 'air'; G.card = null; return out; }
     if (G.rad >= R.RAD_LIMIT) { G.over = 'rad'; G.card = null; return out; }
     G.day++;
@@ -736,12 +945,12 @@ const T = {
   how1: ['🫧 <b>Ar:</b> a tripulação respira todo dia. Se acabar, a missão termina.', '🫧 <b>Air:</b> the crew breathes every day. If it runs out, the mission ends.'],
   how2: ['⚡ <b>Energia:</b> vem do Sol. Tudo gasta energia, e ela nunca dá para tudo.', '⚡ <b>Power:</b> comes from the Sun. Everything uses power, and there is never enough for everything.'],
   how3: ['☢️ <b>Radiação:</b> partículas invisíveis que fazem mal. Se o medidor encher, é hora de voltar para casa.', '☢️ <b>Radiation:</b> invisible particles that harm the body. If the meter fills up, it is time to go home.'],
-  how4: ['🔬 <b>Descobertas:</b> o motivo de estar na Lua!', '🔬 <b>Discoveries:</b> the reason to be on the Moon!'],
+  how4: ['🔬 <b>Ciência:</b> o motivo de estar na Lua! Todo dia a equipe faz uma descoberta real da NASA para o álbum.', '🔬 <b>Science:</b> the reason to be on the Moon! Every day the crew makes a real NASA discovery for the album.'],
   introReal: ['☀️ <b>As tempestades solares deste jogo aconteceram de verdade</b>, em 2024 e 2025. As datas e as horas vêm do DONKI, o banco de dados de clima espacial da NASA. Os dados estão guardados no jogo (não são ao vivo).',
               '☀️ <b>The solar storms in this game really happened</b>, in 2024 and 2025. Dates and times come from DONKI, NASA\'s space weather database. The data is stored in the game (it is not live).'],
   start: ['🚀 Começar missão', '🚀 Start mission'],
   again: ['🔁 Jogar outra missão', '🔁 Play another mission'],
-  mAir: ['ar', 'air'], mPw: ['energia', 'power'], mRad: ['radiação', 'radiation'], mSci: ['descobertas', 'discoveries'],
+  mAir: ['ar', 'air'], mPw: ['energia', 'power'], mRad: ['radiação', 'radiation'], mSci: ['ciência', 'science'],
   swipe: ['Deslize a carta, toque nos botões ou use as setas ← →', 'Swipe the card, tap the buttons or use the ← → keys'],
   realTitle: ['☀️ Isso aconteceu de verdade!', '☀️ This really happened!'],
   srcTitle: ['📚 Dados da NASA usados e simplificações', '📚 NASA data used and simplifications'],
@@ -828,6 +1037,7 @@ function setTexts() {
   mute.setAttribute('aria-label', lang === 'pt'
     ? (muted ? 'Ativar som' : 'Silenciar')
     : (muted ? 'Unmute' : 'Mute'));
+  $('albumGameBtn').setAttribute('aria-label', lang === 'pt' ? 'Álbum de descobertas' : 'Discovery album');
   if (learnFn) $('learn').innerHTML = learnFn();
   if (discoveryReveal.length && !busy) renderDiscovery();
   const n = getUnlocked().length;
@@ -883,6 +1093,7 @@ function renderCard(animate) {
   if (!c.single) { fill($('btnL'), c.L, 'l'); $('tagL').textContent = tr(c.L.label); }
   fill($('btnR'), c.R, c.single ? '' : 'r'); $('tagR').textContent = tr(c.R.label);
   $('tagL').style.opacity = 0; $('tagR').style.opacity = 0;
+  $('albumGameBtn').disabled = !!c.quiz;   // o álbum daria a resposta da pergunta
   preview(null);
 }
 function preview(side) {
@@ -957,12 +1168,19 @@ function renderDiscovery() {
       name.append(badge);
     }
     item.append(icon, name, fact);
+    if (d.base) {
+      const base = document.createElement('p');
+      base.textContent = '🏠 ' + tr({pt: 'Na base: ', en: 'At the base: '}) + tr(d.base);
+      item.append(base);
+    }
     return item;
   });
   $('cTxt').replaceChildren(...content);
-  $('cNote').textContent = discoveryReveal.some(item => item.first)
+  const nightNote = discoveryReveal.some(item => item.night)
+    ? tr({pt: '🌙 Diário de bordo: revisando os dados do dia, a equipe descobriu algo · ', en: '🌙 Logbook: reviewing the day\'s data, the crew discovered something · '}) : '';
+  $('cNote').textContent = nightNote + (discoveryReveal.some(item => item.first)
     ? tr({pt: 'Nova descoberta · Registrada no álbum', en: 'New discovery · Saved to the album'})
-    : tr({pt: 'Descoberta · Consulte no álbum', en: 'Discovery · Find it in the album'});
+    : tr({pt: 'Descoberta · Consulte no álbum', en: 'Discovery · Find it in the album'}));
   $('cReal').classList.add('hidden');
   $('choices').classList.add('single');
   $('btnL').classList.add('hidden');
@@ -997,7 +1215,7 @@ async function act(side) {
   renderMeters();
   if (out.found?.length) {
     const unlocked = new Set(getUnlocked());
-    discoveryReveal = out.found.map(entry => ({ entry, first: !unlocked.has(entry.id) }));
+    discoveryReveal = out.found.map(entry => ({ entry, first: !unlocked.has(entry.id), night: !!out.nightDisc }));
     for (const { entry } of discoveryReveal) unlocked.add(entry.id);
     store.set('lb_disc', JSON.stringify([...unlocked]));
     preview(null);
@@ -1034,7 +1252,7 @@ async function act(side) {
 
 function start(eventCard) {
   busy=false; lunarScene.reset();
-  discoveryReveal = []; G = newGame(eventCard); lockHits = 0; prog = null; showLearn(null);
+  discoveryReveal = []; G = newGame(eventCard, getUnlocked()); lockHits = 0; prog = null; showLearn(null);
   if (eventCard) {
     G.queue = G.queue.filter(card => card !== eventCard);
     G.card = eventCard;
@@ -1108,23 +1326,31 @@ function renderAlbum(targetEl, currentFound = []) {
     const isOpen = unlocked.has(d.id);
     if (isOpen) {
       const badge = isNow ? `<span class="badgeNew">${pt ? 'Nesta missão!' : 'This mission!'}</span>` : '';
-      return `<div class="d${isNow ? ' now' : ''}"><span class="i">${d.ico}</span><b>${tr(d.name)}${badge}</b><span>${tr(d.fact)}</span></div>`;
+      const base = d.base ? `<small class="base">🏠 ${pt ? 'Na base' : 'At the base'}: ${tr(d.base)}</small>` : '';
+      const src = d.src ? `<a class="src" href="${d.src}" target="_blank" rel="noopener">${pt ? 'Fonte: NASA' : 'Source: NASA'} ↗</a>` : '';
+      return `<div class="d${isNow ? ' now' : ''}"><span class="i">${d.ico}</span><b>${tr(d.name)}${badge}</b><span>${tr(d.fact)}</span>${base}${src}</div>`;
     }
     const hint = POOL_HINT[d.pool] ? POOL_HINT[d.pool][pt ? 0 : 1] : '';
     return `<div class="d locked"><span class="i">❓</span><b>${pt ? 'Descoberta bloqueada' : 'Locked discovery'}</b><span>${hint}</span></div>`;
   }).join('');
 }
 
-function openAlbum() {
-  const pt = lang === 'pt', n = getUnlocked().length;
-  $('intro').classList.add('hidden');
+// De onde o álbum foi aberto: 'intro' (tela inicial) ou 'game' (durante a missão).
+let albumFrom = 'intro';
+function openAlbum(from = albumFrom) {
+  albumFrom = from;
+  const pt = lang === 'pt';
+  // Durante a missão, as descobertas atuais ainda não foram gravadas no navegador.
+  const current = from === 'game' && G ? G.found : [];
+  const n = new Set([...getUnlocked(), ...current]).size;
+  $(from).classList.add('hidden');
   $('album').classList.remove('hidden');
   $('closeAlbumBtn').textContent = pt ? '← Voltar' : '← Back';
   $('albumTitle').textContent = pt ? '📓 Álbum de descobertas' : '📓 Discovery album';
   $('albumSub').textContent = pt
     ? `Você já desbloqueou ${n} de ${DISC.length} descobertas científicas neste aparelho:`
     : `You have unlocked ${n} of ${DISC.length} scientific discoveries on this device:`;
-  renderAlbum($('albumGrid'), []);
+  renderAlbum($('albumGrid'), current);
   window.scrollTo(0, 0);
 }
 function finish() {
@@ -1225,6 +1451,7 @@ const unlockedTotal = getUnlocked().length;
       De cada tempestade usamos: a hora em que as partículas chegaram, a explosão solar ligada a ela (hora e classe) e a velocidade da nuvem de gás (CME).
       Os dados foram baixados antes e guardados no jogo: <b>não são ao vivo</b>. As horas estão em UTC (hora universal).</p>
     <p><b>Por que esses dados:</b> o tempo entre ver a explosão e a chegada das partículas é o tempo real que uma tripulação teria para se proteger. No jogo, esse aviso decide se dá para carregar o escudo.</p>
+    <p><b>Descobertas:</b> as ${DISC.length} descobertas do álbum são fatos de páginas da NASA (missões Apollo, LRO, LCROSS, SOFIA, Lunar Prospector, SDO, Parker Solar Probe, Estação Espacial e pesquisas de saúde dos astronautas). Cada uma tem o link da fonte no álbum.</p>
     <p><b>Força da tempestade:</b> “forte” = o satélite GOES, perto da Terra e da Lua, detectou partículas acima de 100 MeV; “média” = acima de 10 MeV; “fraca” = só sondas mais distantes detectaram.
       MeV mede a energia das partículas: quanto maior, mais fácil elas atravessam paredes.</p>
     <p><b>Simplificações:</b> os números de ar, energia e radiação são de jogo, não de engenharia. O “escudo” representa um abrigo protegido, e cada descoberta representa o uso de recursos locais (ISRU). Registros com menos de 48 horas de diferença contam como uma tempestade só.
@@ -1235,6 +1462,7 @@ const unlockedTotal = getUnlocked().length;
       From each storm we use: the time the particles arrived, the solar flare linked to it (time and class) and the speed of the gas cloud (CME).
       The data was downloaded in advance and stored in the game: <b>it is not live</b>. Times are in UTC.</p>
     <p><b>Why this data:</b> the time between seeing the flare and the particles arriving is the real time a crew would have to take cover. In the game, that warning decides whether the shield can be charged.</p>
+    <p><b>Discoveries:</b> the ${DISC.length} discoveries in the album are facts from NASA pages (Apollo missions, LRO, LCROSS, SOFIA, Lunar Prospector, SDO, Parker Solar Probe, the Space Station and astronaut health research). Each one has its source link in the album.</p>
     <p><b>Storm strength:</b> "strong" = the GOES satellite, near Earth and the Moon, detected particles above 100 MeV; "medium" = above 10 MeV; "weak" = only more distant probes detected it.
       MeV measures particle energy: the higher it is, the more easily particles pass through walls.</p>
     <p><b>Simplifications:</b> the air, power and radiation numbers are game numbers, not engineering values. The "shield" stands for a protected shelter, and each discovery represents In-Situ Resource Utilization (ISRU). Records less than 48 hours apart count as a single storm.
@@ -1313,10 +1541,14 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft') act('L'); else if (e.key === 'ArrowRight') act('R');
 });
 $('reportClose').addEventListener('click', () => act('R'));
-$('openAlbumBtn').addEventListener('click', openAlbum);
+$('openAlbumBtn').addEventListener('click', () => openAlbum('intro'));
+$('albumGameBtn').addEventListener('click', () => {
+  if (busy || !G || G.over || (G.card && G.card.quiz)) return;
+  openAlbum('game');
+});
 $('closeAlbumBtn').addEventListener('click', () => {
   $('album').classList.add('hidden');
-  $('intro').classList.remove('hidden');
+  $(albumFrom).classList.remove('hidden');
 });
 $('muteBtn').addEventListener('click', () => { muted = !muted; store.set('lb_mute', muted ? '1' : '0'); setTexts(); if (!muted) sfx('swipe'); });
 $('startBtn').addEventListener('click', () => start());
