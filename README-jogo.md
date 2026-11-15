@@ -24,8 +24,10 @@ When there is not enough power for an option, that option is locked. No choice i
 
 Nothing here stops the game; it is one sentence in a strip below the card.
 
-- **Named discoveries:** every science point becomes a real fact about the Moon or the Sun (16 in all), such as the orange glass
-  found by Apollo 17, the water found by LCROSS or the Sun's 11-year cycle. They are collected in a notebook shown at the end.
+- **Named discoveries:** 40 real facts from NASA pages, 10 per group (lab, rover, ice and water, telescope), such as the water found by LCROSS,
+  the 98% water recycling on the Space Station or the May 2024 auroras. Each one says how it matters at the base and links to its NASA source.
+  The crew makes one discovery per day, so a mission gives 10 and the full album takes several missions. Discoveries missing from the album are twice as likely to come up.
+  The album can be opened during the mission.
 - **Tips in context:** the first time a topic comes up (the oxygen machine, cosmic rays, shadows at the south pole), one sentence explains it. Each tip shows only once.
 - **"What this mission showed":** up to four sentences at the end, taken from what the child actually did,
   such as how much radiation the trips outside cost or how many times power ran short.
@@ -120,8 +122,10 @@ Quando não há energia para uma opção, ela fica travada. Nenhuma escolha é d
 
 Nada disso trava o jogo; é uma frase numa faixa abaixo da carta.
 
-- **Descobertas com nome:** cada ponto de ciência vira um fato real sobre a Lua ou o Sol (16 no total), como o vidro laranja
-  achado pela Apollo 17, a água achada pela LCROSS ou o ciclo de 11 anos do Sol. Elas vão para um caderno mostrado no final.
+- **Descobertas com nome:** 40 fatos reais de páginas da NASA, 10 por grupo (laboratório, jipe, gelo e água, telescópio), como a água achada pela LCROSS,
+  a reciclagem de 98% da água na Estação Espacial ou as auroras de maio de 2024. Cada uma diz como importa na base e traz o link da fonte da NASA.
+  A equipe faz uma descoberta por dia, então uma missão dá 10 e o álbum completo leva várias missões. As descobertas que faltam no álbum têm o dobro de chance de aparecer.
+  O álbum pode ser aberto durante a missão.
 - **Dicas na hora:** na primeira vez que um assunto aparece (a máquina de oxigênio, os raios cósmicos, as sombras do polo sul), uma frase explica. Cada dica aparece uma vez só.
 - **"O que esta missão mostrou":** até quatro frases no final, tiradas do que a criança fez de verdade,
   como quanta radiação as saídas da base custaram ou quantas vezes faltou energia.
