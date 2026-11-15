@@ -27,14 +27,16 @@
 </section>
 
 <!-- ===================== JOGO ===================== -->
-<section id="game" class="hidden" style="display:flex; flex-direction:column; gap:.6rem; flex:1">
+<section id="game" class="hidden">
   <div class="top">
-    <div><div class="day" id="dayTxt"></div><div class="date" id="dateTxt"></div></div>
-    <div style="display:flex; gap:.4rem"><button class="lang" id="muteBtn" aria-label="Som / Sound"></button><button class="lang" data-lang></button></div>
+    <div><div class="day" id="dayTxt"></div><div class="date"><img src="assets/hud/calendario.png" alt=""><span id="dateTxt"></span></div></div>
+    <div style="display:flex; gap:.4rem"><button class="lang" id="muteBtn" aria-label="Som / Sound"><img src="assets/hud/som-ligado.png" alt=""></button><button class="lang" data-lang></button></div>
   </div>
 
   <div class="scene" id="scene" aria-hidden="true">
     <div class="sun" id="sun"></div>
+    <span class="base-beacon"></span>
+    <img class="event-art" src="assets/hud/evento-oxigenio.png" alt="">
     <div class="ground"></div>
     <div class="rover" id="rover">🚙</div>
     <div class="shield" id="shield"></div>
@@ -43,10 +45,31 @@
   </div>
 
   <div class="meters">
-    <div class="meter" id="m_air"><div class="ico"><span>🫧</span><small data-t="mAir"></small></div><div class="bar"><div id="b_air" style="background:var(--air)"></div></div><span class="pv"></span></div>
-    <div class="meter" id="m_pw"><div class="ico"><span>⚡</span><small data-t="mPw"></small></div><div class="bar"><div id="b_pw" style="background:var(--pw)"></div></div><span class="pv"></span></div>
-    <div class="meter" id="m_rad"><div class="ico"><span>☢️</span><small data-t="mRad"></small></div><div class="bar"><div id="b_rad" style="background:var(--rad)"></div></div><span class="pv"></span></div>
-    <div class="meter sci" id="m_sci"><b>🔬 <span id="sciTxt">0</span></b><small data-t="mSci"></small><span class="pv"></span></div>
+    <div class="meter" id="m_air">
+      <div class="meter-art"><svg class="tank" aria-hidden="true" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#8591DC" d="M6 1h4v2H9v1h2v1h1v9h-1v1H5v-1H4V5h1V4h2V3H6z"/>
+        <rect x="5" y="4" width="6" height="10" fill="#303DB1"/>
+        <rect x="5" class="tank-fill" y="4" width="6" height="10" fill="#FFCF72"/>
+        <path fill="#F3F3FF" d="M5 5h1v8H5zM6 1h4v1H6z"/>
+        <path fill="#8591DC" d="M9 2h2V1h4v1h1v4h-1v1h-4V6h-1V4H9z"/>
+        <path fill="#F3F3FF" d="M11 2h4v4h-4z"/>
+        <path fill="#171B4B" d="M13 3h1v1h-1v1h-1V4h1z"/>
+      </svg></div>
+      <small data-t="mAir"></small><span class="meter-value" id="airValue"></span><span class="pv"></span>
+    </div>
+    <div class="meter" id="m_pw">
+      <div class="meter-art meter-sprite power" aria-hidden="true"></div>
+      <small data-t="mPw"></small><span class="meter-value" id="powerValue"></span><span class="pv"></span>
+    </div>
+    <div class="meter" id="m_rad">
+      <div class="meter-art meter-sprite radiation" aria-hidden="true"></div>
+      <small data-t="mRad"></small><span class="meter-value" id="radiationValue"></span><span class="pv"></span>
+    </div>
+    <div class="meter sci" id="m_sci">
+      <img class="meter-art" src="assets/hud/descobertas.png" alt="">
+      <small data-t="mSci"></small><span class="meter-value" id="sciTxt"></span>
+      <span class="discovery-points" aria-hidden="true"></span><span class="pv"></span>
+    </div>
   </div>
 
   <div class="deck" id="deck">
@@ -677,7 +700,7 @@ function tip(keys) {
   const k = keys.find(x => TIPS[x] && !seen.has(x));
   if (!k) return false;
   seen.add(k);
-  showLearn(() => '<span>💡 ' + TIPS[k][lang === 'pt' ? 0 : 1] + '</span>');
+  showLearn(() => '<span>' + TIPS[k][lang === 'pt' ? 0 : 1] + '</span>');
   return true;
 }
 
@@ -786,7 +809,11 @@ function setTexts() {
   document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
   document.querySelectorAll('[data-t]').forEach(e => { e.innerHTML = t(e.dataset.t); });
   document.querySelectorAll('[data-lang]').forEach(b => { b.textContent = lang === 'pt' ? '🌐 English' : '🌐 Português'; });
-  $('muteBtn').textContent = muted ? '🔇' : '🔊';
+  const mute = $('muteBtn');
+  mute.querySelector('img').src = muted ? 'assets/hud/som-desligado.png' : 'assets/hud/som-ligado.png';
+  mute.setAttribute('aria-label', lang === 'pt'
+    ? (muted ? 'Ativar som' : 'Silenciar')
+    : (muted ? 'Unmute' : 'Mute'));
   if (learnFn) $('learn').innerHTML = learnFn();
   const n = getUnlocked().length;
   $('openAlbumBtn').textContent = lang === 'pt'
@@ -794,14 +821,21 @@ function setTexts() {
     : `📓 View all discoveries (${n}/${DISC.length})`;
 }
 function renderMeters() {
-  const w = (id, v, max) => { $(id).style.width = Math.max(0, Math.min(100, v / max * 100)) + '%'; };
-  w('b_air', G.air, R.AIR_MAX); w('b_pw', G.pw, R.PW_MAX); w('b_rad', G.rad, R.RAD_LIMIT);
-  $('b_rad').style.background = G.rad >= R.RAD_SAFE ? '#ef4444' : '#fb923c';
+  const setLevel = (meter, label, value, max, suffix) => {
+    const level = Math.max(0, Math.min(value, max));
+    $(meter).style.setProperty('--level', level / max);
+    $(label).textContent = level + suffix;
+  };
+  setLevel('m_air', 'airValue', G.air, R.AIR_MAX, '/' + R.AIR_MAX);
+  setLevel('m_pw', 'powerValue', G.pw, R.PW_MAX, '/' + R.PW_MAX);
+  setLevel('m_rad', 'radiationValue', G.rad, R.RAD_LIMIT, '%');
   $('sciTxt').textContent = G.sci;
+  const points = $('m_sci').querySelector('.discovery-points');
+  points.replaceChildren(...Array.from({ length: G.sci }, () => document.createElement('i')));
   $('m_air').classList.toggle('low', G.air <= R.AIR_USE);
   $('m_rad').classList.toggle('low', G.rad >= 75);
   $('dayTxt').textContent = `${t('day')} ${Math.min(G.day + 1, R.DAYS)} ${t('of')} ${R.DAYS}`;
-  $('dateTxt').textContent = '📅 ' + fmtDate(G.start + Math.min(G.day, R.DAYS - 1) * DAY);
+  $('dateTxt').textContent = fmtDate(G.start + Math.min(G.day, R.DAYS - 1) * DAY);
   $('sun').style.setProperty('--sun', G.sun);
   $('shield').className = 'shield' + (G.prepared ? ' ready' : G.rush ? ' rush' : '');
   $('rover').classList.toggle('out', !!G.outside);
@@ -849,6 +883,20 @@ function toast(msg) {
 
 /* ---------- tempestade: partículas do Sol contra o escudo ---------- */
 const wait = ms => new Promise(r => setTimeout(r, ms));
+async function playOxygenEvent() {
+  const game = $('game'), scene = $('scene');
+  const height = scene.offsetHeight + $('deck').offsetHeight;
+  scene.style.setProperty('--event-height', height + 'px');
+  game.classList.add('oxygen-event');
+  try {
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) await wait(300);
+    renderMeters();
+    await wait(750);
+  } finally {
+    game.classList.remove('oxygen-event');
+    scene.style.removeProperty('--event-height');
+  }
+}
 async function playStorm(m) {
   const scene = $('scene');
   if (matchMedia('(prefers-reduced-motion: reduce)').matches || !scene.animate) return;
@@ -889,9 +937,11 @@ async function act(side) {
   card.classList.add('fly'); card.style.transform = `translateX(${dir * 420}px) rotate(${dir * 24}deg)`;
   const out = choose(G, side);
   sfx(out.storm ? 'storm' : 'swipe');
+  const oxygenEvent = c.id === 'o2' && out.side === 'R';
   if (out.storm) { preview(null); await playStorm(out.storm); }
+  else if (oxygenEvent) await playOxygenEvent();
   else await wait(240);
-  renderMeters();
+  if (!oxygenEvent) renderMeters();
   if (out.night && !G.over) toast('🌙 🫧▼  ☢️▲');
   if (G.over) { await wait(500); busy = false; return finish(); }
   if (out.found && out.found.length) {
@@ -1132,10 +1182,10 @@ card.addEventListener('pointermove', e => {
   $('tagL').style.opacity = side === 'L' && !G.card.single ? k : 0;
   preview(side);
 });
-const drop = () => {
+const drop = event => {
   if (!drag) return;
   const dx = drag.dx; drag = null;
-  if (Math.abs(dx) > 90) { act(dx > 0 ? 'R' : 'L'); if (!busy) { card.classList.add('snap'); card.style.transform = ''; preview(null); } }
+  if (event.type === 'pointerup' && Math.abs(dx) > 90) { act(dx > 0 ? 'R' : 'L'); if (!busy) { card.classList.add('snap'); card.style.transform = ''; preview(null); } }
   else { card.classList.add('snap'); card.style.transform = ''; $('tagL').style.opacity = 0; $('tagR').style.opacity = 0; preview(null); }
 };
 card.addEventListener('pointerup', drop); card.addEventListener('pointercancel', drop);
@@ -1162,7 +1212,7 @@ $('againBtn').addEventListener('click', () => { factIdx++; start(); });
 document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click', () => {
   lang = lang === 'pt' ? 'en' : 'pt'; setTexts();
   if (!$('album').classList.contains('hidden')) openAlbum();
-  if (G) { renderMeters(); if (G.over) renderEnd(); else renderCard(false); }
+  if (G && !busy) { renderMeters(); if (G.over) renderEnd(); else renderCard(false); }
 }));
 setTexts();
 window.__game = { get G() { return G; }, R, STORMS, Engine, act, setLang: l => { lang = l; setTexts(); } };   // para testes
