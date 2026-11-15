@@ -5,7 +5,7 @@ const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const code = html.match(/\/\*ENGINE-START\*\/([\s\S]*?)\/\*ENGINE-END\*\//)[1];
 const Engine = new Function(code + '; return Engine;')();
 const { R, newGame, choose, locked, stars } = Engine;
-const N = +process.argv[2] || 30000;
+const N = +process.argv[2] || 100000;
 
 // Cada estratégia recebe (G, carta) e devolve 'L' ou 'R'.
 const can = (G, c) => !locked(G, c.R);
@@ -58,6 +58,7 @@ const S = {
   'esquece o ar': (G, c) => (c.id === 'o2' || c.id === 'farm') ? 'L' : S['cuidadosa'](G, c),
   'sempre direita': () => 'R',
   'sempre esquerda': () => 'L',
+  'alternada': (G, c) => c.single ? 'R' : ((G._alt = (G._alt || 0) + 1) % 2 ? 'L' : 'R'),
   'aleatoria': () => Math.random() < .5 ? 'L' : 'R',
 };
 
