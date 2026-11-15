@@ -220,7 +220,7 @@ const LAB = { id: 'lab', art: '🔬🪨',
 const ROVER = { id: 'rover', art: '🚙🕳️',
   text: B('Uma cratera aqui perto pode ter gelo! Mas fora da base não tem escudo contra a radiação.', 'A nearby crater may have ice! But outside the base there is no shield against radiation.'),
   L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -2 } },
-  R: { label: B('Explorar de jipe', 'Explore by rover'), fx: { pw: -1, sci: 2, rad: 4, outside: true }, pool: 'crater' } };
+  R: { label: B('Explorar de jipe', 'Explore by rover'), fx: { pw: -1, sci: 1, rad: 4, outside: true }, pool: 'crater' } };
 const ROVER_ALERT = { id: 'roverAlert', art: '🚙⚠️',
   text: B('O alerta solar está ligado. A cratera com gelo está logo ali… Sair de jipe mesmo assim?', 'The solar alert is on. The icy crater is right there… Drive out anyway?'),
   L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -2 } },
