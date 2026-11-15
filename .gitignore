@@ -2,3 +2,6 @@
 data/raw/
 data/CME_*.json
 data/notifications_*.json
+
+# Referencias, estudos e exportacoes de arte locais
+/artes/

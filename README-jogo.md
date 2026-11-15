@@ -189,3 +189,19 @@ Arrastar com o dedo em um celular de verdade ainda não foi testado.
 2. Som para o alerta e para a tempestade.
 3. Usar o RadLab (dosimetria real da ISS) para comparar a radiação do jogo com a de astronautas de verdade.
 4. Modo Marte: comunicação atrasada (a ordem só chega depois).
+
+## Cenário animado integrado (branch arte)
+
+O cenário em `assets/scene/lunar-scene.js` usa uma grade de 256 × 88 pixels e não depende da pasta local `artes/`. O Sol e as estrelas variam o brilho; a iluminação acompanha o dia e a etapa da missão.
+
+As animações partem do resultado da escolha: hover para viagens, astronauta a pé para gelo, limpeza para painéis, manutenção para vazamentos e filtros, operação do terminal para oxigênio, energia e pesquisa. O alerta prepara o abrigo; a chegada das partículas usa a proteção realmente escolhida. Meteoritos precedem a limpeza opcional. Caixas lançadas permanecem onde caíram até serem recolhidas.
+
+Durante a execução, a carta dá lugar à cena e à descrição da tarefa. A interface bloqueia novas escolhas e atualiza os níveis após a sequência; descobertas aparecem em seguida. Movimento reduzido elimina a espera animada. Reiniciar a missão limpa o estado visual e encerra a sequência anterior.
+
+Validação:
+
+- `node tools/scene-test.mjs`: associação entre escolhas e cenas, estados persistentes, conclusão das sequências e movimento reduzido.
+- `tools/scene-ui-test.html`: integração no navegador, incluindo atualização dos níveis, tempestade e descoberta; servir o repositório por HTTP e abrir essa página.
+- `node tools/sim.mjs 100`: simulação do motor, independente das animações.
+
+Referências, regras de arte, rascunhos e capturas de revisão continuam excluídos pelo `.gitignore`.

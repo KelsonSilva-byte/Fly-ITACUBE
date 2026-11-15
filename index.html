@@ -34,13 +34,8 @@
   </div>
 
   <div class="scene" id="scene" aria-hidden="true">
-    <div class="sun" id="sun"></div>
-    <span class="base-beacon"></span>
-    <img class="event-art" src="assets/hud/evento-oxigenio.png" alt="">
-    <div class="ground"></div>
-    <div class="rover" id="rover">🚙</div>
-    <div class="shield" id="shield"></div>
-    <div class="base" id="base">🧑‍🚀</div>
+    <canvas id="lunarCanvas" width="256" height="88"></canvas>
+    <div class="scene-caption"><strong id="sceneCaption"></strong><p id="sceneDetail"></p></div>
     <div class="toast" id="toast"></div>
   </div>
 
@@ -126,6 +121,7 @@
 <footer data-t="footer"></footer>
 </main>
 
+<script src="assets/scene/lunar-scene.js"></script>
 <script>
 /*ENGINE-START*/
 /* ====== MOTOR DO JOGO (sem DOM, para poder ser testado em Node: tools/sim.mjs) ====== */
@@ -210,7 +206,7 @@ function pickMission() {
 const LIFE = [
   { id: 'o2', art: '🫧⚙️', w: 3,
     text: B('A máquina de oxigênio usa eletricidade para tirar ar da água. Ligar hoje?', 'The oxygen machine uses electricity to pull air out of water. Turn it on today?'),
-    L: { label: B('Deixar desligada', 'Leave it off'), fx: {} },
+    L: { label: B('Poupar energia', 'Save power'), fx: { pw: 1, air: -1 } },
     R: { label: B('Ligar', 'Turn it on'), fx: { pw: -2, air: 4 } } },
   { id: 'farm', art: '🌱💡', w: 1,
     text: B('As plantas da estufa fazem ar para respirar, mas precisam de luz.', 'The greenhouse plants make air to breathe, but they need light.'),
@@ -219,17 +215,32 @@ const LIFE = [
 ];
 const LAB = { id: 'lab', art: '🔬🪨',
   text: B('O laboratório pode estudar as pedras da Lua hoje. Ele gasta bastante energia.', 'The lab can study Moon rocks today. It uses a lot of power.'),
-  L: { label: B('Guardar energia', 'Save power'), fx: {} },
+  L: { label: B('Recarregar baterias', 'Recharge batteries'), fx: { pw: 1, air: -1 } },
   R: { label: B('Pesquisar', 'Do research'), fx: { pw: -2, sci: 1 }, pool: 'rock' } };
 const ROVER = { id: 'rover', art: '🚙🕳️',
   text: B('Uma cratera aqui perto pode ter gelo! Mas fora da base não tem escudo contra a radiação.', 'A nearby crater may have ice! But outside the base there is no shield against radiation.'),
-  L: { label: B('Ficar na base', 'Stay inside'), fx: {} },
+  L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -1 } },
   R: { label: B('Explorar de jipe', 'Explore by rover'), fx: { pw: -1, sci: 2, rad: 5, outside: true }, pool: 'crater' } };
 const ROVER_ALERT = { id: 'roverAlert', art: '🚙⚠️',
   text: B('O alerta solar está ligado. A cratera com gelo está logo ali… Sair de jipe mesmo assim?', 'The solar alert is on. The icy crater is right there… Drive out anyway?'),
-  L: { label: B('Ficar na base', 'Stay inside'), fx: {} },
+  L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -1 } },
   R: { label: B('Explorar de jipe', 'Explore by rover'), fx: { pw: -1, sci: 2, rad: 5, outside: true }, pool: 'crater' } };
 const EVENTS = [
+  { id: 'reserveAir', art: '🫧⚙️',
+    text: B('O compressor pode ligar a reserva de ar. Quanto menos ar resta na base, mais espaço há para receber a reserva.',
+            'The compressor can connect the backup air supply. The less air the base has, the more room there is for the reserve.'),
+    L: { label: B('Desligar o compressor', 'Switch off the compressor'), fx: { pw: 1, air: -1 } },
+    R: { label: B('Acionar a reserva', 'Connect the reserve'), fx: { pw: -2 }, adjust: G => ({ air: G.air <= 3 ? 5 : 2 }) } },
+  { id: 'reservePower', art: '🔋',
+    text: B('A bateria auxiliar rende mais quando a carga da base está baixa. Para ligá-la, é preciso gastar ar na câmara de manutenção.',
+            'The backup battery helps more when the base is low on charge. Connecting it uses air in the maintenance chamber.'),
+    L: { label: B('Isolar a bateria', 'Isolate the battery'), fx: { air: 1, pw: -1 } },
+    R: { label: B('Ligar a bateria', 'Connect the battery'), fx: { air: -1 }, adjust: G => ({ pw: G.pw <= 3 ? 4 : 2 }) } },
+  { id: 'signal', art: '📡',
+    text: B('A antena captou um sinal fraco. O laboratório ainda não sabe se ele traz dados úteis.',
+            'The antenna picked up a weak signal. The lab does not yet know whether it carries useful data.'),
+    L: { label: B('Desligar o receptor', 'Switch off the receiver'), fx: { pw: 1, air: -1 } },
+    R: { label: B('Analisar o sinal', 'Analyze the signal'), fx: { pw: -1 }, hidden: true, resolveFx: () => ({ sci: rnd() < .55 ? 1 : 0 }), pool: 'sun' } },
   { id: 'airlock', art: '🥾🧹',
     text: B('Os trajes voltaram cheios de poeira lunar afiada na câmara de ar. Limpar agora?',
             'The spacesuits came back covered in sharp Moon dust in the airlock. Clean them now?'),
@@ -243,7 +254,7 @@ const EVENTS = [
   { id: 'cargo', art: '📦🚙',
     text: B('Um módulo de carga pousou pertinho da base com cilindros extras de ar e água!',
             'A cargo pod landed close to the base with extra air and water tanks!'),
-    L: { label: B('Ficar na base', 'Stay inside'), fx: {} },
+    L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -1 } },
     R: { label: B('Buscar de jipe', 'Fetch by rover'), fx: { pw: -1, air: 3, rad: 4, outside: true } } },
   { id: 'dust', art: '🧹☀️',
     text: B('A poeira da Lua cobriu os painéis solares.', 'Moon dust has covered the solar panels.'),
@@ -255,11 +266,11 @@ const EVENTS = [
     R: { label: B('Consertar agora', 'Fix it now'), fx: { pw: -1 } } },
   { id: 'scope', art: '🔭☀️',
     text: B('O telescópio pode observar o Sol hoje.', 'The telescope can watch the Sun today.'),
-    L: { label: B('Deixar desligado', 'Keep it off'), fx: {} },
+    L: { label: B('Poupar energia', 'Save power'), fx: { pw: 1, air: -1 } },
     R: { label: B('Observar', 'Observe'), fx: { pw: -2, sci: 1 }, pool: 'sun' } },
   { id: 'ice', art: '🧊👣',
     text: B('Um sensor achou gelo pertinho da base. Dá para ir a pé, mas lá fora tem mais radiação.', 'A sensor found ice close to the base. You can walk there, but there is more radiation outside.'),
-    L: { label: B('Ficar na base', 'Stay inside'), fx: {} },
+    L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -1 } },
     R: { label: B('Buscar a amostra', 'Get the sample'), fx: { rad: 3, sci: 1, outside: true }, pool: 'ice' } },
 ];
 /* Eventos reais de 2024–2025 mapeados pela data exata (só aparecem no dia civil correspondente) */
@@ -281,7 +292,7 @@ const DATED_EVENTS = [
             'Giant solar flare (class X8.7) seen on the Sun! The cloud passed wide of the Moon, and the telescope can measure it.'),
     record: B('Em 14 de maio de 2024, o Sol produziu uma explosão classe X8.7 — a mais forte daquele período — sem atingir diretamente a Terra e a Lua.',
               'On May 14, 2024, the Sun produced an X8.7 class flare — the strongest of that period — without hitting Earth and the Moon directly.'),
-    L: { label: B('Poupar energia', 'Save power'), fx: {} },
+    L: { label: B('Poupar energia', 'Save power'), fx: { pw: 1, air: -1 } },
     R: { label: B('Apontar telescópio', 'Point telescope'), fx: { pw: -1, sci: 1 }, pool: 'sun' } },
 
   { id: 'eclipse_2024_09', art: '🌍🌑',
@@ -475,7 +486,7 @@ function discover(G, pool, n) {
     const d = pick(same.length ? same : left);
     G.found.push(d.id);
     if (DISC_QUIZ[d.id] && !G.recall.some(x => x.id === d.id)) {
-      G.recall.push({ id: d.id, dueDay: G.day + 1 + Math.floor(rnd() * 2) });
+      G.recall.push({ id: d.id, dueDay: G.day + 1 + Math.floor(rnd() * Math.min(4, Math.max(1, R.DAYS - 1 - G.day))) });
     }
     got.push(d);
   }
@@ -498,7 +509,7 @@ function dayCard(G) {
 }
 function flareCard(s) {
   return { id: 'flare', kind: 'flare', art: '🚨☀️', alert: true, storm: s,
-    L: { label: B('Continuar a pesquisa', 'Keep doing research'), fx: { sci: 1 }, pool: 'rock' },
+    L: { label: B('Continuar a pesquisa', 'Keep doing research'), fx: { air: -1, sci: 1 }, pool: 'rock' },
     R: { label: B('Carregar o escudo', 'Charge the shield'), fx: { pw: -R.SHIELD_PW, prepared: true } } };
 }
 function arrivalCard(G, s) {
@@ -529,10 +540,11 @@ function buildDay(G) {
   q.push(G.air <= R.AIR_USE ? LIFE[0] : pick(LIFE.flatMap(c => Array(c.w).fill(c))));
   if (s && s.flr) q.push(flareCard(s));
   q.push(s ? (s.flr ? ROVER_ALERT : LAB) : bag(G, 'sci', [LAB, ROVER]));
-  const dueIdx = G.recall.findIndex(x => x.dueDay <= G.day);
-  if (dueIdx !== -1) {
-    const [item] = G.recall.splice(dueIdx, 1);
-    q.push(quizCard(item.id));
+  const due = G.recall.filter(item => item.dueDay <= G.day);
+  if (due.length) {
+    const item = pick(due);
+    G.recall.splice(G.recall.indexOf(item), 1);
+    q.splice(1 + Math.floor(rnd() * q.length), 0, quizCard(item.id));
   }
   if (s) {
     q.push(() => arrivalCard(G, s));
@@ -554,7 +566,8 @@ function newGame() {
   return G;
 }
 
-const locked = (G, opt) => G.pw + (opt.fx.pw || 0) < 0;
+const effectFor = (G, opt) => opt.adjust ? { ...opt.fx, ...opt.adjust(G) } : opt.fx;
+const locked = (G, opt) => G.pw + (effectFor(G, opt).pw || 0) < 0;
 
 function apply(G, fx) {
   if (fx.pw) { const v = G.pw + fx.pw; if (v > R.PW_MAX) G.wasted += v - R.PW_MAX; G.pw = Math.max(0, Math.min(R.PW_MAX, v)); }
@@ -570,12 +583,14 @@ function choose(G, side) {
   if (G.over) return null;
   const c = G.card, opt = c.single ? c.R : c[side];
   if (!opt || locked(G, opt)) return null;
-  apply(G, opt.fx);
-  const out = { card: c, side: c.single ? 'R' : side, opt };
+  const known = effectFor(G, opt);
+  const fx = opt.resolveFx ? { ...known, ...opt.resolveFx() } : known;
+  apply(G, fx);
+  const out = { card: c, side: c.single ? 'R' : side, opt, fx };
   if (c.quiz) {
     if (opt.ok) {
       G.air = Math.min(R.AIR_MAX, G.air + 3);
-      G.pw  = Math.min(R.PW_MAX, G.pw + 3);
+      G.pw = Math.max(1, G.pw - 1);
       G.rad = Math.max(0, G.rad - 12);
       out.quizOk = true;
     } else {
@@ -586,7 +601,7 @@ function choose(G, side) {
       out.quizOk = false;
     }
   }
-  if (opt.fx.sci) out.found = discover(G, opt.pool, opt.fx.sci);
+  if (fx.sci) out.found = discover(G, opt.pool, fx.sci);
   if (c.resolve) {
     const s = c.storm, dose = R.STORM[s.sev];
     const mode = G.prepared ? 'ready' : G.rush ? 'rush' : 'none';
@@ -622,18 +637,19 @@ function stars(G) {
   return a && b ? 3 : a || b ? 2 : 1;
 }
 
-return { R, STORMS, DISC, newGame, choose, locked, stars, setRng: f => { rnd = f; } };
+return { R, STORMS, DISC, newGame, choose, locked, effectFor, stars, setRng: f => { rnd = f; } };
 })();
 /*ENGINE-END*/
 
 /* ====== INTERFACE ====== */
 (() => {
 'use strict';
-const { R, STORMS, DISC, newGame, choose, locked, stars } = Engine;
+const { R, STORMS, DISC, newGame, choose, locked, effectFor, stars } = Engine;
 const $ = id => document.getElementById(id);
+const lunarScene = LunarScene.create($('lunarCanvas'));
 const DAY = 864e5;
 let lang = (navigator.language || 'pt').toLowerCase().startsWith('pt') ? 'pt' : 'en';
-let G = null, busy = false, lockHits = 0, prog = null, learnFn = null;
+let G = null, busy = false, lockHits = 0, prog = null, learnFn = null, discoveryReveal = [];
 const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
 let muted = store.get('lb_mute') === '1';
 
@@ -793,15 +809,15 @@ function cardReal(c) {
 }
 
 /* Ícones de efeito: setas em vez de números */
-function fxIcons(fx) {
+function effectText(fx) {
   const arrows = (n, per) => (n > 0 ? '▲' : '▼').repeat(Math.min(3, Math.max(1, Math.round(Math.abs(n) / per))));
   const p = [];
-  if (fx.prepared || fx.rush) p.push('🛡️');
-  if (fx.pw) p.push('⚡' + arrows(fx.pw, 1));
-  if (fx.air) p.push('🫧' + arrows(fx.air, 1));
-  if (fx.sci) p.push('🔬' + arrows(fx.sci, 1));
-  if (fx.rad) p.push('☢️' + arrows(fx.rad, 5));
-  return p.join(' ');
+  if (fx.prepared || fx.rush) p.push(lang === 'pt' ? 'Escudo' : 'Shield');
+  if (fx.pw) p.push(tr({pt: 'Energia', en: 'Power'}) + ' ' + arrows(fx.pw, 1));
+  if (fx.air) p.push(tr({pt: 'Ar', en: 'Air'}) + ' ' + arrows(fx.air, 1));
+  if (fx.sci) p.push(tr({pt: 'Ciência', en: 'Science'}) + ' ' + arrows(fx.sci, 1));
+  if (fx.rad) p.push(tr({pt: 'Radiação', en: 'Radiation'}) + ' ' + arrows(fx.rad, 5));
+  return p.join(' · ');
 }
 
 /* ---------- desenho ---------- */
@@ -815,6 +831,7 @@ function setTexts() {
     ? (muted ? 'Ativar som' : 'Silenciar')
     : (muted ? 'Unmute' : 'Mute'));
   if (learnFn) $('learn').innerHTML = learnFn();
+  if (discoveryReveal.length && !busy) renderDiscovery();
   const n = getUnlocked().length;
   $('openAlbumBtn').textContent = lang === 'pt'
     ? `📓 Ver todas as descobertas (${n}/${DISC.length})`
@@ -836,14 +853,11 @@ function renderMeters() {
   $('m_rad').classList.toggle('low', G.rad >= 75);
   $('dayTxt').textContent = `${t('day')} ${Math.min(G.day + 1, R.DAYS)} ${t('of')} ${R.DAYS}`;
   $('dateTxt').textContent = fmtDate(G.start + Math.min(G.day, R.DAYS - 1) * DAY);
-  $('sun').style.setProperty('--sun', G.sun);
-  $('shield').className = 'shield' + (G.prepared ? ' ready' : G.rush ? ' rush' : '');
-  $('rover').classList.toggle('out', !!G.outside);
-  // A cara da tripulação mostra como a base está, sem precisar ler os medidores.
-  $('base').textContent = G.air <= R.AIR_USE ? '😮‍💨' : G.rad >= 75 ? '🤒' : G.rad >= R.RAD_SAFE ? '😟' : '🧑‍🚀';
+  lunarScene.sync(G);
 }
 function renderCard(animate) {
   const c = G.card; if (!c) return;
+  lunarScene.present(c);
   const card = $('card');
   card.className = 'card' + (c.alert ? ' alert' : '') + (animate ? ' in' : '');
   card.style.transform = '';
@@ -857,7 +871,8 @@ function renderCard(animate) {
   const fill = (btn, opt, arrow) => {
     const lk = locked(G, opt);
     btn.disabled = lk;
-    const fxTxt = c.quiz ? '🧠 ?' : (lk ? t('locked') : fxIcons(opt.fx));
+    const fxTxt = lk ? tr({pt: 'Energia insuficiente', en: 'Not enough power'})
+      : c.quiz ? '' : opt.hidden ? tr({pt: 'Efeito incerto', en: 'Uncertain outcome'}) : effectText(effectFor(G, opt));
     btn.innerHTML = `<span>${arrow === 'l' ? '← ' : ''}${tr(opt.label)}${arrow === 'r' ? ' →' : ''}</span><span class="fx">${fxTxt}</span>`;
   };
   if (!c.single) { fill($('btnL'), c.L, 'l'); $('tagL').textContent = tr(c.L.label); }
@@ -867,14 +882,13 @@ function renderCard(animate) {
 }
 function preview(side) {
   const c = G && G.card;
-  const fx = side && c && !c.quiz ? (c.single ? c.R.fx : c[side].fx) : {};
+  const option = side && c && !c.quiz && !discoveryReveal.length ? (c.single ? c.R : c[side]) : null;
+  const fx = option && !option.hidden && !locked(G, option) ? effectFor(G, option) : {};
   [['air', 1], ['pw', 1], ['rad', -1], ['sci', 1]].forEach(([k, goodDir]) => {
     const m = $('m_' + k), v = fx[k] || 0, pv = m.querySelector('.pv');
     m.classList.toggle('up', v > 0); m.classList.toggle('down', v < 0);
     if (v) { pv.textContent = v > 0 ? '▲' : '▼'; pv.className = 'pv ' + (v * goodDir > 0 ? 'good' : 'bad'); }
   });
-  if (side && (fx.prepared || fx.rush)) $('shield').className = 'shield ' + (fx.prepared ? 'ready' : 'rush');
-  else if (G) $('shield').className = 'shield' + (G.prepared ? ' ready' : G.rush ? ' rush' : '');
 }
 function toast(msg) {
   const e = $('toast'); e.textContent = msg; e.classList.add('show');
@@ -883,71 +897,101 @@ function toast(msg) {
 
 /* ---------- tempestade: partículas do Sol contra o escudo ---------- */
 const wait = ms => new Promise(r => setTimeout(r, ms));
-async function playOxygenEvent() {
-  const game = $('game'), scene = $('scene');
-  const height = scene.offsetHeight + $('deck').offsetHeight;
-  scene.style.setProperty('--event-height', height + 'px');
-  game.classList.add('oxygen-event');
+async function playTaskScene(out) {
+  const actions = LunarScene.actionsFor(out);
+  if (!actions.length) { await wait(240); return; }
+  const game=$('game'),scene=$('scene');
+  const height=scene.offsetHeight+$('deck').offsetHeight;
+  scene.style.setProperty('--event-height',height+'px');
+  game.classList.add('scene-event');
+  game.setAttribute('aria-busy','true');
+  $('btnL').disabled=$('btnR').disabled=true;
+  $('sceneCaption').textContent=out.storm
+    ? tr({pt:'Tempestade solar · Abrigo da tripulação',en:'Solar storm · Crew shelter'}) : tr(out.opt.label);
+  $('sceneDetail').textContent=cardText(out.card);
   try {
-    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) await wait(300);
-    renderMeters();
-    await wait(750);
+    if(!matchMedia('(prefers-reduced-motion: reduce)').matches) await wait(280);
+    for(const action of actions) await lunarScene.play(action.kind,action);
   } finally {
-    game.classList.remove('oxygen-event');
+    game.classList.remove('scene-event');
+    game.removeAttribute('aria-busy');
     scene.style.removeProperty('--event-height');
+    $('sceneCaption').textContent='';
   }
-}
-async function playStorm(m) {
-  const scene = $('scene');
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches || !scene.animate) return;
-  const sr = scene.getBoundingClientRect(), su = $('sun').getBoundingClientRect(), ba = $('base').getBoundingClientRect(), sh = $('shield').getBoundingClientRect();
-  const x0 = su.left - sr.left + su.width / 2, y0 = su.top - sr.top + su.height / 2;
-  const bx = ba.left - sr.left + ba.width / 2, by = ba.top - sr.top + ba.height * .6;
-  const rad = sh.width / 2 + 2;
-  scene.classList.add('storm');
-  const n = 14 + m.e.sev * 10;
-  let hits = 0;
-  for (let i = 0; i < n; i++) {
-    const p = document.createElement('div'); p.className = 'particle'; scene.appendChild(p);
-    const tx = bx + (Math.random() - .5) * 60, ty = by + (Math.random() - .5) * 16;
-    const blocked = Math.random() < m.block;
-    let ex = tx, ey = ty;
-    if (blocked) { const dx = tx - x0, dy = ty - y0, len = Math.hypot(dx, dy), k = (len - rad) / len; ex = x0 + dx * k; ey = y0 + dy * k; } else hits++;
-    const a = p.animate([
-      { transform: `translate(${x0}px, ${y0}px)`, opacity: 1 },
-      { transform: `translate(${ex}px, ${ey}px)`, opacity: 1, offset: .85 },
-      { transform: `translate(${ex}px, ${ey}px) scale(${blocked ? 2.4 : .4})`, opacity: 0 },
-    ], { duration: 900, delay: i * 38, easing: 'ease-in', fill: 'both' });
-    a.onfinish = () => p.remove();
-  }
-  await wait(700);
-  if (hits) { $('base').classList.add('hit'); }
-  await wait(n * 38 + 500);
-  $('base').classList.remove('hit'); scene.classList.remove('storm');
 }
 
 /* ---------- jogar ---------- */
+function renderDiscovery() {
+  const card = $('card');
+  card.className = 'card discovery-reveal in' + (discoveryReveal.some(item => item.first) ? ' first' : '');
+  card.style.transform = '';
+  $('tagL').style.opacity = $('tagR').style.opacity = 0;
+  $('cArt').textContent = discoveryReveal.map(({ entry }) => entry.ico).join(' ');
+  const content = discoveryReveal.map(({ entry: d, first }) => {
+    const item = document.createElement('div');
+    const name = document.createElement('strong');
+    const fact = document.createElement('p');
+    name.textContent = tr(d.name);
+    fact.textContent = tr(d.fact);
+    item.classList.toggle('first-discovery', first);
+    item.append(name, fact);
+    return item;
+  });
+  $('cTxt').replaceChildren(...content);
+  $('cNote').textContent = discoveryReveal.some(item => item.first)
+    ? tr({pt: 'Nova descoberta · Registrada no álbum', en: 'New discovery · Saved to the album'})
+    : tr({pt: 'Descoberta · Consulte no álbum', en: 'Discovery · Find it in the album'});
+  $('cReal').classList.add('hidden');
+  $('choices').classList.add('single');
+  $('btnL').classList.add('hidden');
+  $('btnR').disabled = false;
+  $('btnR').textContent = tr({pt: 'Continuar', en: 'Continue'});
+}
+
 async function act(side) {
-  if (busy || !G || G.over) return;
+  if (busy || !G) return;
+  if (discoveryReveal.length) {
+    busy = true;
+    flyCard(side);
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) await wait(240);
+    discoveryReveal = [];
+    busy = false;
+    if (G.over) return finish();
+    if (G.card.kind === 'flare') sfx('alert');
+    renderCard(true);
+    $('card').focus();
+    return;
+  }
+  if (G.over) return;
   const c = G.card, opt = c.single ? c.R : c[side];
   const card = $('card');
   if (locked(G, opt)) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); toast(t('locked')); sfx('lock'); lockHits++; tip(['locked']); return; }
   busy = true;
-  const dir = side === 'L' ? -1 : 1;
-  card.classList.add('fly'); card.style.transform = `translateX(${dir * 420}px) rotate(${dir * 24}deg)`;
+  flyCard(side);
   const out = choose(G, side);
   sfx(out.storm ? 'storm' : 'swipe');
-  const oxygenEvent = c.id === 'o2' && out.side === 'R';
-  if (out.storm) { preview(null); await playStorm(out.storm); }
-  else if (oxygenEvent) await playOxygenEvent();
-  else await wait(240);
-  if (!oxygenEvent) renderMeters();
+  preview(null);
+  await playTaskScene(out);
+  renderMeters();
   if (out.night && !G.over) toast('🌙 🫧▼  ☢️▲');
-  if (G.over) { await wait(500); busy = false; return finish(); }
-  if (out.found && out.found.length) {
-    const f = out.found;
-    showLearn(() => `<span>🔬 <b>${lang === 'pt' ? 'Nova descoberta' : 'New discovery'}: ${f.map(d => d.ico + ' ' + tr(d.name)).join(' + ')}</b><br>${tr(f[0].fact)}</span>`, true);
+  if (out.found?.length) {
+    const unlocked = new Set(getUnlocked());
+    discoveryReveal = out.found.map(entry => ({ entry, first: !unlocked.has(entry.id) }));
+    for (const { entry } of discoveryReveal) unlocked.add(entry.id);
+    store.set('lb_disc', JSON.stringify([...unlocked]));
+    preview(null);
+    showLearn(null);
+    renderDiscovery();
     sfx('disc');
+    busy = false;
+    $('btnR').focus();
+    return;
+  }
+  if (G.over) { await wait(500); busy = false; return finish(); }
+  if (out.opt.hidden) {
+    showLearn(() => '<span>' + (out.fx.sci
+      ? tr({pt: 'O sinal trouxe dados úteis para o laboratório.', en: 'The signal gave the lab useful data.'})
+      : tr({pt: 'O sinal não trouxe dados úteis. A análise gastou energia.', en: 'The signal held no useful data. Analyzing it used power.'})) + '</span>');
   } else {
     const keys = [c.id + ':' + out.side];
     if (out.night) keys.push('night');
@@ -956,7 +1000,7 @@ async function act(side) {
   }
   if (c.quiz) {
     if (out.quizOk) {
-      showLearn(() => `<span>🎉 <b>${lang === 'pt' ? 'Você lembrou! (+3 🫧  +3 ⚡  -12 ☢️)' : 'You remembered! (+3 🫧  +3 ⚡  -12 ☢️)'}</b><br>${tr(c.disc.fact)}</span>`, true);
+      showLearn(() => `<span>🎉 <b>${lang === 'pt' ? 'Você lembrou! A solução recupera ar e reduz radiação, com um pequeno custo de energia.' : 'You remembered! Your solution restores air and reduces radiation at a small power cost.'}</b><br>${tr(c.disc.fact)}</span>`, true);
       sfx('disc');
     } else {
       showLearn(() => `<span>🤔 <b>${lang === 'pt' ? 'Quase! A base gastou um pouco de ar e energia.' : 'Close! The base spent a little air and power.'}</b><br>${tr(c.disc.fact)}</span>`, false);
@@ -968,7 +1012,8 @@ async function act(side) {
 }
 
 function start() {
-  G = newGame(); lockHits = 0; prog = null; showLearn(null);
+  busy=false; lunarScene.reset();
+  discoveryReveal = []; G = newGame(); lockHits = 0; prog = null; showLearn(null);
   $('intro').classList.add('hidden'); $('end').classList.add('hidden'); $('game').classList.remove('hidden');
   renderMeters(); renderCard(true);
   if (!seen.has('hint')) { seen.add('hint'); $('card').classList.add('hint'); }
@@ -1057,6 +1102,7 @@ function openAlbum() {
   window.scrollTo(0, 0);
 }
 function finish() {
+  lunarScene.stop();
   // Coleção de descobertas e melhor resultado ficam guardados só neste navegador.
   let all = [];
   try { all = JSON.parse(store.get('lb_disc') || '[]'); } catch (e) {}
@@ -1172,23 +1218,62 @@ const unlockedTotal = getUnlocked().length;
 /* ---------- eventos ---------- */
 const card = $('card');
 let drag = null;
-card.addEventListener('pointerdown', e => { if (busy || !G || G.over) return; drag = { x: e.clientX, dx: 0 }; card.setPointerCapture(e.pointerId); card.classList.remove('snap', 'in', 'shake'); });
-card.addEventListener('pointermove', e => {
-  if (!drag) return;
-  drag.dx = e.clientX - drag.x;
-  card.style.transform = `translateX(${drag.dx}px) rotate(${drag.dx / 16}deg)`;
-  const side = drag.dx > 25 ? 'R' : drag.dx < -25 ? 'L' : null, k = Math.min(1, Math.abs(drag.dx) / 90);
-  $('tagR').style.opacity = side === 'R' ? k : 0;
-  $('tagL').style.opacity = side === 'L' && !G.card.single ? k : 0;
+function dragLimit() {
+  const deck = $('deck').getBoundingClientRect();
+  const center = (deck.left + deck.right) / 2;
+  const viewportRoom = Math.min(center, document.documentElement.clientWidth - center);
+  const deckRoom = deck.width / 2 + 26;
+  return Math.max(0, Math.min(deckRoom, viewportRoom) - card.offsetWidth / 2 - 2);
+}
+function moveCard(offset) {
+  const limit = dragLimit();
+  const angle = Math.sign(offset) * Math.min(8, Math.abs(offset) / 16, limit * 90 / (Math.PI * card.offsetHeight));
+  const rotationRoom = card.offsetHeight * Math.abs(Math.sin(angle * Math.PI / 180)) / 2;
+  const travel = Math.max(0, limit - rotationRoom);
+  const x = Math.max(-travel, Math.min(travel, offset));
+  card.style.transform = `translateX(${x}px) rotate(${angle}deg)`;
+}
+
+function flyCard(side) {
+  card.classList.add('fly');
+  moveCard(side === 'L' ? -120 : 120);
+}
+
+function resetDrag() {
+  card.classList.add('snap');
+  card.style.transform = '';
+  $('tagL').style.opacity = $('tagR').style.opacity = 0;
+  preview(null);
+}
+
+card.addEventListener('pointerdown', event => {
+  if (busy || !G || (G.over && !discoveryReveal.length) || !event.isPrimary || event.button !== 0) return;
+  drag = { id: event.pointerId, x: event.clientX };
+  card.setPointerCapture(event.pointerId);
+  card.classList.remove('snap', 'in', 'shake');
+});
+card.addEventListener('pointermove', event => {
+  if (drag?.id !== event.pointerId) return;
+  const offset = event.clientX - drag.x;
+  moveCard(offset);
+  if (discoveryReveal.length) return;
+  const side = offset > 25 ? 'R' : offset < -25 ? 'L' : null;
+  const opacity = Math.min(1, Math.abs(offset) / 90);
+  $('tagR').style.opacity = side === 'R' ? opacity : 0;
+  $('tagL').style.opacity = side === 'L' && !G.card.single ? opacity : 0;
   preview(side);
 });
 const drop = event => {
-  if (!drag) return;
-  const dx = drag.dx; drag = null;
-  if (event.type === 'pointerup' && Math.abs(dx) > 90) { act(dx > 0 ? 'R' : 'L'); if (!busy) { card.classList.add('snap'); card.style.transform = ''; preview(null); } }
-  else { card.classList.add('snap'); card.style.transform = ''; $('tagL').style.opacity = 0; $('tagR').style.opacity = 0; preview(null); }
+  if (drag?.id !== event.pointerId) return;
+  const offset = event.clientX - drag.x;
+  drag = null;
+  if (event.type === 'pointerup' && Math.abs(offset) > Math.max(22, Math.min(60, dragLimit() * .85))) {
+    act(offset > 0 ? 'R' : 'L');
+    if (busy) return;
+  }
+  resetDrag();
 };
-card.addEventListener('pointerup', drop); card.addEventListener('pointercancel', drop);
+card.addEventListener('pointerup', drop); card.addEventListener('pointercancel', drop); card.addEventListener('lostpointercapture', drop);
 [['btnL', 'L'], ['btnR', 'R']].forEach(([id, s]) => {
   const b = $(id);
   b.addEventListener('click', () => act(s));
@@ -1212,10 +1297,10 @@ $('againBtn').addEventListener('click', () => { factIdx++; start(); });
 document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click', () => {
   lang = lang === 'pt' ? 'en' : 'pt'; setTexts();
   if (!$('album').classList.contains('hidden')) openAlbum();
-  if (G && !busy) { renderMeters(); if (G.over) renderEnd(); else renderCard(false); }
+  if (G && !busy && !discoveryReveal.length) { renderMeters(); if (G.over) renderEnd(); else renderCard(false); }
 }));
 setTexts();
-window.__game = { get G() { return G; }, R, STORMS, Engine, act, setLang: l => { lang = l; setTexts(); } };   // para testes
+window.__game = { get G() { return G; }, get busy() { return busy; }, lunarScene, R, STORMS, Engine, act, setLang: l => { lang = l; setTexts(); } };   // para testes
 })();
 </script>
 </body>
