@@ -590,8 +590,7 @@ function choose(G, side) {
   if (c.quiz) {
     if (opt.ok) {
       G.air = Math.min(R.AIR_MAX, G.air + 3);
-      G.pw = Math.max(1, G.pw - 1);
-      G.rad = Math.max(0, G.rad - 12);
+      G.pw = Math.max(1, G.pw + 2);
       out.quizOk = true;
     } else {
       // Perde um pouco de ar e energia, mas trava acima do limite letal para não encerrar o jogo
