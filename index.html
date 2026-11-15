@@ -280,8 +280,8 @@ const LIFE = [
    `task` escolhe a animação; `pool` escolhe o grupo da descoberta. */
 /* Os rótulos são os próprios nomes das pesquisas, para o jogador saber qual descoberta vai ganhar. */
 const SCI = {
-  lab:   { key: 'lab', task: 'research', art: '🔬', label: B('Pesquisar pedras', 'Study rocks'), fx: { pw: -1, sci: 1 }, pool: 'rock' },
-  scope: { key: 'scope', task: 'observe', art: '🔭', label: B('Observar o Sol', 'Watch the Sun'), fx: { pw: -1, sci: 1 }, pool: 'sun' },
+  lab:   { key: 'lab', task: 'research', art: '🔬', label: B('Pesquisar pedras', 'Study rocks'), fx: { pw: -2, sci: 1 }, pool: 'rock' },
+  scope: { key: 'scope', task: 'observe', art: '🔭', label: B('Observar o Sol', 'Watch the Sun'), fx: { pw: -2, sci: 1 }, pool: 'sun' },
   rover: { key: 'rover', task: 'explore', art: '🚙', label: B('Ver crateras', 'See craters'), fx: { pw: -1, sci: 1, rad: 4, outside: true }, pool: 'crater' },
   // Dia de alerta solar: o jipe expõe menos (rad 3), como no ROVER_ALERT do Kelson. Usa a dica do jipe.
   roverAlert: { key: 'rover', task: 'explore', art: '🚙', label: B('Ver crateras', 'See craters'), fx: { pw: -1, sci: 1, rad: 3, outside: true }, pool: 'crater' },
