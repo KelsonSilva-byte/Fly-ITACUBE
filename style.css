@@ -114,8 +114,11 @@
   .debrief li { background:#0e1630; border-radius:12px; padding:.5rem .7rem; font-size:.92rem; line-height:1.35; }
   .book { display:grid; gap:.4rem; }
   .book .d { display:grid; grid-template-columns:auto 1fr; gap:.1rem .6rem; background:#0f2a1e; border-radius:12px; padding:.5rem .7rem; font-size:.88rem; line-height:1.35; }
-  .book .d .i { grid-row:span 2; font-size:1.6rem; align-self:center; }
+  .book .d .i { grid-row:span 4; font-size:1.6rem; align-self:center; }
+  .book .d.locked .i { grid-row:span 2; }
   .book .d b { color:#86efac; }
+  .book .d .base { color:#fde68a; font-size:.82rem; }
+  .book .d .src { color:#93c5fd; font-size:.75rem; justify-self:start; }
   .book .d.now { border:2px solid var(--sci); }
   .book .d.locked { background:#0e1630; opacity:.72; }
   .book .d.locked b { color:var(--muted); }
