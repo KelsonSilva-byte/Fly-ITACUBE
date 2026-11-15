@@ -5,7 +5,7 @@ const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const code = html.match(/\/\*ENGINE-START\*\/([\s\S]*?)\/\*ENGINE-END\*\//)[1];
 const Engine = new Function(code + '; return Engine;')();
 const { R, newGame, choose, locked, stars } = Engine;
-const N = +process.argv[2] || 3000;
+const N = +process.argv[2] || 30000;
 
 // Cada estratégia recebe (G, carta) e devolve 'L' ou 'R'.
 const can = (G, c) => !locked(G, c.R);
@@ -54,9 +54,9 @@ const S = {
 };
 
 console.log(`${N} partidas por estratégia · meta de ciência ${R.SCI_GOAL}\n`);
-console.log('estratégia'.padEnd(18), 'vitórias', ' 3★ ', ' 2★ ', ' 1★ ', 'ar✗ ', 'rad✗', ' ciência', ' radiação');
+console.log('estratégia'.padEnd(18), 'vitórias', ' 3★ ', ' 2★ ', ' 1★ ', 'ar✗ ', 'rad✗','en✗', ' ciência', ' radiação');
 for (const [name, f] of Object.entries(S)) {
-  const r = { win: 0, air: 0, rad: 0, s: [0, 0, 0, 0], sci: 0, radSum: 0 };
+  const r = { win: 0, air: 0, pw:0, rad: 0, s: [0, 0, 0, 0], sci: 0, radSum: 0 };
   for (let i = 0; i < N; i++) {
     const G = newGame();
     let guard = 0;
@@ -69,5 +69,5 @@ for (const [name, f] of Object.entries(S)) {
     r[G.over]++; r.s[stars(G)]++; r.sci += G.sci; r.radSum += G.rad;
   }
   const p = v => (v / N * 100).toFixed(0).padStart(3) + '%';
-  console.log(name.padEnd(18), p(r.win).padStart(8), p(r.s[3]), p(r.s[2]), p(r.s[1]), p(r.air), p(r.rad), (r.sci / N).toFixed(1).padStart(8), (r.radSum / N).toFixed(0).padStart(9));
+  console.log(name.padEnd(18), p(r.win).padStart(8), p(r.s[3]), p(r.s[2]), p(r.s[1]), p(r.air), p(r.rad), p(r.pw), (r.sci / N).toFixed(1).padStart(8), (r.radSum / N).toFixed(0).padStart(9));
 }
