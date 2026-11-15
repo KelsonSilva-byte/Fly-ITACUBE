@@ -153,6 +153,6 @@ e os links do DONKI presentes. Para repetir: `python -m http.server 8765` na pas
 - Testar com dedo em celular de verdade (o arrastar só foi testado por clique automático e teclado).
 - Arte: a cena e as cartas usam emojis e formas em CSS; ilustrações próprias ainda não existem.
 - A partida aleatória perde por falta de ar em 66% dos casos: observar se crianças de verdade travam nisso.
-- Molduras de descobertas, relatório e alerta solar em validação (ver `artes/REGRAS.md`). Nada disso está integrado ao `index.html`.
+- Molduras de descobertas, relatório e alerta solar integrados ao `index.html` em 15/11, ainda sem conferência em navegador e celular (ver `artes/REGRAS.md`).
 - Som da descoberta inédita não confirmado em partida.
 - Ideias não feitas: som, RadLab (dosimetria real da ISS) para comparar a radiação, modo Marte com atraso de comunicação.

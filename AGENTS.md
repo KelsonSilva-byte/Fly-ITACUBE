@@ -4,9 +4,9 @@ Base Lunar é um jogo de navegador, em português e inglês, para crianças de 7
 
 ## Onde paramos
 
-Atualizado em 15/11/2026, depois da sessão no ChatGPT que retomou o trabalho visual.
+Atualizado em 15/11/2026 (noite), depois da integração visual.
 
-**Git.** A branch `arte` está em `a208a80`, com 11 commits locais ainda não enviados a `origin/arte` (que está em `1edf8c4`). Eles incluem o merge de `base` feito em 15/11, com o rebalanceamento de eventos e as telas de pesquisas e descobertas, feitos por Kelson Silva e Luis Felipe Schmitt. Há alterações não commitadas em `index.html`, `style.css`, `assets/scene/lunar-scene.js` e `tools/scene-test.mjs`, além de `assets/audio/` e `assets/hud/pixel-icons.js` sem rastreio. Nada disso foi commitado.
+**Git.** Em 15/11 a branch `arte` recebeu o commit das alterações visuais (relatório de descobertas, alerta solar, áudio, ícones 16×16 e telas mínimas), foi enviada a `origin/arte` e mergeada com `origin/base`. O estado de `main` está no histórico do Git. As alterações de `base` (Kelson Silva e Luis Felipe Schmitt) incluem rebalanceamento de eventos e as telas de pesquisas e descobertas.
 
 **Visual (fora do git, em `artes/`).** As decisões estão em `artes/REGRAS.md`, seção "Molduras e revelação de descobertas". Resumo:
 - Descobertas: relatório no estilo de janela de computador, com barra de título, rolagem, selo ✦ Novo nos registros inéditos e um único X vermelho centralizado. As tarefas comuns mantêm o visual atual.
