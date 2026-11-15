@@ -55,12 +55,15 @@ Medidores (3 + contador):
 
 Cartas de cada dia, nesta ordem:
 1. **Dia**: mostra o Sol do dia e dá a energia.
-2. **Suporte de vida**: máquina de oxigênio (−2⚡, +4🫧) ou estufa (acender: −1⚡ +2🫧; apagar: +1⚡ −1🫧).
+2. **Suporte de vida**: uma das 12 cartas de manutenção do ar (`O2_CARDS`, peso 1 cada): ligar (−2⚡, +4🫧) ou poupar (+1⚡, −2🫧),
+   com números iguais em todas. Ou a estufa (`farm`, peso 4): acender (−1⚡ +2🫧); apagar (+1⚡ −2🫧).
 3. **Alerta de explosão** (só em dia de tempestade com explosão ligada no DONKI): hora e classe reais.
    Carregar o escudo (−3⚡) ou continuar a pesquisa (+1🔬).
 4. **Ciência** (`sciCard`): duas pesquisas, uma dentro da base (custa energia) e uma fora (custa radiação).
    Dentro: laboratório (−1⚡, +1🔬, grupo pedras) ou telescópio (−1⚡, +1🔬, grupo Sol), sorteado.
-   Fora: jipe na cratera (−1⚡, +2🔬, +5☢️, grupo crateras) ou buscar gelo a pé (+3☢️, +1🔬, grupo gelo), sorteado.
+   Fora: ver crateras de jipe (−1⚡, +1🔬, +4☢️; em dia de alerta, +3☢️, grupo crateras) ou buscar gelo a pé (+3☢️, +1🔬, grupo gelo), sorteado.
+   Os rótulos dos botões são os nomes das pesquisas ("Pesquisar pedras", "Observar o Sol", "Ver crateras", "Buscar gelo", "Recarregar baterias"),
+   e a carta diz "Está na hora da pesquisa! X ou Y?".
    Dia de alerta: dentro contra o jipe ("sair mesmo assim?"). Tempestade sem aviso: laboratório contra telescópio.
    Resgate: com energia ≤ 2 (`R.RESCUE_PW`) na hora da carta, a opção de dentro vira "Recarregar baterias" (+1⚡, −1🫧).
 5. **Fim do dia**: em dia de tempestade, a chegada dela; em data de evento real, a carta desse evento;
@@ -98,7 +101,7 @@ Aprendizado sem texto obrigatório (nada disso trava o jogo; é uma faixa de uma
   vazamento, abrigo, energia travada), uma frase explica o termo. Cada dica aparece uma vez só por sessão (lista `TIPS`).
 - **"O que esta missão mostrou":** até 4 frases no fim, tiradas do que a criança fez (escudo a tempo ou às pressas,
   saídas da base e a radiação que custaram, vezes em que faltou energia, energia perdida com a bateria cheia).
-- **Ajuda quando o ar está acabando:** com ar só para uma noite, a carta de suporte de vida é sempre a máquina de oxigênio,
+- **Ajuda quando o ar está acabando:** com ar só para uma noite, a carta de suporte de vida é sempre uma das cartas de manutenção do ar,
   com o aviso "o ar só dá para esta noite", e o medidor pisca.
 
 Outros detalhes: sons simples gerados na hora (botão 🔊 para silenciar), a cara da tripulação na base muda com o estado
@@ -136,16 +139,17 @@ node tools/embed-storms.mjs
 O simulador responde as perguntas de memória ao acaso.
 | Estratégia | Vitórias | 3★ | Derrota por ar | Derrota por radiação | Derrota por energia |
 |---|---|---|---|---|---|
-| Cuidadosa (mantém o ar, guarda 3⚡ para o escudo, pesquisa com a sobra) | 64% | 43% | 11% | 1% | 24% |
-| Só ciência (nunca usa escudo, sempre pesquisa fora da base) | 12% | 0% | 6% | 74% | 8% |
-| Só segurança (sempre escudo, só pesquisa dentro da base) | 49% | 35% | 19% | 0% | 32% |
+| Cuidadosa (mantém o ar, guarda 3⚡ para o escudo, pesquisa com a sobra) | 43% | 29% | 25% | 1% | 31% |
+| Só ciência (nunca usa escudo, sempre pesquisa fora da base) | 14% | 0% | 22% | 54% | 10% |
+| Só segurança (sempre escudo, só pesquisa dentro da base) | 26% | 19% | 38% | 0% | 36% |
 | Esquece o ar | 0% | 0% | 100% | 0% | 0% |
-| Sempre para a direita | 13% | 0% | 0% | 11% | 76% |
+| Sempre para a direita | 13% | 0% | 1% | 9% | 77% |
 | Sempre para a esquerda | 0% | 0% | 100% | 0% | 0% |
-| Aleatória | 12% | 2% | 72% | 7% | 10% |
+| Aleatória | 5% | 1% | 83% | 4% | 9% |
 
-Atenção: com a carta de ciência, "só segurança" chega a 3 estrelas (35%), porque pesquisar dentro da base todo dia já soma
-quase 8 pontos. Com meta 10, cai para 17% (cuidadosa: 37%). Ao mudar qualquer número em `R` ou nas cartas, rodar `node tools/sim.mjs` de novo.
+Atenção: "só segurança" ainda chega a 3 estrelas em 19% das partidas, porque pesquisar dentro da base todo dia já soma pontos.
+A meta de 10 foi testada antes da carta de manutenção e dos números do Kelson, e não foi rodada de novo.
+Ao mudar qualquer número em `R` ou nas cartas, rodar `node tools/sim.mjs` de novo.
 
 Interface: 20 partidas automáticas no Edge headless (15 em PT, 5 em EN) sem erros de JavaScript, com a tela final
 e os links do DONKI presentes. Para repetir: `python -m http.server 8765` na pasta do projeto e abrir

@@ -206,12 +206,60 @@ function pickMission() {
 }
 
 /* ---------- cartas ---------- */
+/* Manutenção do ar: 12 cartas com os mesmos números (cada uma com peso 1). A estufa tem peso 4 e segue 25% das chances. */
+const O2_CARDS = [
+  { id: 'o2', art: '🫧⚙️', w: 1,
+    text: B('A máquina usa eletricidade para separar a água em oxigênio. Ligar hoje?', 'The machine uses electricity to split water into oxygen. Turn it on today?'),
+    L: { label: B('Deixar desligado', 'Leave it off'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Ligar o gerador', 'Turn on the generator'), fx: { pw: -2, air: 4 } } },
+  { id: 'o2', art: '🌬️', w: 1,
+    text: B('O purificador tira o gás carbônico que a tripulação solta ao respirar. Ligar?', 'The purifier removes the carbon dioxide the crew breathes out. Turn it on?'),
+    L: { label: B('Deixar desligado', 'Leave it off'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Ligar o purificador', 'Turn on the purifier'), fx: { pw: -2, air: 4 } } },
+  { id: 'o2', art: '💧', w: 1,
+    text: B('A água da base pode virar oxigênio com eletricidade. Começar agora?', 'The base\'s water can become oxygen with electricity. Start now?'),
+    L: { label: B('Esperar', 'Wait'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Começar a eletrólise', 'Start electrolysis'), fx: { pw: -2, air: 4 } } },
+  { id: 'o2', art: '🌀', w: 1,
+    text: B('Os ventiladores espalham o ar bom por todo o módulo. Ligar?', 'Fans spread the good air through the whole module. Turn them on?'),
+    L: { label: B('Desligar para economizar', 'Turn off to save power'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Ligar os ventiladores', 'Turn on the fans'), fx: { pw: -2, air: 4 } } },
+  { id: 'o2', art: '🛢️', w: 1,
+    text: B('Um tanque de reserva pode liberar ar, mas o compressor gasta energia. Abrir?', 'A reserve tank can release air, but the compressor uses power. Open it?'),
+    L: { label: B('Manter fechado', 'Keep it closed'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Abrir o tanque', 'Open the tank'), fx: { pw: -2, air: 4 } } },
+  { id: 'o2', art: '♻️', w: 1,
+    text: B('A reciclagem transforma o gás em água, que depois vira oxigênio. Iniciar?', 'Recycling turns the gas into water, which later becomes oxygen. Start it?'),
+    L: { label: B('Adiar a reciclagem', 'Delay recycling'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Iniciar a reciclagem', 'Start recycling'), fx: { pw: -2, air: 4 } } },
+  { id: 'o2', art: '🔥', w: 1,
+    text: B('O ar frio deixa a tripulação cansada. O aquecedor usa energia, mas melhora a respiração. Ligar?', 'Cold air makes the crew tired. The heater uses power but improves breathing. Turn it on?'),
+    L: { label: B('Deixar frio', 'Leave it cold'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Ligar o aquecedor', 'Turn on the heater'), fx: { pw: -2, air: 4 } } },
+  { id: 'o2', art: '🔧', w: 1,
+    text: B('O gerador precisa de limpeza para não parar de vez. Fazer agora?', 'The generator needs cleaning or it may stop for good. Do it now?'),
+    L: { label: B('Adiar a manutenção', 'Postpone maintenance'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Fazer a manutenção', 'Do maintenance'), fx: { pw: -2, air: 4 } } },
+  { id: 'o2', art: '🖥️', w: 1,
+    text: B('Um painel mostra quanto ar resta. Acender para ver melhor?', 'A panel shows how much air is left. Turn it on to see better?'),
+    L: { label: B('Manter apagado', 'Keep it off'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Acender o painel', 'Turn on the panel'), fx: { pw: -2, air: 4 } } },
+  { id: 'o2', art: '🌿', w: 1,
+    text: B('Plantas precisam de luz para fazer ar. Ligar o módulo?', 'Plants need light to make air. Turn on the module?'),
+    L: { label: B('Apagar as luzes', 'Lights off'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Ligar as luzes do módulo', 'Lights on in the module'), fx: { pw: -2, air: 4 } } },
+  { id: 'o2', art: '📡', w: 1,
+    text: B('Um sensor ajuda a achar vazamentos de ar. Ligar?', 'A sensor helps find air leaks. Turn it on?'),
+    L: { label: B('Deixar desligado', 'Leave it off'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Ligar o sensor', 'Turn on the sensor'), fx: { pw: -2, air: 4 } } },
+  { id: 'o2', art: '🌙', w: 1,
+    text: B('A tripulação pode ativar o gerador à noite, quando a energia dos painéis é menor. Ligar?', 'The crew can run the generator at night, when panel power is lower. Turn it on?'),
+    L: { label: B('Esperar o dia', 'Wait for day'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Ligar o gerador à noite', 'Run the generator at night'), fx: { pw: -2, air: 4 } } },
+];
 const LIFE = [
-  { id: 'o2', art: '🫧⚙️', w: 3,
-    text: B('A máquina de oxigênio usa eletricidade para tirar ar da água. Ligar hoje?', 'The oxygen machine uses electricity to pull air out of water. Turn it on today?'),
-    L: { label: B('Poupar energia', 'Save power'), fx: { pw: 1, air: -2 } },
-    R: { label: B('Ligar', 'Turn it on'), fx: { pw: -2, air: 4 } } },
-  { id: 'farm', art: '🌱💡', w: 1,
+  ...O2_CARDS,
+  { id: 'farm', art: '🌱💡', w: 4,
     text: B('As plantas da estufa fazem ar para respirar, mas precisam de luz.', 'The greenhouse plants make air to breathe, but they need light.'),
     L: { label: B('Apagar as luzes', 'Lights off'), fx: { pw: 1, air: -2 } },
     R: { label: B('Acender as luzes', 'Lights on'), fx: { pw: -1, air: 2 } } },
@@ -748,7 +796,7 @@ function buildDay(G) {
   const dEv = G.dated[G.day];
   G.prepared = false; G.rush = false; G.outside = false;
   const q = [dayCard(G)];
-  q.push(G.air <= R.AIR_USE ? LIFE[0] : pick(LIFE.flatMap(c => Array(c.w).fill(c))));
+  q.push(G.air <= R.AIR_USE ? pick(O2_CARDS) : pick(LIFE.flatMap(c => Array(c.w).fill(c))));
   if (s && s.flr) q.push(flareCard(s));
   q.push(() => sciCard(G, s));
   const due = G.recall.filter(item => item.dueDay <= G.day);
