@@ -84,7 +84,7 @@ Tempestade (dose fraca 20, média 40, forte 70):
 - Jipe lá fora no dia: +60% da dose, sem proteção.
 - Depois da escolha roda a animação (partículas saem do Sol e param no escudo ou atingem a base) e uma carta de resultado.
 
-Estrelas (só quem completa os 10 dias): 3 = descobertas ≥ 8 E radiação < 50; 2 = só uma das duas; 1 = nenhuma.
+Estrelas (só quem completa os 10 dias): 3 = descobertas ≥ 8 E radiação < 70; 2 = só uma das duas; 1 = nenhuma.
 Derrotas (por falta de ar, falta de energia ou excesso de radiação) têm texto leve ("voltando para casa", "tente de novo com outra estratégia")
 e botão de jogar de novo no topo.
 
