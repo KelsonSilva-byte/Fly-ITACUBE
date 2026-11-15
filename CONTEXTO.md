@@ -58,9 +58,16 @@ Cartas de cada dia, nesta ordem:
 2. **Suporte de vida**: máquina de oxigênio (−2⚡, +4🫧) ou estufa (acender: −1⚡ +2🫧; apagar: +1⚡ −1🫧).
 3. **Alerta de explosão** (só em dia de tempestade com explosão ligada no DONKI): hora e classe reais.
    Carregar o escudo (−3⚡) ou continuar a pesquisa (+1🔬).
-4. **Ciência**: laboratório (−2⚡, +1🔬) ou jipe na cratera (−1⚡, +2🔬, +5☢️).
-   Em dia de alerta, é sempre o jipe ("sair mesmo assim?"); em dia de tempestade sem aviso, é sempre o laboratório.
-5. **Chegada da tempestade** (dia de tempestade) ou **evento** sorteado (poeira nos painéis, vazamento, telescópio, gelo perto da base).
+4. **Ciência** (`sciCard`): duas pesquisas, uma dentro da base (custa energia) e uma fora (custa radiação).
+   Dentro: laboratório (−1⚡, +1🔬, grupo pedras) ou telescópio (−1⚡, +1🔬, grupo Sol), sorteado.
+   Fora: jipe na cratera (−1⚡, +2🔬, +5☢️, grupo crateras) ou buscar gelo a pé (+3☢️, +1🔬, grupo gelo), sorteado.
+   Dia de alerta: dentro contra o jipe ("sair mesmo assim?"). Tempestade sem aviso: laboratório contra telescópio.
+   Resgate: com energia ≤ 2 (`R.RESCUE_PW`) na hora da carta, a opção de dentro vira "Recarregar baterias" (+1⚡, −1🫧).
+5. **Fim do dia**: em dia de tempestade, a chegada dela; em data de evento real, a carta desse evento;
+   nos outros dias, 50% **problema** (poeira nos painéis, vazamento, filtro entupido, poeira na câmara de ar),
+   25% **boa notícia** (reserva de ar, bateria auxiliar, módulo de carga, sinal fraco) e 25% nada
+   (`R.PROBLEM_CHANCE`, `R.GOOD_CHANCE`). Problemas e boas notícias saem de sacos embaralhados separados.
+A pergunta de memória, quando há, entra numa posição sorteada entre a carta do dia e a carta final.
 
 Tempestade (dose fraca 20, média 40, forte 70):
 - Escudo carregado no alerta: bloqueia 90%.
@@ -125,18 +132,20 @@ node tools/embed-storms.mjs
 - O endpoint direto kauai.ccmc.gsfc.nasa.gov não respondeu daqui e bloqueia CORS no navegador.
 - A página do desafio só carrega com JavaScript; os critérios acima vieram do resumo da equipe.
 
-## Equilíbrio (tools/sim.mjs, 3.000 partidas por estratégia)
-| Estratégia | Vitórias | 3★ | Derrota por ar | Derrota por radiação |
-|---|---|---|---|---|
-| Cuidadosa (mantém o ar, guarda 3⚡ para o escudo, pesquisa com a sobra) | 99% | 42% | 0% | 1% |
-| Só ciência (nunca usa escudo, sempre sai de jipe) | 19% | 0% | 0% | 81% |
-| Só segurança (sempre escudo, nenhuma pesquisa) | 100% | 0% | 0% | 0% |
-| Esquece o ar | 0% | 0% | 100% | 0% |
-| Sempre para a direita | 46% | 0% | 0% | 54% |
-| Sempre para a esquerda | 0% | 0% | 100% | 0% |
-| Aleatória | 24% | 1% | 66% | 10% |
+## Equilíbrio (tools/sim.mjs, 4.000 partidas por estratégia, 15/11/2026, meta de ciência 8)
+O simulador responde as perguntas de memória ao acaso.
+| Estratégia | Vitórias | 3★ | Derrota por ar | Derrota por radiação | Derrota por energia |
+|---|---|---|---|---|---|
+| Cuidadosa (mantém o ar, guarda 3⚡ para o escudo, pesquisa com a sobra) | 64% | 43% | 11% | 1% | 24% |
+| Só ciência (nunca usa escudo, sempre pesquisa fora da base) | 12% | 0% | 6% | 74% | 8% |
+| Só segurança (sempre escudo, só pesquisa dentro da base) | 49% | 35% | 19% | 0% | 32% |
+| Esquece o ar | 0% | 0% | 100% | 0% | 0% |
+| Sempre para a direita | 13% | 0% | 0% | 11% | 76% |
+| Sempre para a esquerda | 0% | 0% | 100% | 0% | 0% |
+| Aleatória | 12% | 2% | 72% | 7% | 10% |
 
-Nenhuma estratégia de um lado só chega a 3 estrelas. Ao mudar qualquer número em `R` ou nas cartas, rodar `node tools/sim.mjs` de novo.
+Atenção: com a carta de ciência, "só segurança" chega a 3 estrelas (35%), porque pesquisar dentro da base todo dia já soma
+quase 8 pontos. Com meta 10, cai para 17% (cuidadosa: 37%). Ao mudar qualquer número em `R` ou nas cartas, rodar `node tools/sim.mjs` de novo.
 
 Interface: 20 partidas automáticas no Edge headless (15 em PT, 5 em EN) sem erros de JavaScript, com a tela final
 e os links do DONKI presentes. Para repetir: `python -m http.server 8765` na pasta do projeto e abrir

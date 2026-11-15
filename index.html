@@ -177,6 +177,9 @@ const R = {
   STORM: { 1: 20, 2: 40, 3: 70 },
   BLOCK_READY: 0.9, BLOCK_RUSH: 0.5, OUTSIDE: 0.6,
   SHIELD_PW: 3,
+  RESCUE_PW: 2,              // com energia até aqui, a carta de ciência troca a pesquisa de dentro por "Recarregar baterias"
+  PROBLEM_CHANCE: 0.5,       // fim do dia sem tempestade: 50% problema,
+  GOOD_CHANCE: 0.25,         // 25% boa notícia, 25% nada
 };
 const DAY = 864e5;
 let rnd = Math.random;
@@ -213,66 +216,76 @@ const LIFE = [
     L: { label: B('Apagar as luzes', 'Lights off'), fx: { pw: 1, air: -2 } },
     R: { label: B('Acender as luzes', 'Lights on'), fx: { pw: -1, air: 2 } } },
 ];
-const LAB = { id: 'lab', art: '🔬🪨',
-  text: B('O laboratório pode estudar as pedras da Lua hoje. Ele gasta bastante energia.', 'The lab can study Moon rocks today. It uses a lot of power.'),
-  L: { label: B('Recarregar baterias', 'Recharge batteries'), fx: { pw: 1, air: -1 } },
-  R: { label: B('Pesquisar', 'Do research'), fx: { pw: -2, sci: 1 }, pool: 'rock' } };
-const ROVER = { id: 'rover', art: '🚙🕳️',
-  text: B('Uma cratera aqui perto pode ter gelo! Mas fora da base não tem escudo contra a radiação.', 'A nearby crater may have ice! But outside the base there is no shield against radiation.'),
-  L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -1 } },
-  R: { label: B('Explorar de jipe', 'Explore by rover'), fx: { pw: -1, sci: 2, rad: 5, outside: true }, pool: 'crater' } };
-const ROVER_ALERT = { id: 'roverAlert', art: '🚙⚠️',
-  text: B('O alerta solar está ligado. A cratera com gelo está logo ali… Sair de jipe mesmo assim?', 'The solar alert is on. The icy crater is right there… Drive out anyway?'),
-  L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -1 } },
-  R: { label: B('Explorar de jipe', 'Explore by rover'), fx: { pw: -1, sci: 2, rad: 5, outside: true }, pool: 'crater' } };
+/* Carta de ciência: uma pesquisa dentro da base (custa energia) contra uma fora da base (custa radiação).
+   `task` escolhe a animação; `pool` escolhe o grupo da descoberta. */
+const SCI = {
+  lab:   { key: 'lab', task: 'research', art: '🔬', label: B('Laboratório', 'Lab'), fx: { pw: -1, sci: 1 }, pool: 'rock',
+           say: B('O laboratório pode estudar pedras da Lua, mas gasta energia.', 'The lab can study Moon rocks, but it uses power.') },
+  scope: { key: 'scope', task: 'observe', art: '🔭', label: B('Telescópio', 'Telescope'), fx: { pw: -1, sci: 1 }, pool: 'sun',
+           say: B('O telescópio pode observar o Sol, mas gasta energia.', 'The telescope can watch the Sun, but it uses power.') },
+  rover: { key: 'rover', task: 'explore', art: '🚙', label: B('Jipe na cratera', 'Rover to the crater'), fx: { pw: -1, sci: 2, rad: 5, outside: true }, pool: 'crater',
+           say: B('Uma cratera perto pode ter gelo, mas fora da base não há escudo contra a radiação.', 'A nearby crater may have ice, but outside the base there is no shield against radiation.'),
+           sayAlert: B('O alerta solar está ligado, e a cratera está logo ali… Sair de jipe mesmo assim?', 'The solar alert is on, and the crater is right there… Drive out anyway?') },
+  ice:   { key: 'ice', task: 'sample', art: '🧊', label: B('Buscar gelo a pé', 'Walk to the ice'), fx: { rad: 3, sci: 1, outside: true }, pool: 'ice',
+           say: B('Um sensor achou gelo pertinho da base. Dá para ir a pé, mas lá fora tem mais radiação.', 'A sensor found ice close to the base. You can walk there, but there is more radiation outside.') },
+  rest:  { key: 'rest', task: 'power', art: '🔋', label: B('Recarregar baterias', 'Recharge batteries'), fx: { pw: 1, air: -1 },
+           say: B('As baterias estão quase vazias. Dá para recarregar e pesquisar outro dia.', 'The batteries are almost empty. You can recharge them and do research another day.') },
+};
+// Montada na hora em que aparece, para o resgate olhar a energia já com o Sol do dia.
+function sciCard(G, s) {
+  let inside = pick(['lab', 'scope']), outside;
+  if (s && !s.flr) outside = inside === 'lab' ? 'scope' : 'lab';   // tempestade sem aviso: sair seria injusto
+  else outside = s ? 'rover' : pick(['rover', 'ice']);             // dia de alerta: a tentação é o jipe
+  if (G.pw <= R.RESCUE_PW) inside = 'rest';
+  const a = SCI[inside], b = SCI[outside];
+  const sayB = s && s.flr && outside === 'rover' ? b.sayAlert : b.say;
+  return { id: 'sci', kind: 'sci', art: a.art + b.art, pair: [inside, outside],
+    text: B(`Hora da pesquisa! ${a.say.pt} ${sayB.pt}`, `Research time! ${a.say.en} ${sayB.en}`),
+    L: a, R: b };
+}
+/* Fim do dia (sem tempestade): problema, boa notícia ou nada. Toda carta tem custo dos dois lados. */
 const EVENTS = [
-  { id: 'reserveAir', art: '🫧⚙️',
+  { id: 'reserveAir', type: 'good', art: '🫧⚙️',
     text: B('O compressor pode ligar a reserva de ar. Quanto menos ar resta na base, mais espaço há para receber a reserva.',
             'The compressor can connect the backup air supply. The less air the base has, the more room there is for the reserve.'),
     L: { label: B('Desligar o compressor', 'Switch off the compressor'), fx: { pw: 1, air: -1 } },
     R: { label: B('Acionar a reserva', 'Connect the reserve'), fx: { pw: -2 }, adjust: G => ({ air: G.air <= 3 ? 5 : 2 }) } },
-  { id: 'reservePower', art: '🔋',
+  { id: 'reservePower', type: 'good', art: '🔋',
     text: B('A bateria auxiliar rende mais quando a carga da base está baixa. Para ligá-la, é preciso gastar ar na câmara de manutenção.',
             'The backup battery helps more when the base is low on charge. Connecting it uses air in the maintenance chamber.'),
     L: { label: B('Isolar a bateria', 'Isolate the battery'), fx: { air: 1, pw: -1 } },
     R: { label: B('Ligar a bateria', 'Connect the battery'), fx: { air: -1 }, adjust: G => ({ pw: G.pw <= 3 ? 4 : 2 }) } },
-  { id: 'signal', art: '📡',
+  { id: 'signal', type: 'good', art: '📡',
     text: B('A antena captou um sinal fraco. O laboratório ainda não sabe se ele traz dados úteis.',
             'The antenna picked up a weak signal. The lab does not yet know whether it carries useful data.'),
     L: { label: B('Desligar o receptor', 'Switch off the receiver'), fx: { pw: 1, air: -1 } },
     R: { label: B('Analisar o sinal', 'Analyze the signal'), fx: { pw: -1 }, hidden: true, resolveFx: () => ({ sci: rnd() < .55 ? 1 : 0 }), pool: 'sun' } },
-  { id: 'airlock', art: '🥾🧹',
+  { id: 'airlock', type: 'problem', art: '🥾🧹',
     text: B('Os trajes voltaram cheios de poeira lunar afiada na câmara de ar. Limpar agora?',
             'The spacesuits came back covered in sharp Moon dust in the airlock. Clean them now?'),
     L: { label: B('Limpar amanhã', 'Clean tomorrow'), fx: { air: -2 } },
     R: { label: B('Aspirar agora', 'Vacuum now'), fx: { pw: -1 } } },
-  { id: 'filter', art: '🚰⚙️',
+  { id: 'filter', type: 'problem', art: '🚰⚙️',
     text: B('O filtro que recicla a água e o ar da tripulação está ficando entupido.',
             'The filter that recycles the crew\'s water and air is getting clogged.'),
     L: { label: B('Modo econômico', 'Eco mode'), fx: { pw: 1, air: -2 } },
     R: { label: B('Limpar com força total', 'Full-power clean'), fx: { pw: -1, air: 2 } } },
-  { id: 'cargo', art: '📦🚙',
+  { id: 'cargo', type: 'good', art: '📦🚙',
     text: B('Um módulo de carga pousou pertinho da base com cilindros extras de ar e água!',
             'A cargo pod landed close to the base with extra air and water tanks!'),
     L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -1 } },
     R: { label: B('Buscar de jipe', 'Fetch by rover'), fx: { pw: -1, air: 3, rad: 4, outside: true } } },
-  { id: 'dust', art: '🧹☀️',
+  { id: 'dust', type: 'problem', art: '🧹☀️',
     text: B('A poeira da Lua cobriu os painéis solares.', 'Moon dust has covered the solar panels.'),
     L: { label: B('Deixar assim', 'Leave it'), fx: { pw: -1 } },
     R: { label: B('Sair para limpar', 'Go out and clean'), fx: { pw: 2, rad: 4, outside: true } } },
-  { id: 'leak', art: '🔧💨',
+  { id: 'leak', type: 'problem', art: '🔧💨',
     text: B('Um cano de ar está vazando um pouquinho.', 'An air pipe has a small leak.'),
     L: { label: B('Consertar depois', 'Fix it later'), fx: { air: -2 } },
     R: { label: B('Consertar agora', 'Fix it now'), fx: { pw: -1 } } },
-  { id: 'scope', art: '🔭☀️',
-    text: B('O telescópio pode observar o Sol hoje.', 'The telescope can watch the Sun today.'),
-    L: { label: B('Poupar energia', 'Save power'), fx: { pw: 1, air: -1 } },
-    R: { label: B('Observar', 'Observe'), fx: { pw: -2, sci: 1 }, pool: 'sun' } },
-  { id: 'ice', art: '🧊👣',
-    text: B('Um sensor achou gelo pertinho da base. Dá para ir a pé, mas lá fora tem mais radiação.', 'A sensor found ice close to the base. You can walk there, but there is more radiation outside.'),
-    L: { label: B('Poupar a viagem', 'Skip the trip'), fx: { pw: 1, air: -1 } },
-    R: { label: B('Buscar a amostra', 'Get the sample'), fx: { rad: 3, sci: 1, outside: true }, pool: 'ice' } },
 ];
+const PROBLEMS = EVENTS.filter(e => e.type === 'problem');
+const GOOD_NEWS = EVENTS.filter(e => e.type === 'good');
 /* Eventos reais de 2024–2025 mapeados pela data exata (só aparecem no dia civil correspondente) */
 const DATED_EVENTS = [
   { id: 'eclipse_2024_03', art: '🌍🌑',
@@ -741,7 +754,7 @@ function buildDay(G) {
   const q = [dayCard(G)];
   q.push(G.air <= R.AIR_USE ? LIFE[0] : pick(LIFE.flatMap(c => Array(c.w).fill(c))));
   if (s && s.flr) q.push(flareCard(s));
-  q.push(s ? (s.flr ? ROVER_ALERT : LAB) : bag(G, 'sci', [LAB, ROVER]));
+  q.push(() => sciCard(G, s));
   const due = G.recall.filter(item => item.dueDay <= G.day);
   if (due.length) {
     const item = pick(due);
@@ -754,7 +767,9 @@ function buildDay(G) {
     G.realLog.push({ day: G.day, ev: dEv });
     q.push(dEv);
   } else {
-    q.push(bag(G, 'ev', EVENTS));
+    const r = rnd();
+    if (r < R.PROBLEM_CHANCE) q.push(bag(G, 'problem', PROBLEMS));
+    else if (r < R.PROBLEM_CHANCE + R.GOOD_CHANCE) q.push(bag(G, 'good', GOOD_NEWS));
   }
   G.queue = q;
 }
@@ -901,6 +916,12 @@ const TIPS = {
   'dust:R': ['Fora da base, só o traje protege. Por isso os astronautas contam cada minuto que passam lá fora.',
              'Outside the base, only the suit protects you. That is why astronauts count every minute they spend out there.'],
   'dust:L': ['Painel sujo recebe menos luz e faz menos energia.', 'A dirty panel gets less light and makes less power.'],
+  'sci:rover': ['Fora da base, só o traje protege. Por isso os astronautas contam cada minuto que passam lá fora.',
+                'Outside the base, only the suit protects you. That is why astronauts count every minute they spend out there.'],
+  'sci:ice': ['O gelo das crateras pode virar água, ar e combustível. Por isso vale a pena ir buscar, mesmo com radiação.',
+              'Crater ice can become water, air and fuel. That is why it is worth fetching, even with radiation.'],
+  'sci:rest': ['Energia é limitada: às vezes o melhor é recarregar hoje e pesquisar amanhã.',
+               'Power is limited: sometimes the best move is to recharge today and do research tomorrow.'],
   'leak:L': ['Fora da base não existe ar. Qualquer furinho deixa o ar de dentro escapar para o espaço.',
              'There is no air outside the base. Any tiny hole lets the air inside escape into space.'],
   'leak:R': ['Fora da base não existe ar. Qualquer furinho deixa o ar de dentro escapar para o espaço.',
@@ -1003,6 +1024,11 @@ function cardNote(c) {
     return c.first ? d : d + (pt ? ' · 🌙 À noite a tripulação respirou e os raios cósmicos passaram pela base.' : ' · 🌙 Overnight the crew breathed and cosmic rays passed through the base.');
   }
   if (c.id === 'flare') return pt ? 'Carregar o escudo leva tempo e gasta energia.' : 'Charging the shield takes time and uses power.';
+  if (c.kind === 'sci') return c.pair[0] === 'rest'
+    ? (pt ? '🔋 Pouca energia: hoje dá para recarregar no lugar de uma pesquisa.' : '🔋 Low power: today you can recharge instead of one research.')
+    : (pt ? '🔬 Escolha uma pesquisa · dentro da base gasta energia, fora recebe radiação.' : '🔬 Pick one research · inside the base uses power, outside gets radiation.');
+  if (c.type === 'problem') return pt ? '⚠️ Problema na base' : '⚠️ Problem at the base';
+  if (c.type === 'good') return pt ? '🎁 Boa notícia' : '🎁 Good news';
   if (c.kind === 'result') return `☢️ +${c.met.inside + c.met.extra}`;
   return '';
 }
@@ -1211,7 +1237,7 @@ async function act(side) {
       ? tr({pt: 'O sinal trouxe dados úteis para o laboratório.', en: 'The signal gave the lab useful data.'})
       : tr({pt: 'O sinal não trouxe dados úteis. A análise gastou energia.', en: 'The signal held no useful data. Analyzing it used power.'})) + '</span>');
   } else {
-    const keys = [c.id + ':' + out.side];
+    const keys = [c.kind === 'sci' ? 'sci:' + out.opt.key : c.id + ':' + out.side];
     if (out.night) keys.push('night');
     if (G.card.kind === 'day' && G.card.sun === 1) keys.push('low');
     if (!tip(keys)) showLearn(null);
