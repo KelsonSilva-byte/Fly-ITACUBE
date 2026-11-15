@@ -29,7 +29,7 @@
 <!-- ===================== JOGO ===================== -->
 <section id="game" class="hidden">
   <div class="top">
-    <div><div class="day" id="dayTxt"></div><div class="date"><img src="assets/hud/calendario.png" alt=""><span id="dateTxt"></span></div></div>
+    <div class="day" id="dayTxt"></div>
     <div style="display:flex; gap:.4rem"><button class="lang" id="albumGameBtn" aria-label="Descobertas"><img src="assets/hud/album-descobertas.png" alt=""></button><button class="lang" id="muteBtn" aria-label="Som / Sound"><img src="assets/hud/som-ligado.png" alt=""></button><button class="lang" data-lang></button></div>
   </div>
 
@@ -189,22 +189,32 @@ const day0 = iso => Date.parse(iso.slice(0, 10) + 'T00:00:00Z');
 const pick = a => a[Math.floor(rnd() * a.length)];
 const B = (pt, en) => ({ pt, en });
 
+function sample(arr, n) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a.slice(0, n);
+}
+
 function pickMission() {
-  // Janela real de 10 dias com pelo menos uma tempestade (nunca no dia 1).
-  const pivot = pick(STORMS);
-  const off = 1 + Math.floor(rnd() * (R.DAYS - 2));
-  const start = day0(pivot.d) - off * DAY;
+  // Sorteia 2 a 3 tempestades reais (dias 2 a 10) e até 2 eventos datados nos dias livres.
+  const stormDaysPool = Array.from({ length: R.DAYS - 1 }, (_, i) => i + 1);
+  const stormCount = 1 + Math.floor(rnd() * 3);
+  const stormDays = sample(stormDaysPool, stormCount);
+  const chosenStorms = sample(STORMS, stormCount);
   const storms = {};
-  STORMS.forEach(e => {
-    const i = Math.round((day0(e.d) - start) / DAY);
-    if (i >= 1 && i < R.DAYS && (!storms[i] || e.sev > storms[i].sev)) storms[i] = e;
-  });
+  stormDays.forEach((d, idx) => { storms[d] = chosenStorms[idx]; });
+
+  const freeDays = Array.from({ length: R.DAYS }, (_, i) => i).filter(i => !storms[i]);
+  const eventCount = Math.min(freeDays.length, DATED_EVENTS.length, Math.floor(rnd()*3));
+  const eventDays = sample(freeDays, eventCount);
+  const chosenEvents = sample(DATED_EVENTS, eventCount);
   const dated = {};
-  DATED_EVENTS.forEach(e => {
-    const i = Math.round((day0(e.d) - start) / DAY);
-    if (i >= 0 && i < R.DAYS && !storms[i]) dated[i] = e;
-  });
-  return { start, storms, dated };
+  eventDays.forEach((d, idx) => { dated[d] = chosenEvents[idx]; });
+
+  return { storms, dated };
 }
 
 /* ---------- cartas ---------- */
@@ -774,7 +784,7 @@ function buildDay(G) {
 // seen: ids das descobertas que o jogador já tem no álbum (vem do navegador; no Node fica vazio).
 function newGame(seen = []) {
   const m = pickMission();
-  const G = { day: 0, air: R.AIR_START, pw: R.PW_START, rad: 0, sci: 0, start: m.start, storms: m.storms, dated: m.dated || {},
+  const G = { day: 0, air: R.AIR_START, pw: R.PW_START, rad: 0, sci: 0, storms: m.storms, dated: m.dated || {},
               phase: Math.floor(rnd() * R.SUN.length), bags: {}, met: [], over: null, card: null, queue: [], wasted: 0, found: [], trips: 0, tripRad: 0, realLog: [], recall: [],
               seen: [...seen], discDay: -1 };
   buildDay(G);
@@ -1017,7 +1027,7 @@ function cardNote(c) {
   if (c.quiz) return lang === 'pt' ? `🧠 Lembre da sua descoberta: ${tr(c.disc.name)}` : `🧠 Recall your discovery: ${tr(c.disc.name)}`;
   if ((c.id === 'o2' || c.id === 'farm') && G.air <= R.AIR_USE) return pt ? '⚠️ O ar só dá para esta noite!' : '⚠️ There is only enough air for tonight!';
   if (c.kind === 'day') {
-    const d = `${t('day')} ${G.day + 1} ${t('of')} ${R.DAYS} · ${fmtDate(G.start + G.day * DAY)}`;
+    const d = `${t('day')} ${G.day + 1} ${t('of')} ${R.DAYS}`;
     return c.first ? d : d + (pt ? ' · 🌙 À noite a tripulação respirou e os raios cósmicos passaram pela base.' : ' · 🌙 Overnight the crew breathed and cosmic rays passed through the base.');
   }
   if (c.id === 'flare') return pt ? 'Carregar o escudo leva tempo e gasta energia.' : 'Charging the shield takes time and uses power.';
@@ -1086,7 +1096,6 @@ function renderMeters() {
   $('m_air').classList.toggle('low', G.air <= R.AIR_USE);
   $('m_rad').classList.toggle('low', G.rad >= 75);
   $('dayTxt').textContent = `${t('day')} ${Math.min(G.day + 1, R.DAYS)} ${t('of')} ${R.DAYS}`;
-  $('dateTxt').textContent = fmtDate(G.start + Math.min(G.day, R.DAYS - 1) * DAY);
   lunarScene.sync(G);
 }
 function renderCard(animate) {
@@ -1418,8 +1427,8 @@ const unlockedTotal = getUnlocked().length;
   $('endFact').innerHTML = (pt ? '💡 <b>Você sabia?</b> ' : '💡 <b>Did you know?</b> ') + FACTS[factIdx % FACTS.length][pt ? 0 : 1];
 
   $('realIntro').textContent = pt
-    ? `Sua missão aconteceu entre ${fmtDate(G.start)} e ${fmtDate(G.start + (R.DAYS - 1) * DAY)}. Nesses dias, o Sol e o espaço fizeram isto de verdade:`
-    : `Your mission took place between ${fmtDate(G.start)} and ${fmtDate(G.start + (R.DAYS - 1) * DAY)}. On those days, the Sun and space really did this:`;
+    ? 'Os eventos desta missão aconteceram de verdade entre 2024 e 2025. Veja o registro real da NASA para cada um deles:'
+    : 'The events in this mission really happened between 2024 and 2025. Here is NASA\'s real record for each one:';
 
   // Junta tempestades solares (DONKI) e eventos datados em ordem cronológica da missão
   const timeline = [
