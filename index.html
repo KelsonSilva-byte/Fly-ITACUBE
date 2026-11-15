@@ -1218,7 +1218,7 @@ async function act(side) {
   }
   if (c.quiz) {
     if (out.quizOk) {
-      showLearn(() => `<span>🎉 <b>${lang === 'pt' ? 'Você lembrou! A solução recupera ar e reduz radiação, com um pequeno custo de energia.' : 'You remembered! Your solution restores air and reduces radiation at a small power cost.'}</b><br>${tr(c.disc.fact)}</span>`, true);
+      showLearn(() => `<span>🎉 <b>${lang === 'pt' ? 'Você lembrou! A solução recupera ar, com um pequeno custo de energia.' : 'You remembered! Your solution restores air and reduces radiation at a small power cost.'}</b><br>${tr(c.disc.fact)}</span>`, true);
       sfx('disc');
     } else {
       showLearn(() => `<span>🤔 <b>${lang === 'pt' ? 'Quase! A base gastou um pouco de ar e energia.' : 'Close! The base spent a little air and power.'}</b><br>${tr(c.disc.fact)}</span>`, false);
