@@ -12,26 +12,28 @@ f.onload=async()=>{
  const wait=ms=>new Promise(r=>setTimeout(r,ms));
  d.getElementById('startBtn').click();await pump(7000);
  const api=w.__game,check=(ok,msg)=>{if(!ok)errors.push(msg);};
- const cases=[['o2','R'],['dust','L'],['dust','R'],['rover','L'],['rover','R'],['ice','R'],['leak','R'],['lab','R'],['arriveSurprise','R'],['geminids_2024_12','R'],['eclipse_2025_03','L']];
+ const cases=[['o2','R'],['dust','L'],['dust','R'],['sci_rest','L'],['sci_explore','R'],['sci_sample','R'],['leak','R'],['sci_research','L'],['arriveSurprise','R'],['geminids_2024_12','R'],['eclipse_2025_03','L']];
  const selected=params.get('snapshot');
  for(const [id,side] of cases){
  const G=api.G;G.air=5;G.pw=8;G.rad=0;G.over=null;
  const option={label:{pt:'Executar tarefa',en:'Perform task'},fx:{pw:-1,air:1}};
  G.card={id,art:'',text:{pt:'Teste de integração: '+id,en:'Integration test: '+id},L:option,R:option};
- if(id==='lab'){option.fx.sci=1;option.pool='rock';}
+ // Carta de ciência: cada lado é uma tarefa; a animação vem de option.task.
+ if(id.startsWith('sci_')){G.card.id='sci';G.card.kind='sci';G.card.pair=['lab','rover'];option.task=id.slice(4);option.key=id.slice(4);}
+ if(id==='sci_research'){option.fx.sci=1;option.pool='rock';G.discDay=-1;}
  if(id==='arriveSurprise'){G.card.kind='arrive';G.card.resolve=true;G.card.storm={sev:2,d:'2024-01-03T20:05Z',flr:null,link:'https://science.nasa.gov/sun/'};}
  G.queue=[{id:'day',kind:'day',single:true,sun:3,art:'',text:{pt:'Próximo dia',en:'Next day'},R:option}];
  d.querySelector('[data-lang]').click();d.querySelector('[data-lang]').click();
  const before=d.getElementById('airValue').textContent;
  const pending=api.act(side);await wait(350);
- if(w.LunarScene.actionsFor({card:{id},side}).length){
+ if(w.LunarScene.actionsFor({card:G.card,side,opt:option}).length){
  check(d.getElementById('game').classList.contains('scene-event'),id+': cena não expandiu');
  check(d.getElementById('airValue').textContent===before,id+': nível mudou cedo');
  }
  if(selected===id){await pump(id.startsWith('geminids')?11000:1300);output.textContent='SNAPSHOT '+id+'\n'+JSON.stringify({errors,overflow:d.documentElement.scrollWidth>w.innerWidth,height:d.documentElement.scrollHeight,viewport:w.innerHeight});return;}
  await pump(40000);await pending;
  check(!api.busy,id+': entrada ficou bloqueada');
- if(id==='lab'){check(d.getElementById('card').classList.contains('discovery-reveal'),'Descoberta não aguardou a cena');await api.act('R');}
+ if(id==='sci_research'){check(d.getElementById('card').classList.contains('discovery-reveal'),'Descoberta não aguardou a cena');await api.act('R');}
  check(!d.getElementById('game').classList.contains('scene-event'),id+': cena não reduziu');
  check(d.getElementById('airValue').textContent==='6/10',id+': nível final incorreto');
  check(!d.getElementById('game').innerText.includes('undefined'),id+': undefined na interface');

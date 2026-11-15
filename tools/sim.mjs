@@ -18,17 +18,25 @@ const S = {
       case 'farm': return G.air <= 6 ? 'R' : 'L';
       case 'flare': return 'R';
       case 'arriveLate': case 'arriveSurprise': return 'R';
-      case 'lab': return spare >= 2 ? 'R' : 'L';
-      case 'rover': return spare >= 1 && G.rad < 22 ? 'R' : 'L';
-      case 'roverAlert': return 'L';
-      case 'scope': return spare >= 1 ? 'R' : 'L';
-      case 'ice': return G.rad < 15 ? 'R' : 'L';
+      case 'sci': {
+        // L = pesquisa dentro da base (ou recarregar), R = fora (ou a outra de dentro em dia de tempestade sem aviso)
+        const cost = o => -(o.fx.pw || 0), keep = G.storms[G.day]?.flr ? R.SHIELD_PW : 1;
+        const ok = o => G.pw - cost(o) >= keep && (!o.fx.outside || (G.rad < 30 && !G.storms[G.day]));
+        if (ok(c.L) && ok(c.R)) return c.R.fx.outside && G.rad < 15 ? 'R' : 'L';
+        return ok(c.R) ? 'R' : ok(c.L) ? 'L' : (cost(c.L) <= cost(c.R) ? 'L' : 'R');
+      }
       case 'dust': return G.pw < 4 && G.rad < 25 ? 'R' : 'L';
       case 'leak': return G.pw >= 1 ? 'R' : 'L';
+      case 'airlock': return G.pw >= 2 ? 'R' : 'L';
+      case 'filter': return G.air <= 6 && G.pw >= 2 ? 'R' : 'L';
+      case 'reserveAir': return G.air <= 6 && G.pw >= 4 ? 'R' : 'L';
+      case 'reservePower': return G.air >= 5 ? 'R' : 'L';
+      case 'cargo': return G.rad < 30 ? 'R' : 'L';
+      case 'signal': return G.pw >= 4 ? 'R' : 'L';
       default: return 'R';
     }
   },
-  // Só quer descobertas: nunca usa o escudo, sempre sai de jipe.
+  // Só quer descobertas: nunca usa o escudo, sempre escolhe a pesquisa de fora da base.
   'so ciencia': (G, c) => {
     switch (c.id) {
       case 'o2': return G.air <= 4 ? 'R' : 'L';
@@ -37,7 +45,7 @@ const S = {
       default: return 'R';
     }
   },
-  // Sempre o escudo e nunca arrisca: não pesquisa nada que custe.
+  // Sempre o escudo e nunca arrisca: só pesquisa dentro da base (ou recarrega).
   'so seguranca': (G, c) => {
     switch (c.id) {
       case 'o2': return G.air <= 6 ? 'R' : 'L';
