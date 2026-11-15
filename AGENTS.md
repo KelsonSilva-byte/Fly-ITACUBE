@@ -4,9 +4,22 @@ Base Lunar é um jogo de navegador, em português e inglês, para crianças de 7
 
 ## Onde paramos
 
-A branch `arte` foi publicada em `origin/arte` no commit `1edf8c4` com o cenário animado integrado à partida. O cenário de 256 × 88 pixels inclui Sol e estrelas com brilho variável, tripulação, hover, abrigo e caixas que ficam onde caem até serem recolhidas.
+Atualizado em 15/11/2026, depois da sessão no ChatGPT que retomou o trabalho visual.
 
-As cenas seguem o resultado da escolha. Recusar uma viagem mantém o hover parado, buscar gelo usa um astronauta a pé e limpar os painéis remove a poeira. A tempestade usa a proteção escolhida. Durante a cena, a partida aguarda a sequência antes de atualizar os medidores e apresentar eventuais descobertas. As descobertas ficam no lugar da carta até o jogador avançar e podem reaparecer como perguntas de memória.
+**Git.** A branch `arte` está em `a208a80`, com 11 commits locais ainda não enviados a `origin/arte` (que está em `1edf8c4`). Eles incluem o merge de `base` feito em 15/11, com o rebalanceamento de eventos e as telas de pesquisas e descobertas, feitos por Kelson Silva e Luis Felipe Schmitt. Há alterações não commitadas em `index.html`, `style.css`, `assets/scene/lunar-scene.js` e `tools/scene-test.mjs`, além de `assets/audio/` e `assets/hud/pixel-icons.js` sem rastreio. Nada disso foi commitado.
+
+**Visual (fora do git, em `artes/`).** As decisões estão em `artes/REGRAS.md`, seção "Molduras e revelação de descobertas". Resumo:
+- Descobertas: relatório no estilo de janela de computador, com barra de título, rolagem, selo ✦ Novo nos registros inéditos e um único X vermelho centralizado. As tarefas comuns mantêm o visual atual.
+- Tempestade: moldura própria de alerta (janela com barra vermelha e exclamação amarela, borda lavanda em degraus), luzes vermelhas pulsando, rastros vermelhos e laranjas saindo do Sol e um tremor breve restrito ao cenário. Com movimento reduzido, tudo fica estático.
+- Escudo: os rastros param na borda e viram pontos de luz que se apagam.
+- Fonte: Press Start 2P, a mesma do jogo.
+- Prévias: `artes/rascunhos/relatorio-descobertas/index.html` e `artes/rascunhos/cenario/index.html` (simulação de partida).
+
+**Pendente e não verificado.**
+- Nenhuma dessas prévias foi conferida no navegador, nem em celular.
+- O som da descoberta inédita (cinco notas ascendentes) não foi confirmado. Na conversa, o usuário disse que o som do jogo não pareceu mudar. O efeito só toca no primeiro registro de cada descoberta.
+- A duração da ida e volta do jipe (7,8 s, antes 12 s) foi relatada na conversa, mas não confirmei no código.
+- Falta decidir se a direção dos raios acompanha a posição real do Sol no horizonte.
 
 ## Onde mexer
 
@@ -28,10 +41,18 @@ As cenas seguem o resultado da escolha. Recusar uma viagem mantém o hover parad
 - Sirva o repositório por HTTP e abra `tools/scene-ui-test.html`. Na última entrega, o Edge passou nos 11 casos e o layout foi conferido em celular e tela horizontal.
 - Execute `node tools/sim.mjs 100` para rodar a simulação do motor. A simulação não substitui o teste manual da experiência.
 
+## Alterações de 15/11 (fim da tarde) no código do jogo
+
+- Raios da radiação: os radiais continuam saindo do Sol. Os que chegam à Lua são condensados (feixe estreito) e variam de comprimento. Quando estão na linha de visão, viram ponto.
+- Volume do som de descoberta (`reveal`) reduzido pela metade. Suposição: "esse efeito" era esse som. Confirmar.
+- Tensão: drone grave sintetizado (`syncTension`) sobe durante alerta e tempestade. Não usa o tema do Interstellar, que serve só de referência.
+- Telas inicial e final mínimas, com a classe `.min` (`index.html` e `style.css`). Para voltar ao texto completo, remova `.min`.
+- Ícones 16×16 (`assets/hud/pixel-icons.js`, bloco `hiRes`) para ☀ 🌑 🧑 🫧 ⚡ ⚠ ☢ 🔋. Os outros emojis continuam em 8×8. 🔬 ainda não foi refeito.
+- Capa nova em `assets/hud/capa-base-lunar.svg`, gerada em pixel art na paleta Eclipse índigo. Substitui a `base-panoramica.png` só na tela inicial.
+- Pendentes: gritos (aguardam os arquivos em `assets/audio/`), redesenho dos emojis em mais pixels (decisão de escopo: cerca de 50 ícones em 16×16) e conferência no navegador.
+
 ## Próxima etapa
 
-O responsável por esta sessão vai continuar o trabalho visual. Retome pela avaliação das cenas numa partida real. Confira se o ritmo funciona em sequência, se cada ação comunica a escolha e se cartas, descobertas e medidores continuam legíveis em telas pequenas. As artes dedicadas para a abertura e o fim da missão continuam em aberto.
-
-O balanceamento provavelmente ficará com outra pessoa. Se surgir um problema de equilíbrio durante os testes visuais, registre o caso para quem assumir essa frente.
+Abrir as duas prévias no navegador e conferir a fonte, o relatório e o alerta. Depois testar uma partida real com som ligado, usando janela privativa para repetir o primeiro registro. Só então integrar ao `index.html`. As artes de abertura e de fim de missão continuam em aberto. O balanceamento fica com a equipe, não com esta frente; se surgir problema de equilíbrio durante os testes visuais, registre o caso para quem assumir essa frente.
 
 Este arquivo é o ponto de retomada compartilhado. Se o Claude Code não carregar `AGENTS.md` automaticamente, indique o arquivo no início da sessão.

@@ -1,6 +1,6 @@
 # Contexto do projeto — NASA Space Apps 2026 (14–15/nov)
 
-Equipe Fly ITACUBE. Atualizado em 14/11/2026.
+Equipe Fly ITACUBE. Atualizado em 15/11/2026.
 
 ## Desafio
 "Build a Junior Astronaut Mission Trainer": jogo/app para crianças de 7–12 anos administrarem um posto na Lua ou em Marte,
@@ -25,7 +25,7 @@ CSA (kit de produção de comida na Lua).
 - **História real:** as tempestades reais do DONKI conduzem a missão. Elas viram cartas com data e hora reais,
   e não só uma tabela no final.
 - **Missão de 10 dias** (por enquanto; 7 dias foi cogitado para encurtar a partida).
-- **Sem commits por enquanto.** Os arquivos podem ser alterados, mas ninguém commita até a equipe liberar.
+- **Commits.** Até 14/11 ninguém commitava. Em 15/11 entraram commits de Kelson Silva e Luis Felipe Schmitt em `base`, e `arte` foi mergeada com `base`. Não há registro escrito de liberação; ver `AGENTS.md` para o estado de cada branch.
 
 ## Onde estão os arquivos
 Pasta de trabalho: `Nasa Space\Fly-ITACUBE\` (repositório git).
@@ -153,4 +153,6 @@ e os links do DONKI presentes. Para repetir: `python -m http.server 8765` na pas
 - Testar com dedo em celular de verdade (o arrastar só foi testado por clique automático e teclado).
 - Arte: a cena e as cartas usam emojis e formas em CSS; ilustrações próprias ainda não existem.
 - A partida aleatória perde por falta de ar em 66% dos casos: observar se crianças de verdade travam nisso.
+- Molduras de descobertas, relatório e alerta solar em validação (ver `artes/REGRAS.md`). Nada disso está integrado ao `index.html`.
+- Som da descoberta inédita não confirmado em partida.
 - Ideias não feitas: som, RadLab (dosimetria real da ISS) para comparar a radiação, modo Marte com atraso de comunicação.
