@@ -108,7 +108,7 @@ Aprendizado sem texto obrigatório (nada disso trava o jogo; é uma faixa de uma
   vazamento, abrigo, energia travada), uma frase explica o termo. Cada dica aparece uma vez só por sessão (lista `TIPS`).
 - **"O que esta missão mostrou":** até 4 frases no fim, tiradas do que a criança fez (escudo a tempo ou às pressas,
   saídas da base e a radiação que custaram, vezes em que faltou energia, energia perdida com a bateria cheia).
-- **Ajuda quando o ar está acabando:** com ar só para uma noite, a carta de suporte de vida é sempre a máquina de oxigênio,
+- **Ajuda quando o ar está acabando:** com ar só para uma noite, a carta de suporte de vida é sempre uma das cartas de manutenção do ar,
   com o aviso "o ar só dá para esta noite", e o medidor pisca.
 
 Outros detalhes: sons simples gerados na hora (botão 🔊 para silenciar), cena lunar animada em `<canvas>` (`lunar-scene.js`)
@@ -150,13 +150,13 @@ node tools/embed-storms.mjs
 O simulador responde as perguntas de memória ao acaso.
 | Estratégia | Vitórias | 3★ | Derrota por ar | Derrota por radiação | Derrota por energia |
 |---|---|---|---|---|---|
-| Cuidadosa (mantém o ar, guarda 3⚡ para o escudo, pesquisa com a sobra) | 64% | 43% | 11% | 1% | 24% |
-| Só ciência (nunca usa escudo, sempre pesquisa fora da base) | 12% | 0% | 6% | 74% | 8% |
-| Só segurança (sempre escudo, só pesquisa dentro da base) | 49% | 35% | 19% | 0% | 32% |
+| Cuidadosa (mantém o ar, guarda 3⚡ para o escudo, pesquisa com a sobra) | 43% | 29% | 25% | 1% | 31% |
+| Só ciência (nunca usa escudo, sempre pesquisa fora da base) | 14% | 0% | 22% | 54% | 10% |
+| Só segurança (sempre escudo, só pesquisa dentro da base) | 26% | 19% | 38% | 0% | 36% |
 | Esquece o ar | 0% | 0% | 100% | 0% | 0% |
-| Sempre para a direita | 13% | 0% | 0% | 11% | 76% |
+| Sempre para a direita | 13% | 0% | 1% | 9% | 77% |
 | Sempre para a esquerda | 0% | 0% | 100% | 0% | 0% |
-| Aleatória | 12% | 2% | 72% | 7% | 10% |
+| Aleatória | 5% | 1% | 83% | 4% | 9% |
 
 Atenção: com a carta de ciência, "só segurança" chega a 3 estrelas (35%), porque pesquisar dentro da base todo dia já soma
 quase 8 pontos. Com meta 10, cai para 17% (cuidadosa: 37%). A tabela acima foi medida antes de aleatorizar `R.SUN` (`0–2`)

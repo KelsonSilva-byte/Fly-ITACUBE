@@ -75,11 +75,11 @@ In the game, that warning decides whether the shield can be charged.
 
 | Strategy | Wins | 3 stars |
 |---|---|---|
-| Careful: keeps air up, saves power for the shield, researches with what is left | 64% | 43% |
-| Science only: never uses the shield, always researches outside | 12% | 0% |
-| Safety only: always the shield, only researches inside | 49% | 35% |
+| Careful: keeps air up, saves power for the shield, researches with what is left | 43% | 29% |
+| Science only: never uses the shield, always researches outside | 14% | 0% |
+| Safety only: always the shield, only researches inside | 26% | 19% |
 | Forgets the air | 0% | 0% |
-| Random choices | 12% | 2% |
+| Random choices | 5% | 1% |
 
 3 stars need **8 science points and radiation below half**. Surviving is not enough: ignoring the shield never reaches 3 stars.
 
@@ -122,6 +122,7 @@ São três medidores e um contador:
 **A lição principal:** energia é limitada, e proteger a tripulação de uma tempestade solar custa energia que faria falta em outra coisa.
 Quando não há energia para uma opção, ela fica travada. Nenhuma escolha é de graça: toda carta troca uma coisa por outra.
 
+A carta de manutenção do ar tem 12 variações (um gerador, um purificador, a eletrólise da água e outras), todas com os mesmos custos.
 Todo dia tem uma **carta de ciência** com duas pesquisas: uma dentro da base (laboratório ou telescópio), que custa energia,
 e uma fora (jipe ou buscar gelo a pé), que custa radiação. Com a energia muito baixa, a opção de dentro vira "recarregar baterias".
 Os dias calmos podem terminar com um **problema** para resolver (painéis sujos, vazamento, filtro entupido) ou com uma **boa notícia** (reserva de ar, bateria auxiliar, módulo de carga), e as duas coisas têm custo.
@@ -177,11 +178,11 @@ No jogo, esse aviso decide se dá para carregar o escudo.
 
 | Estratégia | Vitórias | 3 estrelas |
 |---|---|---|
-| Cuidadosa: mantém o ar, guarda energia para o escudo, pesquisa com a sobra | 64% | 43% |
-| Só ciência: nunca usa o escudo, sempre pesquisa fora da base | 12% | 0% |
-| Só segurança: sempre o escudo, só pesquisa dentro da base | 49% | 35% |
+| Cuidadosa: mantém o ar, guarda energia para o escudo, pesquisa com a sobra | 43% | 29% |
+| Só ciência: nunca usa o escudo, sempre pesquisa fora da base | 14% | 0% |
+| Só segurança: sempre o escudo, só pesquisa dentro da base | 26% | 19% |
 | Esquece o ar | 0% | 0% |
-| Escolhas aleatórias | 12% | 2% |
+| Escolhas aleatórias | 5% | 1% |
 
 3 estrelas exigem **8 pontos de ciência e radiação abaixo da metade**. Não basta sobreviver: quem ignora o escudo nunca chega a 3 estrelas.
 
