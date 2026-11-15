@@ -26,7 +26,7 @@ CSA (kit de produção de comida na Lua).
   Eles viram cartas com data e hora reais, e não só uma tabela no final.
 - **Missão de 10 dias** (por enquanto; 7 dias foi cogitado para encurtar a partida), sem data de calendário fixa no cabeçalho,
   para permitir sortear mais tempestades e eventos reais por partida.
-- **Sem commits por enquanto.** Os arquivos podem ser alterados, mas ninguém commita até a equipe liberar.
+- **Commits.** Até 14/11 ninguém commitava. Em 15/11 entraram commits de Kelson Silva e Luis Felipe Schmitt em `base`, e `arte` foi mergeada com `base`. Não há registro escrito de liberação; ver `AGENTS.md` para o estado de cada branch.
 
 ## Onde estão os arquivos
 Pasta de trabalho: `Nasa Space\Fly-ITACUBE\` (repositório git).
@@ -179,4 +179,6 @@ e os links do DONKI presentes. Para repetir: `python -m http.server 8765` na pas
 - Testar com dedo em celular de verdade (o arrastar só foi testado por clique automático e teclado).
 - Arte: a cena superior já tem pixel art animada em `<canvas>` (`lunar-scene.js`) e o HUD tem ícones próprios, mas as cartas ainda usam emojis.
 - A partida aleatória perde por falta de ar em 72% dos casos: observar se crianças de verdade travam nisso (especialmente com a nova variação solar).
+- Molduras de descobertas, relatório e alerta solar integrados ao `index.html` em 15/11, ainda sem conferência em navegador e celular (ver `artes/REGRAS.md`).
+- Som da descoberta inédita não confirmado em partida.
 - Ideias não feitas: RadLab (dosimetria real da ISS) para comparar a radiação, modo Marte com atraso de comunicação.

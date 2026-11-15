@@ -1,5 +1,5 @@
 /* Pixel scene rendered on a 256 × 88 logical grid. No draft assets required. */
-window.LunarScene={create(canvas){
+window.LunarScene={create(canvas, onAudioFrame){
 'use strict';
 const earth = new Image();
 earth.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEISURBVEhLnZTRDcJADEO7BR9MwgxITMEXA7AB/LMfu4CC5FP66stdiWS1jRLbybVdlkGcLs9PD6zdFSQTrvfbJnc4nveJZbIRsih5NiHix+vdCOK+eibKaUROAuWYd+hOwh2zcQaZY0UeY+VDm3FKuClX7pWkewnmvDOgms0UvQY2uhoao8DvwDMRG5VzIiRzubg2AUKEvDqyCl2BAPf6D+yKKDIr5OrKCdgoMQfWDgXoJIPkJBXab6O3knh2HyGFcj7Xtw/Nuc8idEb3AfaXAipigwPJVd/IeyIzAm6CyHd/2RQYQcQUIG+LLJDdkTgj3NqDrUJORuQUIk8ZfD0rsHdXcAV7HX8BHIf5MP+E+eMAAAAASUVORK5CYII=';
@@ -8,6 +8,7 @@ const ctx=canvas.getContext('2d');
 ctx.imageSmoothingEnabled=false;
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const shield={value:'none'};
+let skyTime=0, skyTarget=0, eclipseDay=null;
 let state={day:1,hour:8,sun:3,dust:false,leak:false,power:true,farm:false};
 let active=null,completion=null,generation=0,loopId=0,task=null,clock=0,lastNow=null,running=false;
 const palettes = [
@@ -69,7 +70,7 @@ const crew = [
   { x: 151, y: 61, range: 10, phase: .37, visor: '#FFCF72' },
   { x: cargoStation, y: 61, range: 4, phase: .70, visor: '#8591DC' }
 ];
-const durations = { intro: 6500, alert: 18000, storm: 19500, meteors: 18500, eclipse: 8000, explore: 12000, sample: 6500, clean: 3000, repair: 3000, filter:3000, oxygen: 3200, power: 2200, farm: 2200, research: 3200, observe: 3200, prepare: 2600, airlock: 2600 };
+const durations = { intro: 6500, alert: 18000, storm: 19500, meteors: 18500, eclipse: 8000, explore: 7800, sample: 6500, clean: 3000, repair: 3000, filter:3000, oxygen: 3200, power: 2200, farm: 2200, research: 3200, observe: 3200, prepare: 2600, airlock: 2600 };
 const emergencies = new Set(['alert', 'storm', 'meteors']);
 // O tempo dramático é compartilhado por porta, equipe e efeitos.
 function eventProgress(kind, raw) {
@@ -200,7 +201,6 @@ const layers = {
       }
     });
   }],
-  terra: ['Terra', () => { if (earth.complete && earth.naturalWidth) ctx.drawImage(earth, 198, 9); }],
   sol: ['Sol', s => {
     // Disco estável, borda em degraus e luz respirando: sem faíscas de explosão.
     const pulse=reduceMotion.matches?.5:.5+.5*Math.sin(s.time/1450);
@@ -210,15 +210,50 @@ const layers = {
     disk(s.sunX-1,s.sunY-1,7,mix('#FFE1A3','#F3F3FF',.40+.16*pulse));
     rect(s.sunX-5,s.sunY-6,6,1,'#F3F3FF');
     rect(s.sunX-7,s.sunY-4,1,4,'#F3F3FF');
-    if (s.kind === 'eclipse') {
-      const moonShadowX = s.sunX + Math.round((s.progress - .5) * 58);
-      for (let dy = -14; dy < 14; dy++) {
-        const dx = Math.floor(Math.sqrt(196 - dy * dy));
-        const left = Math.max(s.sunX - dx, moonShadowX - dx);
-        const right = Math.min(s.sunX + dx, moonShadowX + dx);
-        if (right >= left) rect(left, s.sunY + dy, right - left + 1, 1, s.sky);
+  }],
+  terra: ['Terra', s => {
+    const { earthX, earthY, occultation } = s;
+    if (s.kind === 'eclipse') disk(earthX, earthY, 13, '#08091B');
+    if (!earth.complete || !earth.naturalWidth) return;
+    ctx.save();
+    ctx.globalAlpha = 1 - occultation * .85;
+    ctx.drawImage(earth, earthX - 12, earthY - 12);
+    ctx.restore();
+  }],
+  radiacaoSolar: ['Radiação solar', s => {
+    if (s.kind !== 'storm' || s.progress < impactStart || s.progress >= .766) return;
+    const insideShield = (x, y) => s.protection > 0 && y <= dome.ground
+      && ((x - dome.center) / dome.radiusX) ** 2 + ((y - dome.ground) / dome.radiusY) ** 2 <= 1;
+    const sourceInside = insideShield(s.sunX, s.sunY);
+    [...trails, ...trails].forEach(([offset, spread, strength], index) => {
+      const age = (s.progress - impactStart) * 24 - offset * .4;
+      if (age < 0) return;
+      const radial = index < trails.length;
+      const targetAngle = Math.atan2(68 - s.sunY, 137 - s.sunX);
+      const angle = radial ? (index + spread) / trails.length * Math.PI * 2 : targetAngle + (spread - .5) * .14;
+      const pointLike = !radial && Math.abs(spread - .5) < .06;
+      const dx = Math.cos(angle), dy = Math.sin(angle);
+      const head = 11 + (reduceMotion.matches ? offset : age % 1) * 245;
+      const foreshortening = radial ? (index % 5 === 0 ? .04 : .18 + strength * .82) : .3 + strength * .7;
+      const tail = Math.max(11, head - Math.max(1, (5 + head * .045) * foreshortening));
+      if (pointLike) {
+        const px = s.sunX + dx * head, py = s.sunY + dy * head;
+        if (!insideShield(px, py)) rect(px, py, 1, 1, '#FFCF72');
+        return;
       }
-    }
+      for (let distance = 11; distance <= head; distance++) {
+        const x = s.sunX + dx * distance, y = s.sunY + dy * distance;
+        if (insideShield(x, y)) {
+          if (sourceInside) continue;
+          if (distance >= tail) {
+            rect(x - dx * 2, y - dy * 2, 1, 1, '#FFCF72');
+            rect(x - dx * 4 + dy * 2, y - dy * 4 - dx * 2, 1, 1, '#FF983F');
+          }
+          break;
+        }
+        if (distance >= tail) rect(x, y, 1, 1, distance > head - 3 ? '#FFCF72' : strength > .5 ? '#FF514D' : '#FF983F');
+      }
+    });
   }],
   terreno: ['Terreno e crateras', s => {
     poly([[0,64],[10,61],[31,62],[39,59],[52,59],[62,63],[102,64],[129,62],[155,62],[173,65],[198,62],[221,59],[230,59],[245,63],[256,64],[256,88],[0,88]], s.ground);
@@ -229,6 +264,16 @@ const layers = {
     poly([[198,78],[206,76],[230,76],[241,79],[236,83],[205,83]], s.ground);
     rect(207, 79, 27, 2, '#08091B');
 
+  }],
+  sombras: ['Sombras solares', s => {
+    const direction = (128-s.sunX)/128;
+    ctx.save();
+    ctx.globalAlpha=.28*(1-s.occultation);
+    for (const [x,y,height,width] of [[124,67,24,35],[167,65,15,24],[72,61,12,18],[33,67,10,26]]) {
+      const length=height*(1+s.sunY/30);
+      poly([[x,y],[x+width,y],[x+width+direction*length,y+4],[x+direction*length,y+4]],'#08091B');
+    }
+    ctx.restore();
   }],
   base: ['Estrutura da base', s => {
 
@@ -281,18 +326,20 @@ const layers = {
     for (const y of [53,57,61,65,69]) rect(100,y,4,1,s.base);
   }],
   luzes: ['Janelas, antena e porta', s => {
-    const window = mix(s.ground, state.farm?'#b9d3a2':'#FFCF72', s.lit);
+    const lightsOff = s.kind === 'eclipse' && s.clip.lights === false;
+    const window = s.kind === 'storm' ? (s.blink ? '#FF514D' : '#8F2943')
+      : mix(s.ground, state.farm?'#b9d3a2':'#FFCF72', s.lit);
     for (const x of [111, 120, 129, 138, 156, 163]) {
       rect(x, 51 + (x > 150 ? 6 : 0), 5, 5, s.dark);
-      rect(x+1, 52 + (x > 150 ? 6 : 0), 3, 3, window);
+      rect(x+1, 52 + (x > 150 ? 6 : 0), 3, 3, lightsOff ? '#08091B' : window);
     }
-    rect(130, 32, 2, 1, s.blink ? '#FFCF72' : s.base);
-    rect(181, 56, 7, 1, window);
+    rect(130, 32, 2, 1, !lightsOff && s.blink ? '#FFCF72' : s.base);
+    rect(181, 56, 7, 1, lightsOff ? '#08091B' : window);
   }],
   rover: ['Hover lunar', s => {
     const exploring = s.kind === 'explore';
-    const outward = exploring ? between(s.progress, .41, .55) : 0;
-    const back = exploring ? between(s.progress, .64, .78) : 0;
+    const outward = exploring ? between(s.progress, .41, .53) : 0;
+    const back = exploring ? between(s.progress, .66, .78) : 0;
     const x = hoverHome - (hoverHome + 37) * (outward - back);
     if (x + 37 < 0) return;
     const moving = (outward > 0 && outward < 1) || (back > 0 && back < 1);
@@ -405,18 +452,6 @@ const layers = {
       rect(183,39,1,2,s.sky);
       rect(183,42,1,1,s.sky);
     }
-    if (s.kind === 'storm' && s.progress >= impactStart && s.progress < .766) {
-      for (const [offset, spread, strength] of trails) {
-        const p = between(s.progress, impactStart + offset * .05, .765);
-        const endY = 43 + spread * 18;
-        const domeEdge = dome.center - dome.radiusX * Math.sqrt(1 - ((dome.ground - endY) / dome.radiusY) ** 2);
-        const blocked = s.protection && (shield.value === 'ready' || strength > .48);
-        const destination = blocked ? domeEdge : shelterDoor;
-        const x = lerp(s.sunX, destination, p);
-        const y = lerp(s.sunY + (spread - .5) * 12, endY, p);
-        rect(x, y, 2, 1, '#FFCF72');
-      }
-    }
     if (s.kind === 'meteors' && s.progress >= impactStart && s.progress < .756) {
       for (const [offset, spread] of trails.slice(0, 8)) {
         const p = between(s.progress, impactStart + offset * .04, .745);
@@ -441,23 +476,60 @@ function draw(){
   const clip=active,kind=clip?.kind||'idle';
   const raw=clip?between(clock,clip.start,clip.end):1;
   const progress=eventProgress(kind,raw);
-  const eclipse=kind==='eclipse'?Math.max(0,1-Math.abs(progress-.5)*3):0;
   const h=state.hour;
   const noon=clamp((h-3)/9,0,1)*clamp((22-h)/9,0,1);
-  const illumination=noon*(state.sun/4)*(1-eclipse*.92);
+  skyTime += (skyTarget - skyTime) * (reduceMotion.matches ? 1 : .012);
+  const lunarDay = skyTime;
+  const cycle = lunarDay * Math.PI * 2 / 29.53;
+  const earthX = 172 + Math.sin(cycle) * 4;
+  const earthY = 27 + Math.cos(cycle) * 3;
+  const passage = lunarDay - eclipseDay;
+  // Keep the eclipse passage linear near contact and compress its distant ends.
+  const offset = passage * 18;
+  const compressed = Math.sign(offset) * (26 + 42 * Math.tanh((Math.abs(offset) - 26) / 42));
+  let sunX = eclipseDay === null ? 35 + 165 * between(lunarDay, 0, 10)
+    : earthX + (Math.abs(offset) <= 26 ? offset : compressed);
+  let sunY = earthY + (eclipseDay === null ? 25 : Math.min(12, Math.abs(passage) * 2));
+  let eclipse = 0;
+  if (kind === 'eclipse') {
+    const transit = between(progress, .12, .88);
+    sunX = lerp(sunX, earthX+26, transit);
+    sunY = earthY + (clip.clearance ?? 0);
+  }
+  if (eclipseDay !== null || kind === 'eclipse') eclipse = 1 - between(Math.hypot(sunX-earthX,sunY-earthY),0,25);
+  sunX = Math.round(sunX);
+  sunY = Math.round(sunY);
+  const illumination = noon * (state.sun / 4) * (1 - eclipse * .92);
   const palette=h<14?palettes[1]:palettes[2];
   const [sky,dark,ground,base,sun]=palettes[0].map((c,i)=>mix(c,palette[i],illumination));
   const emergency=emergencies.has(kind);
   const door=emergency?Math.max(Math.min(between(progress,.37,.40),1-between(progress,.53,.55)),Math.min(between(progress,.59,.61),1-between(progress,.755,.77)))
     :kind==='intro'?1-between(progress,.01,.04):0;
   const protection=emergency&&shield.value!=='none'&&kind!=='meteors'?Math.min(between(progress,.59,.61),1-between(progress,.745,.77)):0;
-  const scene={sky,dark,ground,base,sun,sunX:20+Math.round(h/4),sunY:43-Math.round(noon*(5+state.sun)),door,protection,emergency,kind,clip,progress,time:clock,starTime:clock,blink:reduceMotion.matches||Math.floor(clock/420)%2===0,lit:clamp(.82-illumination/2+eclipse/4,0,1)};
+  const scene={sky,dark,ground,base,sun,sunX,sunY,earthX:Math.round(earthX),earthY:Math.round(earthY),occultation:eclipse,door,protection,emergency,kind,clip,progress,time:clock,starTime:clock,blink:reduceMotion.matches||Math.floor(clock/420)%2===0,lit:clamp(.82-illumination/2+eclipse/4,0,1)};
   ctx.clearRect(0,0,256,88);
   for(const [,drawLayer] of Object.values(layers)) drawLayer(scene);
+  if (eclipse > 0) {
+    rect(0, 0, 256, 88, 'rgba(5, 3, 12, ' + eclipse * .96 + ')');
+    if (clip?.lights !== false) layers.luzes[1](scene);
+  }
+  canvas.dataset.solarImpact = kind === 'storm' && progress >= impactStart + .03 && progress < .766 ? 'true' : 'false';
+  if (onAudioFrame) {
+    const outward = kind === 'explore' ? between(progress, .41, .53) : 0;
+    const back = kind === 'explore' ? between(progress, .66, .78) : 0;
+    const roverX = hoverHome - (hoverHome + 37) * (outward - back);
+    const roverMoving = roverX + 33 > 0 && ((outward > 0 && outward < 1) || (back > 0 && back < 1));
+    const fallen = emergency && crew.some((person, index) => crewPose(person, index, scene).fallen);
+    const runningToShelter = emergency && progress >= .065 && progress < .49;
+    const call = runningToShelter ? progress < .15 ? 1 : progress < .38 ? 2 : 3 : 0;
+        const impact = (kind === 'storm' || kind === 'meteors') && progress >= impactStart && progress < .766;
+    onAudioFrame(roverMoving, fallen, call, impact ? kind : '', clock);
+  }
   canvas.dataset.animation=kind;
   canvas.dataset.progress=progress.toFixed(3);
 }
 function finishClip(){
+  if(active?.kind==='eclipse' && eclipseDay!==null){skyTime=eclipseDay+26/18;skyTarget=Math.max(skyTarget,skyTime);}
   if(active?.kind==='clean') state.dust=false;
   if(active?.kind==='repair') state.leak=false;
   active=null;
@@ -473,7 +545,7 @@ function tick(now,token){
 function begin(kind,options={}){
   shield.value=options.shield||'none';
   if(kind==='farm')state.farm=options.enabled;
-  active={kind,start:clock,end:clock+durations[kind],origins:crew.map(p=>{const r=routinePose(p,clock);return [r.x,r.y];})};
+  active={kind,lights:options.lights,clearance:options.clearance,start:clock,end:clock+durations[kind],origins:crew.map(p=>{const r=routinePose(p,clock);return [r.x,r.y];})};
   if(reduceMotion.matches) { clock=active.end;finishClip();draw();return Promise.resolve(); }
   return new Promise(resolve=>completion=resolve);
 }
@@ -484,13 +556,19 @@ async function play(kind,options={}){
   if(!durations[kind])throw new Error('Unknown scene: '+kind);
   await begin(kind,options);
 }
-function reset(){generation++;finishClip();state={day:1,hour:8,sun:3,dust:false,leak:false,power:true,farm:false};clock=0;lastNow=null;task=null;if(!running){running=true;const token=++loopId;requestAnimationFrame(now=>tick(now,token));}void begin('intro');}
+function reset(){generation++;finishClip();skyTime=0;skyTarget=0;eclipseDay=null;state={day:1,hour:8,sun:3,dust:false,leak:false,power:true,farm:false};clock=0;lastNow=null;task=null;if(!running){running=true;const token=++loopId;requestAnimationFrame(now=>tick(now,token));}void begin('intro');}
 function present(card){
   task=card?.id||null;
   if(task==='dust'||/^geminids|^quadrantids/.test(task||''))state.dust=true;
   if(task==='leak')state.leak=true;
 }
-function sync(game){state.day=game.day+1;state.sun=game.sun;state.hour=game.card?.kind==='day'?8:Math.min(20,9+(5-game.queue.length)*2);}
+function sync(game){
+  const scheduled = Object.entries(game.dated ?? {}).find(([, event]) => event.id.startsWith('eclipse_'));
+  eclipseDay = scheduled ? Number(scheduled[0]) + .5
+    : game.card?.id?.startsWith('eclipse_') ? game.day + .5 : null;
+  skyTarget = Math.max(skyTime, game.day + Math.max(0,5-game.queue.length)/6);
+  if (game.day===0 && skyTime===0) skyTime=skyTarget;
+  state.day=game.day+1;state.sun=game.sun;state.hour=game.card?.kind==='day'?8:Math.min(20,9+(5-game.queue.length)*2);}
 function stop(){generation++;loopId++;running=false;lastNow=null;finishClip();}
 reduceMotion.addEventListener?.('change',()=>{
   if(reduceMotion.matches&&active){clock=active.end;finishClip();draw();}
@@ -503,7 +581,10 @@ return {play,reset,present,sync,stop,get snapshot(){return {...state,kind:active
 window.LunarScene.actionsFor = out => {
   const id=out.card.id, right=out.side==='R';
   if(out.storm)return [{kind:'storm',shield:out.storm.mode}];
-  if(id.startsWith('eclipse_'))return [{kind:'eclipse'}];
+  if(id.startsWith('eclipse_')) {
+    const clearance = id === 'eclipse_2024_03' ? 19 : id === 'eclipse_2024_09' ? 10 : 0;
+    return [{kind:'eclipse',clearance,lights:right}];
+  }
   if(/^(geminids|quadrantids)_/.test(id))return [{kind:'meteors'},...(right?[{kind:'clean'}]:[])];
   if(out.card.quiz||out.card.kind==='day'||out.card.kind==='result')return [];
   if(id==='flare')return [{kind:right?'prepare':'research'}];

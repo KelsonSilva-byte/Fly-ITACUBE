@@ -3,6 +3,8 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 let now=0, frames=[];
 const ctx=new Proxy({}, {get:(t,p)=>t[p]??(()=>{}),set:(t,p,v)=>(t[p]=v,true)});
+let solarPixels=[];
+ctx.fillRect=(x,y,width)=>{if(ctx.fillStyle==='#FFE1A3')solarPixels.push([x,width]);};
 const canvas={getContext:()=>ctx,dataset:{}};
 const motion={matches:false};
 const context={window:{},document:{hidden:false},Image:class {complete=true;naturalWidth=24;},matchMedia:()=>motion,
@@ -31,5 +33,16 @@ for(const kind of ['storm','meteors','explore','sample','oxygen','prepare','obse
 }
 promise=scene.play('farm',{enabled:true});await advance(2400);await promise;assert.equal(scene.snapshot.farm,true);
 scene.sync({day:3,sun:1,card:{kind:'day'},queue:[]});assert.equal(scene.snapshot.day,4);assert.equal(scene.snapshot.sun,1);
+scene.reset();await advance(6600);
+scene.sync({start:Date.parse('2025-03-14'),day:0,sun:3,card:{kind:'task'},queue:[1,2],dated:{0:{id:'eclipse_2025_03'}}});
+await advance(5000);assert.equal(scene.snapshot.kind,'idle');
+for (const lights of [false,true]) {
+ promise=scene.play('eclipse',{lights,clearance:0});await advance(9000);await promise;
+ await advance(1000);assert.equal(scene.snapshot.kind,'idle');
+}
+scene.reset();
+scene.sync({start:Date.parse('2024-01-05'),day:0,sun:3,card:{kind:'day'},queue:[],dated:{}});
+solarPixels=[];await advance(7000);
+assert.ok(solarPixels.some(([x,width])=>x>=0 && x+width<=256),'Sun visible in a mission without an eclipse');
 scene.stop();motion.matches=true;scene.reset();await scene.play('explore');assert.equal(scene.snapshot.kind,'idle');scene.stop();
 console.log('PASS: routes, completion, persistent dust/leak, shelter events, lighting, reduced motion.');

@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Base Lunar — Junior Astronaut Mission Trainer</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=clear-shapes">
 </head>
 <body>
 <main>
 
 <!-- ===================== INÍCIO ===================== -->
-<section id="intro" class="panel">
+<section id="intro" class="panel min">
   <div style="text-align:right"><button class="lang" data-lang></button></div>
-  <div class="hero" aria-hidden="true">🌑🧑‍🚀☀️</div>
+  <img class="mission-panorama" src="assets/hud/capa-base-lunar.svg" alt="Base Lunar"><div class="hero" aria-hidden="true"></div>
   <h1 data-t="title"></h1>
   <p data-t="intro1"></p>
   <ul class="how">
@@ -30,7 +30,7 @@
 <section id="game" class="hidden">
   <div class="top">
     <div class="day" id="dayTxt"></div>
-    <div style="display:flex; gap:.4rem"><button class="lang" id="albumGameBtn" aria-label="Descobertas"><img src="assets/hud/album-descobertas.png" alt=""></button><button class="lang" id="muteBtn" aria-label="Som / Sound"><img src="assets/hud/som-ligado.png" alt=""></button><button class="lang" data-lang></button></div>
+    <div style="display:flex; gap:.4rem"><button class="lang" id="albumGameBtn" aria-label="Descobertas"><span class="pc-icon" aria-hidden="true"></span></button><button class="lang" id="muteBtn" aria-label="Som / Sound"><img src="assets/hud/som-ligado.png" alt=""></button><button class="lang" data-lang></button></div>
   </div>
 
   <div class="scene" id="scene" aria-hidden="true">
@@ -70,6 +70,11 @@
   <div class="deck" id="deck">
     <div class="card" id="card" tabindex="0" role="group" aria-live="polite">
       <span class="tag l" id="tagL"></span><span class="tag r" id="tagR"></span>
+      <div class="report-bar hidden" id="reportBar">
+        <span class="report-symbol" id="reportSymbol" aria-hidden="true"></span>
+        <strong id="reportTitle"></strong>
+        <button type="button" id="reportClose"></button>
+      </div>
       <div class="art" id="cArt" aria-hidden="true"></div>
       <div class="txt" id="cTxt"></div>
       <div class="note" id="cNote"></div>
@@ -87,9 +92,9 @@
 </section>
 
 <!-- ===================== FIM ===================== -->
-<section id="end" class="panel hidden" aria-live="polite">
+<section id="end" class="panel hidden min" aria-live="polite">
   <div style="text-align:right"><button class="lang" data-lang></button></div>
-  <div class="hero" id="endArt" aria-hidden="true"></div>
+  <img class="mission-panorama" src="assets/hud/base-panoramica.png" alt=""><div class="hero" id="endArt" aria-hidden="true"></div>
   <h1 id="endTitle" style="text-align:center"></h1>
   <div class="stars" id="stars" aria-hidden="true"></div>
   <div class="sum" id="endSum"></div>
@@ -109,15 +114,12 @@
   </details>
 </section>
 <!-- ===================== ÁLBUM DE DESCOBERTAS ===================== -->
-<section id="album" class="panel hidden" aria-live="polite">
-  <div style="display:flex; justify-content:space-between; align-items:center; gap:.5rem;">
-    <button class="lang" id="closeAlbumBtn"></button>
-    <button class="lang" data-lang></button>
-  </div>
-  <h1 id="albumTitle"></h1>
+<section id="album" class="panel hidden" aria-labelledby="albumTitle">
+  <div class="report-bar"><span class="pc-icon" aria-hidden="true"></span><h1 id="albumTitle"></h1><button class="lang" data-lang></button><button class="lang" id="closeAlbumBtn" type="button"></button></div>
   <p class="coll" id="albumSub"></p>
   <div class="book" id="albumGrid"></div>
 </section>
+<div id="studyWindows"></div>
 <footer data-t="footer"></footer>
 </main>
 
@@ -391,8 +393,8 @@ const DATED_EVENTS = [
             'Lunar eclipse! Earth\'s shadow crossed the Moon and dimmed the light on the solar panels.'),
     record: B('Em 25 de março de 2024 ocorreu um eclipse lunar penumbral, dois dias após a tempestade solar de 23 de março.',
               'On March 25, 2024, a penumbral lunar eclipse occurred, two days after the March 23 solar storm.'),
-    L: { label: B('Poupar aquecimento', 'Save heating'), fx: { air: -1 } },
-    R: { label: B('Manter base aquecida', 'Keep base warm'), fx: { pw: -2 } } },
+    L: { label: B('Poupar energia e apagar as luzes', 'Save power and turn off the lights'), fx: { air: -1 } },
+    R: { label: B('Manter aquecimento e luzes', 'Keep heating and lights on'), fx: { pw: -2 } } },
 
   { id: 'donki_x87_2024_05', art: '🔭☀️',
     d: '2024-05-14T16:51Z', source: 'NASA DONKI',
@@ -411,8 +413,8 @@ const DATED_EVENTS = [
             'Partial lunar eclipse! Part of Earth\'s shadow cooled the Moon\'s surface for a few hours.'),
     record: B('Em 18 de setembro de 2024 ocorreu um eclipse lunar parcial, logo após a tempestade de partículas de 17 de setembro.',
               'On September 18, 2024, a partial lunar eclipse occurred, right after the September 17 particle storm.'),
-    L: { label: B('Poupar aquecimento', 'Save heating'), fx: { air: -1 } },
-    R: { label: B('Manter base aquecida', 'Keep base warm'), fx: { pw: -2 } } },
+    L: { label: B('Poupar energia e apagar as luzes', 'Save power and turn off the lights'), fx: { air: -1 } },
+    R: { label: B('Manter aquecimento e luzes', 'Keep heating and lights on'), fx: { pw: -2 } } },
 
   { id: 'geminids_2024_12', art: '☄️🧹',
     d: '2024-12-14T01:00Z', source: 'NASA Meteor Watch',
@@ -441,8 +443,8 @@ const DATED_EVENTS = [
             'Total lunar eclipse! Earth completely blocked the Sun and temperatures plunged at the base.'),
     record: B('Em 14 de março de 2025 ocorreu um eclipse lunar total, mergulhando a face visível da Lua na sombra da Terra.',
               'On March 14, 2025, a total lunar eclipse occurred, plunging the Moon\'s near side into Earth\'s shadow.'),
-    L: { label: B('Poupar aquecimento', 'Save heating'), fx: { air: -1 } },
-    R: { label: B('Manter base aquecida', 'Keep base warm'), fx: { pw: -2 } } },
+    L: { label: B('Poupar energia e apagar as luzes', 'Save power and turn off the lights'), fx: { air: -1 } },
+    R: { label: B('Manter aquecimento e luzes', 'Keep heating and lights on'), fx: { pw: -2 } } },
 ];
 /* Descobertas: cada uma é um fato real da NASA ligado a uma restrição da base (ar, energia, radiação, comida, construção).
    10 por grupo: rock = laboratório, crater = jipe, ice = gelo e água, sun = telescópio. `src` é a página da NASA citada no álbum. */
@@ -874,8 +876,8 @@ function buildDay(G) {
 }
 
 // seen: ids das descobertas que o jogador já tem no álbum (vem do navegador; no Node fica vazio).
-function newGame(seen = []) {
-  const m = pickMission();
+function newGame(eventCard, seen = []) {
+  const m = eventCard ? {storms:{},dated:{0:eventCard}} : pickMission();
   const G = { day: 0, air: R.AIR_START, pw: R.PW_START, rad: 0, sci: 0, storms: m.storms, dated: m.dated || {},
               phase: Math.floor(rnd() * R.SUN.length), bags: {}, met: [], over: null, card: null, queue: [], wasted: 0, found: [], trips: 0, tripRad: 0, realLog: [], recall: [],
               seen: [...seen], discDay: -1 };
@@ -960,7 +962,7 @@ function stars(G) {
   return a && b ? 3 : a || b ? 2 : 1;
 }
 
-return { R, STORMS, DISC, newGame, choose, locked, effectFor, stars, setRng: f => { rnd = f; } };
+return { R, STORMS, DISC, DATED_EVENTS, arrivalCard, quizCard, newGame, choose, locked, effectFor, stars, setRng: f => { rnd = f; } };
 })();
 /*ENGINE-END*/
 
@@ -969,7 +971,7 @@ return { R, STORMS, DISC, newGame, choose, locked, effectFor, stars, setRng: f =
 'use strict';
 const { R, STORMS, DISC, newGame, choose, locked, effectFor, stars } = Engine;
 const $ = id => document.getElementById(id);
-const lunarScene = LunarScene.create($('lunarCanvas'));
+const lunarScene = LunarScene.create($('lunarCanvas'), syncSceneAudio);
 const DAY = 864e5;
 let lang = (navigator.language || 'pt').toLowerCase().startsWith('pt') ? 'pt' : 'en';
 let G = null, busy = false, lockHits = 0, prog = null, learnFn = null, discoveryReveal = [];
@@ -978,18 +980,50 @@ let muted = store.get('lb_mute') === '1';
 
 /* Sons simples feitos na hora (sem arquivos) */
 let ac = null;
-function tone(f, t0, dur, type, vol) {
+function tone(f, t0, dur, type, vol, sustain = false) {
   const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + t0;
   o.type = type || 'sine'; o.frequency.value = f;
-  g.gain.setValueAtTime(vol || .08, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  const volume = vol ?? .08;
+  if (sustain) {
+    g.gain.setValueAtTime(.001, t);
+    g.gain.linearRampToValueAtTime(volume, t + .025);
+    g.gain.setValueAtTime(volume, t + dur * .65);
+  } else {
+    g.gain.setValueAtTime(volume, t);
+  }
+  g.gain.exponentialRampToValueAtTime(.001, t + dur);
   o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + .02);
 }
 const SFX = {
+  shift: () => [392, 494, 587].forEach((f, i) => tone(f, i * .09, .22, 'triangle', .035)),
+  windowOpen: () => [440, 587].forEach((f, i) => tone(f, i * .055, .13, 'sine', .03)),
+  windowClose: () => [587, 440].forEach((f, i) => tone(f, i * .05, .11, 'sine', .025)),
   swipe: () => tone(320, 0, .06, 'triangle', .05),
-  lock: () => tone(140, 0, .16, 'square', .05),
+  lock: () => tone(196, 0, .18, 'sine', .045, true),
+  reveal: () => {
+    [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => tone(f, i * .075, .34, 'sine', .045));
+    tone(1318.51, .27, .28, 'sine', .018);
+  },
   disc: () => [523, 659, 784].forEach((f, i) => tone(f, i * .09, .14)),
-  alert: () => [0, 1, 2].forEach(i => { tone(880, i * .3, .13, 'square', .04); tone(660, i * .3 + .15, .13, 'square', .04); }),
-  storm: () => { for (let i = 0; i < 10; i++) tone(80 + Math.random() * 70, i * .12, .2, 'sawtooth', .06); },
+  alert: () => [329.63, 293.66, 329.63].forEach((f,i) => tone(f, i * .26, .23, 'sine', .055, true)),
+  storm: () => filteredNoise(130, .75, .13, 0, 'lowpass'),
+  fall: () => {
+    filteredNoise(780, .25, .075, 0, 'bandpass');
+    filteredNoise(110, .23, .2, .16, 'lowpass');
+    tone(82, .16, .2, 'sine', .09);
+    const voice = ac.createOscillator(), formant = ac.createBiquadFilter(), gain = ac.createGain();
+    const t = ac.currentTime;
+    voice.type = 'sawtooth';
+    voice.frequency.setValueAtTime(275, t);
+    voice.frequency.linearRampToValueAtTime(360, t + .065);
+    voice.frequency.exponentialRampToValueAtTime(155, t + .24);
+    formant.type = 'bandpass'; formant.frequency.value = 920; formant.Q.value = .85;
+    gain.gain.setValueAtTime(.001, t);
+    gain.gain.linearRampToValueAtTime(.13, t + .045);
+    gain.gain.exponentialRampToValueAtTime(.001, t + .24);
+    voice.connect(formant).connect(gain).connect(ac.destination);
+    voice.start(t); voice.stop(t + .25);
+  },
   win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .13, .25)),
   lose: () => [392, 330, 262].forEach((f, i) => tone(f, i * .18, .3, 'triangle')),
 };
@@ -1002,6 +1036,162 @@ function sfx(k) {
   } catch (e) {}
 }
 
+let sceneNoise, roverAudio, wasFallen = false, shelterCall = 0;
+function noiseSource() {
+  if (!sceneNoise) {
+    sceneNoise = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+    const samples = sceneNoise.getChannelData(0);
+    for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+  }
+  const source = ac.createBufferSource();
+  source.buffer = sceneNoise;
+  return source;
+}
+function filteredNoise(frequency, duration, volume, delay, type) {
+  const source = noiseSource(), filter = ac.createBiquadFilter(), gain = ac.createGain();
+  const t = ac.currentTime + delay;
+  filter.type = type;
+  filter.frequency.value = frequency;
+  gain.gain.setValueAtTime(.001, t);
+  gain.gain.linearRampToValueAtTime(volume, t + .04);
+  gain.gain.exponentialRampToValueAtTime(.001, t + duration);
+  source.connect(filter).connect(gain).connect(ac.destination);
+  source.start(t); source.stop(t + duration);
+}
+const shelterAudio = new Audio('assets/audio/corrida-queda.mp3');
+shelterAudio.preload = 'auto';
+shelterAudio.volume = .35;
+function playShelterCall(call) {
+  if (call !== 1 || muted || document.hidden) return;
+  shelterAudio.currentTime = 0;
+  shelterAudio.play().catch(() => {});
+  voiceUntil = (ac?.currentTime ?? 0) + 3.8;
+}
+let hazardKind = '', lastImpactAt = -Infinity, voiceUntil = 0;
+let tension = null;
+/* Tensão: drone grave que sobe em alertas e tempestades. Referência de composição: tema do Interstellar (não incluído, por direitos). */
+function syncTension(on) {
+  if (on && !tension) {
+    const osc = ac.createOscillator(), filter = ac.createBiquadFilter(), gain = ac.createGain(), t = ac.currentTime;
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(55, t);
+    osc.frequency.linearRampToValueAtTime(110, t + 8);
+    filter.type = 'lowpass'; filter.frequency.value = 380;
+    gain.gain.setValueAtTime(.001, t);
+    gain.gain.linearRampToValueAtTime(.03, t + 6);
+    osc.connect(filter).connect(gain).connect(ac.destination);
+    osc.start(t);
+    tension = { osc, gain };
+  } else if (!on && tension) {
+    const { osc, gain } = tension, t = ac.currentTime;
+    gain.gain.cancelScheduledValues(t);
+    gain.gain.setTargetAtTime(.001, t, .2);
+    osc.stop(t + 1);
+    tension = null;
+  }
+}
+function syncSceneAudio(roverMoving, fallen, call = 0, hazard = '', sceneTime = 0) {
+  if (hazard !== hazardKind) lastImpactAt = -Infinity;
+  hazardKind = hazard;
+  const interval = hazard === 'meteors' ? 440 : 620;
+  if (hazard && !muted && !document.hidden && ac?.state === 'running' && sceneTime - lastImpactAt >= interval) {
+    lastImpactAt = sceneTime;
+    if (hazard === 'meteors') {
+      filteredNoise(650, .22, .16, 0, 'bandpass');
+      filteredNoise(240, .45, .55, .12, 'lowpass');
+      tone(130, .12, .3, 'sine', .19);
+    } else {
+      filteredNoise(460, .48, .20, 0, 'lowpass');
+      filteredNoise(1150, .13, .075, .11, 'bandpass');
+      tone(146.83, .06, .28, 'sine', .055);
+    }
+  }
+  if (call && call !== shelterCall) playShelterCall(call);
+  shelterCall = call;
+  syncTension(!!hazard && !muted && !document.hidden && ac?.state === 'running');
+  if (muted || document.hidden) shelterAudio.pause();
+  wasFallen = fallen;
+  const audible = roverMoving && !muted && !document.hidden && ac?.state === 'running';
+  if (audible && !roverAudio) {
+    const source = noiseSource(), filter = ac.createBiquadFilter(), gain = ac.createGain();
+    source.loop = true;
+    filter.type = 'lowpass';
+    filter.frequency.value = 290;
+    gain.gain.setValueAtTime(.001, ac.currentTime);
+    gain.gain.linearRampToValueAtTime(.22, ac.currentTime + .13);
+    source.connect(filter).connect(gain).connect(ac.destination);
+    source.start();
+    roverAudio = {source, gain};
+  } else if (!audible && roverAudio) {
+    const {source, gain} = roverAudio, t = ac.currentTime;
+    gain.gain.cancelScheduledValues(t);
+    gain.gain.setTargetAtTime(.001, t, .027);
+    source.stop(t + .12);
+    roverAudio = null;
+  }
+}
+const musicScore = [
+  { chord:[45,57,60,64], melody:[72,null,69,71,null,76,74,null] },
+  { chord:[48,55,59,64], melody:[76,null,74,null,71,72,null,null] },
+  { chord:[50,57,60,65], melody:[69,72,null,76,77,null,76,72] },
+  { chord:[43,55,59,62], melody:[74,null,71,69,null,67,null,71] },
+  { chord:[45,52,59,60], melody:[76,79,null,84,83,null,81,79] },
+  { chord:[53,60,64,69], melody:[84,null,81,79,76,null,79,81] },
+  { chord:[50,57,64,65], melody:[77,81,null,76,74,null,72,69] },
+  { chord:[52,55,59,62], melody:[71,null,74,76,null,72,71,null] },
+];
+const noteHz = midi => 440 * 2 ** ((midi - 69) / 12);
+function kalimba(note, delay, volume, length = .42) {
+  const pitch = noteHz(note);
+  tone(pitch, delay, length, 'sine', volume, true);
+  if (pitch < 660) tone(pitch * 2.01, delay, .09, 'sine', volume * .09);
+
+}
+let musicTimer, musicBeat = 0;
+function startMusic() {
+  if (muted || musicTimer || !G || G.over) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume().catch(() => {});
+    musicTimer = setInterval(() => {
+      if (document.hidden || ac.state !== 'running') return;
+      const card = G?.card;
+      const risky = !!hazardKind || card?.alert || card?.kind === 'arrive' || card?.kind === 'flare'
+        || [card?.L, card?.R].some(option => option?.fx?.outside || option?.fx?.rad > 0)
+        || ['storm', 'meteors'].includes(lunarScene.snapshot.kind);
+      const phrase = musicScore[Math.floor(musicBeat / 8)];
+      const step = musicBeat % 8;
+      const swell = (.44 + .56 * Math.sin(Math.PI * musicBeat / 64) ** 2) * (ac.currentTime < voiceUntil ? .23 : hazardKind ? .48 : 1);
+      if (step % 4 === 0) {
+        phrase.chord.forEach((note, voice) => {
+          kalimba(note, voice * .04, (voice === 0 ? .034 : .014) * swell, .83);
+        });
+      }
+      const arpeggio = phrase.chord[[0,2,1,3,1,2,0,3][step]] + 12;
+      kalimba(arpeggio, 0, .039 * swell, .31);
+      const lead = phrase.melody[step];
+      if (lead !== null) {
+        kalimba(lead - 12, .025, .085 * swell, .6);
+        if (swell > .72 && step % 2 === 0) kalimba(lead - 24, .08, .033 * swell, .72);
+      }
+      if (risky) {
+        if (step % 4 === 0) tone(noteHz(phrase.chord[2]), 0, 1.5, 'sine', .035 * swell, true);
+        const intensity = ac.currentTime < voiceUntil ? .25 : 1;
+        tone(noteHz(phrase.chord[0]), .02, .22, 'triangle', .055 * intensity, true);
+        tone(noteHz(phrase.chord[0]), .26, .15, 'sine', .035 * intensity);
+        kalimba(phrase.chord[0] + 7, .22, .035 * intensity, .21);
+        kalimba(arpeggio - 12, .12, .035 * intensity, .16);
+        kalimba(arpeggio - 5, .36, .035 * intensity, .16);
+      }
+      musicBeat = (musicBeat + 1) % (musicScore.length * 8);
+    }, 480);
+  } catch {}
+}
+function stopMusic() {
+  clearInterval(musicTimer);
+  musicTimer = undefined;
+
+}
 /* Dicas curtas: aparecem uma vez só, na hora em que o assunto acontece */
 const TIPS = {
   night: ['Raios cósmicos são partículas que vêm de muito longe no espaço. Na Terra, o ar e o campo magnético nos protegem. Na Lua, não.',
@@ -1144,17 +1334,6 @@ function cardReal(c) {
 }
 
 /* Ícones de efeito: setas em vez de números */
-function effectText(fx) {
-  const arrows = (n, per) => (n > 0 ? '▲' : '▼').repeat(Math.min(3, Math.max(1, Math.round(Math.abs(n) / per))));
-  const p = [];
-  if (fx.prepared || fx.rush) p.push(lang === 'pt' ? 'Escudo' : 'Shield');
-  if (fx.pw) p.push(tr({pt: 'Energia', en: 'Power'}) + ' ' + arrows(fx.pw, 1));
-  if (fx.air) p.push(tr({pt: 'Ar', en: 'Air'}) + ' ' + arrows(fx.air, 1));
-  if (fx.sci) p.push(tr({pt: 'Ciência', en: 'Science'}) + ' ' + arrows(fx.sci, 1));
-  if (fx.rad) p.push(tr({pt: 'Radiação', en: 'Radiation'}) + ' ' + arrows(fx.rad, 5));
-  return p.join(' · ');
-}
-
 /* ---------- desenho ---------- */
 function setTexts() {
   document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
@@ -1196,7 +1375,16 @@ function renderCard(animate) {
   const card = $('card');
   card.className = 'card' + (c.alert ? ' alert' : '') + (animate ? ' in' : '');
   card.style.transform = '';
-  $('cArt').textContent = c.art;
+  const solarAlert = c.kind === 'flare';
+  const shiftStart = c.kind === 'day';
+  card.classList.toggle('shift-start', shiftStart);
+  card.classList.toggle('solar-alert', solarAlert);
+  $('reportBar').classList.toggle('hidden', !solarAlert && !shiftStart);
+  $('reportSymbol').textContent = shiftStart ? '' : '!';
+  $('reportTitle').textContent = shiftStart ? tr({pt: 'Início do turno', en: 'Shift start'}) : tr({pt: 'Alerta solar', en: 'Solar alert'});
+  $('reportClose').classList.add('hidden');
+  $('cTxt').removeAttribute('tabindex');
+  $('cArt').textContent = solarAlert || shiftStart ? '' : c.art;
   $('cTxt').textContent = cardText(c);
   $('cNote').textContent = cardNote(c);
   const real = cardReal(c);
@@ -1207,12 +1395,17 @@ function renderCard(animate) {
     const lk = locked(G, opt);
     btn.disabled = lk;
     const fxTxt = lk ? tr({pt: 'Energia insuficiente', en: 'Not enough power'})
-      : c.quiz ? '' : opt.hidden ? tr({pt: 'Efeito incerto', en: 'Uncertain outcome'}) : effectText(effectFor(G, opt));
+      : '';
     btn.innerHTML = `<span>${arrow === 'l' ? '← ' : ''}${tr(opt.label)}${arrow === 'r' ? ' →' : ''}</span><span class="fx">${fxTxt}</span>`;
   };
-  if (!c.single) { fill($('btnL'), c.L, 'l'); $('tagL').textContent = tr(c.L.label); }
+  if (!c.single) fill($('btnL'), c.L, 'l');
+  $('tagL').textContent = tr((c.single ? c.R : c.L).label);
   fill($('btnR'), c.R, c.single ? '' : 'r'); $('tagR').textContent = tr(c.R.label);
   $('tagL').style.opacity = 0; $('tagR').style.opacity = 0;
+  updateStudyAttention();
+  if (shiftStart && !seen.has('studyAccess') && $('albumGameBtn').classList.contains('study-attention') && !learnFn) {
+    showLearn(() => tr({pt:'Use o monitor no topo para rever suas descobertas.',en:'Use the monitor at the top to review your discoveries.'}));
+  }
   $('albumGameBtn').disabled = !!c.quiz;   // o álbum daria a resposta da pergunta
   preview(null);
 }
@@ -1258,11 +1451,19 @@ async function playTaskScene(out) {
 
 /* ---------- jogar ---------- */
 function renderDiscovery() {
+  updateStudyAttention();
   const card = $('card');
   card.className = 'card discovery-reveal in' + (discoveryReveal.some(item => item.first) ? ' first' : '');
   card.style.transform = '';
   $('tagL').style.opacity = $('tagR').style.opacity = 0;
-  $('cArt').textContent = discoveryReveal.map(({ entry }) => entry.ico).join(' ');
+  $('reportBar').classList.remove('hidden');
+  $('reportSymbol').textContent = '';
+  $('reportTitle').textContent = tr({pt: 'Relatório de descobertas', en: 'Discovery report'});
+  $('reportClose').classList.remove('hidden');
+  $('reportClose').setAttribute('aria-label', tr({pt: 'Fechar relatório', en: 'Close report'}));
+  $('cArt').textContent = '';
+  $('cTxt').tabIndex = 0;
+  $('cTxt').scrollTop = 0;
   const content = discoveryReveal.map(({ entry: d, first }) => {
     const item = document.createElement('div');
     const name = document.createElement('strong');
@@ -1270,7 +1471,17 @@ function renderDiscovery() {
     name.textContent = tr(d.name);
     fact.textContent = tr(d.fact);
     item.classList.toggle('first-discovery', first);
-    item.append(name, fact);
+    const icon = document.createElement('span');
+    icon.className = 'report-entry-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = d.ico;
+    if (first) {
+      const badge = document.createElement('span');
+      badge.className = 'report-new';
+      badge.textContent = tr({pt: '✦ Novo', en: '✦ New'});
+      name.append(badge);
+    }
+    item.append(icon, name, fact);
     if (d.base) {
       const base = document.createElement('p');
       base.textContent = '🏠 ' + tr({pt: 'Na base: ', en: 'At the base: '}) + tr(d.base);
@@ -1292,6 +1503,7 @@ function renderDiscovery() {
 }
 
 async function act(side) {
+  startMusic();
   if (busy || !G) return;
   if (discoveryReveal.length) {
     busy = true;
@@ -1312,11 +1524,10 @@ async function act(side) {
   busy = true;
   flyCard(side);
   const out = choose(G, side);
-  sfx(out.storm ? 'storm' : 'swipe');
+  sfx(out.storm ? 'storm' : c.kind === 'day' ? 'shift' : 'swipe');
   preview(null);
   await playTaskScene(out);
   renderMeters();
-  if (out.night && !G.over) toast('🌙 🫧▼  ☢️▲');
   if (out.found?.length) {
     const unlocked = new Set(getUnlocked());
     discoveryReveal = out.found.map(entry => ({ entry, first: !unlocked.has(entry.id), night: !!out.nightDisc }));
@@ -1325,7 +1536,7 @@ async function act(side) {
     preview(null);
     showLearn(null);
     renderDiscovery();
-    sfx('disc');
+    sfx(discoveryReveal.some(item => item.first) ? 'reveal' : 'disc');
     busy = false;
     $('btnR').focus();
     return;
@@ -1346,7 +1557,7 @@ async function act(side) {
       showLearn(() => `<span>🎉 <b>${lang === 'pt' ? 'Você lembrou! A solução recupera ar, com um pequeno custo de energia.' : 'You remembered! Your solution restores air and reduces radiation at a small power cost.'}</b><br>${tr(c.disc.fact)}</span>`, true);
       sfx('disc');
     } else {
-      showLearn(() => `<span>🤔 <b>${lang === 'pt' ? 'Quase! A base gastou um pouco de ar e energia.' : 'Close! The base spent a little air and power.'}</b><br>${tr(c.disc.fact)}</span>`, false);
+      showLearn(() => `<span><b>${tr({pt:'Quase! A base gastou um pouco de ar e energia.', en:'Close! The base spent a little air and power.'})}</b><br>${tr(c.disc.fact)} ${G.card.quiz ? '' : `<button class="study-review" type="button" data-review="${c.disc.id}">${tr({pt:'Rever no painel',en:'Review in terminal'})}</button>`}</span>`, false);
     }
   }
   if (G.card.kind === 'flare') sfx('alert');
@@ -1354,9 +1565,18 @@ async function act(side) {
   busy = false;
 }
 
-function start() {
+function start(eventCard, reviewPreview = false) {
   busy=false; lunarScene.reset();
-  discoveryReveal = []; G = newGame(getUnlocked()); lockHits = 0; prog = null; showLearn(null);
+  discoveryReveal = []; G = newGame(eventCard, getUnlocked()); lockHits = 0; prog = null; showLearn(null);
+  if (reviewPreview) {
+    G.found.push('bones');
+    G.queue.unshift(Engine.quizCard('bones'));
+  }
+  if (eventCard) {
+    G.queue = G.queue.filter(card => card !== eventCard);
+    G.card = eventCard;
+    G.pw = R.PW_MAX;
+  }
   $('intro').classList.add('hidden'); $('end').classList.add('hidden'); $('game').classList.remove('hidden');
   renderMeters(); renderCard(true);
   if (!seen.has('hint')) { seen.add('hint'); $('card').classList.add('hint'); }
@@ -1411,6 +1631,14 @@ const POOL_HINT = {
   sun:    ['🔭 Observe o Sol com o Telescópio', '🔭 Observe the Sun with the Telescope'],
 };
 
+function updateStudyAttention() {
+  $('albumGameBtn').classList.toggle('study-attention',
+    [...getUnlocked(), ...(G?.found ?? [])].some(id => !readDiscoveries.has(id)));
+}
+const readDiscoveries = new Set();
+try {
+  for (const id of JSON.parse(store.get('lb_read_discoveries') || '[]')) readDiscoveries.add(id);
+} catch {}
 function getUnlocked() {
   try { return JSON.parse(store.get('lb_disc') || '[]'); } catch (e) { return []; }
 }
@@ -1420,16 +1648,28 @@ function renderAlbum(targetEl, currentFound = []) {
   const unlocked = new Set([...getUnlocked(), ...currentFound]);
   const nowSet = new Set(currentFound);
 
-  targetEl.innerHTML = DISC.map(d => {
+  const isDesktop = targetEl.id === 'albumGrid';
+  const entries = isDesktop ? [...DISC].sort((a, b) =>
+    Number(unlocked.has(b.id)) - Number(unlocked.has(a.id))
+    || Number(unlocked.has(b.id) && !readDiscoveries.has(b.id)) - Number(unlocked.has(a.id) && !readDiscoveries.has(a.id))
+    || tr(a.name).localeCompare(tr(b.name), pt ? 'pt-BR' : 'en')) : DISC;
+  targetEl.innerHTML = entries.map(d => {
     const isNow = nowSet.has(d.id);
     const isOpen = unlocked.has(d.id);
     if (isOpen) {
-      const badge = isNow ? `<span class="badgeNew">${pt ? 'Nesta missão!' : 'This mission!'}</span>` : '';
+      const badge = isDesktop && !readDiscoveries.has(d.id) ? `<span class="badgeNew">${pt ? 'Novo' : 'New'}</span>` : isNow ? `<span class="badgeNew">${pt ? 'Nesta missão!' : 'This mission!'}</span>` : '';
       const base = d.base ? `<small class="base">🏠 ${pt ? 'Na base' : 'At the base'}: ${tr(d.base)}</small>` : '';
       const src = d.src ? `<a class="src" href="${d.src}" target="_blank" rel="noopener">${pt ? 'Fonte: NASA' : 'Source: NASA'} ↗</a>` : '';
+      if (isDesktop) {
+        return `<button class="study-entry" type="button" data-study="${d.id}"><span class="study-folder" aria-hidden="true"></span>${tr(d.name)}${badge}</button><template id="study-${d.id}"><p>${tr(d.fact)}</p>${base}${src}</template>`;
+      }
       return `<div class="d${isNow ? ' now' : ''}"><span class="i">${d.ico}</span><b>${tr(d.name)}${badge}</b><span>${tr(d.fact)}</span>${base}${src}</div>`;
     }
     const hint = POOL_HINT[d.pool] ? POOL_HINT[d.pool][pt ? 0 : 1] : '';
+    if (isDesktop) {
+      const label = pt ? 'Arquivo oculto' : 'Hidden file';
+      return `<div class="study-entry study-locked"><span class="study-folder" aria-hidden="true"></span><span>${label}<small>${hint}</small></span></div>`;
+    }
     return `<div class="d locked"><span class="i">❓</span><b>${pt ? 'Descoberta bloqueada' : 'Locked discovery'}</b><span>${hint}</span></div>`;
   }).join('');
 }
@@ -1437,15 +1677,20 @@ function renderAlbum(targetEl, currentFound = []) {
 // De onde o álbum foi aberto: 'intro' (tela inicial) ou 'game' (durante a missão).
 let albumFrom = 'intro';
 function openAlbum(from = albumFrom) {
+  if ($('closeAlbumBtn').disabled) return;
+  const opening = $('album').classList.contains('hidden');
   albumFrom = from;
+  if (from === 'game') seen.add('studyAccess');
+  $('studyWindows').replaceChildren();
   const pt = lang === 'pt';
   // Durante a missão, as descobertas atuais ainda não foram gravadas no navegador.
   const current = from === 'game' && G ? G.found : [];
   const n = new Set([...getUnlocked(), ...current]).size;
   $(from).classList.add('hidden');
   $('album').classList.remove('hidden');
-  $('closeAlbumBtn').textContent = pt ? '← Voltar' : '← Back';
-  $('albumTitle').textContent = pt ? '📓 Álbum de descobertas' : '📓 Discovery album';
+  if (opening) { animateStudy($('album')); sfx('windowOpen'); }
+  $('closeAlbumBtn').setAttribute('aria-label', pt ? 'Fechar painel' : 'Close terminal');
+  $('albumTitle').textContent = pt ? 'Painel de descobertas' : 'Discovery terminal';
   $('albumSub').textContent = pt
     ? `Você já desbloqueou ${n} de ${DISC.length} descobertas científicas neste aparelho:`
     : `You have unlocked ${n} of ${DISC.length} scientific discoveries on this device:`;
@@ -1453,6 +1698,8 @@ function openAlbum(from = albumFrom) {
   window.scrollTo(0, 0);
 }
 function finish() {
+  shelterAudio.pause();
+  stopMusic();
   lunarScene.stop();
   // Coleção de descobertas e melhor resultado ficam guardados só neste navegador.
   let all = [];
@@ -1586,7 +1833,6 @@ function moveCard(offset) {
   const x = Math.max(-travel, Math.min(travel, offset));
   card.style.transform = `translateX(${x}px) rotate(${angle}deg)`;
 }
-
 function flyCard(side) {
   card.classList.add('fly');
   moveCard(side === 'L' ? -120 : 120);
@@ -1600,7 +1846,7 @@ function resetDrag() {
 }
 
 card.addEventListener('pointerdown', event => {
-  if (busy || !G || (G.over && !discoveryReveal.length) || !event.isPrimary || event.button !== 0) return;
+  if (busy || !G || G.over || discoveryReveal.length || !event.isPrimary || event.button !== 0) return;
   drag = { id: event.pointerId, x: event.clientX };
   card.setPointerCapture(event.pointerId);
   card.classList.remove('snap', 'in', 'shake');
@@ -1613,7 +1859,7 @@ card.addEventListener('pointermove', event => {
   const side = offset > 25 ? 'R' : offset < -25 ? 'L' : null;
   const opacity = Math.min(1, Math.abs(offset) / 90);
   $('tagR').style.opacity = side === 'R' ? opacity : 0;
-  $('tagL').style.opacity = side === 'L' && !G.card.single ? opacity : 0;
+  $('tagL').style.opacity = side === 'L' ? opacity : 0;
   preview(side);
 });
 const drop = event => {
@@ -1636,20 +1882,120 @@ card.addEventListener('pointerup', drop); card.addEventListener('pointercancel',
   b.addEventListener('blur', () => { if (!busy) preview(null); });
 });
 document.addEventListener('keydown', e => {
-  if ($('game').classList.contains('hidden')) return;
+  if ($('game').classList.contains('hidden') || discoveryReveal.length) return;
   if (e.key === 'ArrowLeft') act('L'); else if (e.key === 'ArrowRight') act('R');
 });
+$('reportClose').addEventListener('click', () => act('R'));
 $('openAlbumBtn').addEventListener('click', () => openAlbum('intro'));
 $('albumGameBtn').addEventListener('click', () => {
   if (busy || !G || G.over || (G.card && G.card.quiz)) return;
   openAlbum('game');
 });
-$('closeAlbumBtn').addEventListener('click', () => {
+function animateStudy(element, closing = false) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || !element.animate) return Promise.resolve();
+  const frames = [{opacity:0, transform:'translateY(-5px) scale(.97)'}, {opacity:1, transform:'none'}];
+  const animation = element.animate(closing ? frames.reverse() : frames, {
+    duration: closing ? 130 : 180, easing:'ease-out'
+  });
+  return animation.finished.catch(() => {});
+}
+$('learn').addEventListener('click', event => {
+  const button = event.target.closest('[data-review]');
+  if (!button || busy || G?.card?.quiz) return;
+  openAlbum('game');
+  $('albumGrid').querySelector('[data-study="' + button.dataset.review + '"]')?.click();
+});
+document.querySelector('main').addEventListener('dragstart', event => {
+  if (event.target instanceof HTMLImageElement) event.preventDefault();
+});
+const studyWindows = $('studyWindows');
+let studyDepth = 5;
+function placeStudy(panel, x, y) {
+  const desktop = $('album').getBoundingClientRect();
+  panel.style.width = Math.min(360, desktop.width - 12) + 'px';
+  const right = desktop.right - panel.offsetWidth - 6;
+  panel.style.left = Math.max(desktop.left + 6, Math.min(right, x)) + 'px';
+  panel.style.top = Math.max(0, Math.min(innerHeight - panel.offsetHeight, y)) + 'px';
+}
+$('albumGrid').addEventListener('click', event => {
+  if ($('closeAlbumBtn').disabled) return;
+  const file = event.target.closest('[data-study]');
+  if (!file) return;
+  const id = file.dataset.study;
+  const wasUnread = !readDiscoveries.has(id);
+  readDiscoveries.add(id);
+  file.querySelector('.badgeNew')?.remove();
+  store.set('lb_read_discoveries', JSON.stringify([...readDiscoveries]));
+  updateStudyAttention();
+  const existing = $('open-study-' + id);
+  if (existing) {
+    existing.style.zIndex = ++studyDepth;
+    existing.querySelector('button').focus();
+    return;
+  }
+  const entry = DISC.find(discovery => discovery.id === id);
+  const panel = document.createElement('section');
+  panel.id = 'open-study-' + id;
+  panel.className = 'study-window';
+  panel.setAttribute('aria-label', tr(entry.name));
+  panel.innerHTML = '<div class="report-bar study-handle"><strong></strong><button class="pc-close" type="button"></button></div><div class="study-body"></div>';
+  panel.querySelector('strong').textContent = tr(entry.name);
+  panel.querySelector('.study-body').append($('study-' + id).content.cloneNode(true));
+  const close = panel.querySelector('button');
+  close.setAttribute('aria-label', lang === 'pt' ? 'Fechar arquivo' : 'Close file');
+  close.onclick = async () => {
+    close.disabled = true;
+    sfx('windowClose');
+    await animateStudy(panel, true);
+    panel.remove();
+    file.focus();
+  };
+  studyWindows.append(panel);
+  const offset = ((studyWindows.childElementCount - 1) % 5) * 24;
+  const desktop = $('album').getBoundingClientRect();
+  placeStudy(panel, desktop.left + 12 + offset, innerHeight * .52 + offset);
+  const raise = () => { panel.style.zIndex = ++studyDepth; };
+  panel.addEventListener('pointerdown', raise);
+  panel.addEventListener('focusin', raise);
+  const handle = panel.querySelector('.study-handle');
+  let origin;
+  handle.addEventListener('pointerdown', event => {
+    if (!event.isPrimary || event.button !== 0 || event.target.closest('button')) return;
+    const bounds = panel.getBoundingClientRect();
+    origin = {x:event.clientX - bounds.left, y:event.clientY - bounds.top};
+    handle.setPointerCapture(event.pointerId);
+  });
+  handle.addEventListener('pointermove', event => {
+    if (origin && handle.hasPointerCapture(event.pointerId)) {
+      placeStudy(panel, event.clientX - origin.x, event.clientY - origin.y);
+    }
+  });
+  handle.addEventListener('lostpointercapture', () => { origin = null; });
+  raise();
+  animateStudy(panel);
+  sfx('windowOpen');
+});
+window.addEventListener('resize', () => {
+  for (const panel of studyWindows.children) {
+    const bounds = panel.getBoundingClientRect();
+    placeStudy(panel, bounds.left, bounds.top);
+  }
+});
+$('closeAlbumBtn').addEventListener('click', async () => {
+  const close = $('closeAlbumBtn');
+  if (close.disabled) return;
+  close.disabled = true;
+  sfx('windowClose');
+  await Promise.all([animateStudy($('album'), true),
+    ...Array.from(studyWindows.children, panel => animateStudy(panel, true))]);
+  studyWindows.replaceChildren();
   $('album').classList.add('hidden');
   $(albumFrom).classList.remove('hidden');
+  close.disabled = false;
+  $(albumFrom === 'game' ? 'albumGameBtn' : 'openAlbumBtn').focus();
 });
-$('muteBtn').addEventListener('click', () => { muted = !muted; store.set('lb_mute', muted ? '1' : '0'); setTexts(); if (!muted) sfx('swipe'); });
-$('startBtn').addEventListener('click', start);
+$('muteBtn').addEventListener('click', () => { muted = !muted; store.set('lb_mute', muted ? '1' : '0'); setTexts(); if (muted) { stopMusic(); syncSceneAudio(false, wasFallen); } else { sfx('swipe'); startMusic(); } });
+$('startBtn').addEventListener('click', () => start());
 $('againBtn').addEventListener('click', () => { factIdx++; start(); });
 document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click', () => {
   lang = lang === 'pt' ? 'en' : 'pt'; setTexts();
@@ -1658,7 +2004,15 @@ document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click'
 }));
 setTexts();
 window.__game = { get G() { return G; }, get busy() { return busy; }, lunarScene, R, STORMS, Engine, act, setLang: l => { lang = l; setTexts(); } };   // para testes
+if (new URLSearchParams(location.search).get('teste') === 'revisao') start(undefined, true);
+const testEventId = new URLSearchParams(location.search).get('evento');
+const previewStorm = Engine.STORMS.find(storm => storm.flr);
+const testEvent = testEventId === 'tempestade-solar' && previewStorm
+  ? { ...Engine.arrivalCard({prepared:false}, previewStorm), d:previewStorm.d }
+  : Engine.DATED_EVENTS.find(event => event.id === testEventId);
+if (testEvent) start(testEvent);
 })();
 </script>
+<script src="assets/hud/pixel-icons.js?v=detail16"></script>
 </body>
 </html>
