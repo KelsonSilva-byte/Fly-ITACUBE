@@ -146,7 +146,8 @@ body:has(#game:not(.hidden)) { background:#08091b; }
 #game .date { display:flex; align-items:center; gap:.2rem; font-size:.52rem; }
 #game .date img { width:22px; height:22px; object-fit:contain; }
 #game .lang { min-height:44px; padding:0 .5rem; font-size:.55rem; background:#171b4b; }
-#muteBtn img { width:30px; height:30px; display:block; object-fit:contain; }
+#albumGameBtn:disabled { opacity:.45; cursor:not-allowed; }
+#muteBtn img, #albumGameBtn img { width:30px; height:30px; display:block; object-fit:contain; }
 #game img { image-rendering:pixelated; }
 #game .scene, #game .meter, #game .card, #game .learn, #game .choice, #game .lang {
   clip-path:var(--pixel-corners); border-radius:0;

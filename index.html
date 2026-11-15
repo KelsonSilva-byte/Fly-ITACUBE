@@ -30,7 +30,7 @@
 <section id="game" class="hidden">
   <div class="top">
     <div><div class="day" id="dayTxt"></div><div class="date"><img src="assets/hud/calendario.png" alt=""><span id="dateTxt"></span></div></div>
-    <div style="display:flex; gap:.4rem"><button class="lang" id="muteBtn" aria-label="Som / Sound"><img src="assets/hud/som-ligado.png" alt=""></button><button class="lang" data-lang></button></div>
+    <div style="display:flex; gap:.4rem"><button class="lang" id="albumGameBtn" aria-label="Descobertas"><img src="assets/hud/album-descobertas.png" alt=""></button><button class="lang" id="muteBtn" aria-label="Som / Sound"><img src="assets/hud/som-ligado.png" alt=""></button><button class="lang" data-lang></button></div>
   </div>
 
   <div class="scene" id="scene" aria-hidden="true">
@@ -829,6 +829,7 @@ function setTexts() {
   mute.setAttribute('aria-label', lang === 'pt'
     ? (muted ? 'Ativar som' : 'Silenciar')
     : (muted ? 'Unmute' : 'Mute'));
+  $('albumGameBtn').setAttribute('aria-label', lang === 'pt' ? 'Álbum de descobertas' : 'Discovery album');
   if (learnFn) $('learn').innerHTML = learnFn();
   if (discoveryReveal.length && !busy) renderDiscovery();
   const n = getUnlocked().length;
@@ -877,6 +878,7 @@ function renderCard(animate) {
   if (!c.single) { fill($('btnL'), c.L, 'l'); $('tagL').textContent = tr(c.L.label); }
   fill($('btnR'), c.R, c.single ? '' : 'r'); $('tagR').textContent = tr(c.R.label);
   $('tagL').style.opacity = 0; $('tagR').style.opacity = 0;
+  $('albumGameBtn').disabled = !!c.quiz;   // o álbum daria a resposta da pergunta
   preview(null);
 }
 function preview(side) {
@@ -1088,16 +1090,22 @@ function renderAlbum(targetEl, currentFound = []) {
   }).join('');
 }
 
-function openAlbum() {
-  const pt = lang === 'pt', n = getUnlocked().length;
-  $('intro').classList.add('hidden');
+// De onde o álbum foi aberto: 'intro' (tela inicial) ou 'game' (durante a missão).
+let albumFrom = 'intro';
+function openAlbum(from = albumFrom) {
+  albumFrom = from;
+  const pt = lang === 'pt';
+  // Durante a missão, as descobertas atuais ainda não foram gravadas no navegador.
+  const current = from === 'game' && G ? G.found : [];
+  const n = new Set([...getUnlocked(), ...current]).size;
+  $(from).classList.add('hidden');
   $('album').classList.remove('hidden');
   $('closeAlbumBtn').textContent = pt ? '← Voltar' : '← Back';
   $('albumTitle').textContent = pt ? '📓 Álbum de descobertas' : '📓 Discovery album';
   $('albumSub').textContent = pt
     ? `Você já desbloqueou ${n} de ${DISC.length} descobertas científicas neste aparelho:`
     : `You have unlocked ${n} of ${DISC.length} scientific discoveries on this device:`;
-  renderAlbum($('albumGrid'), []);
+  renderAlbum($('albumGrid'), current);
   window.scrollTo(0, 0);
 }
 function finish() {
@@ -1285,10 +1293,14 @@ document.addEventListener('keydown', e => {
   if ($('game').classList.contains('hidden')) return;
   if (e.key === 'ArrowLeft') act('L'); else if (e.key === 'ArrowRight') act('R');
 });
-$('openAlbumBtn').addEventListener('click', openAlbum);
+$('openAlbumBtn').addEventListener('click', () => openAlbum('intro'));
+$('albumGameBtn').addEventListener('click', () => {
+  if (busy || !G || G.over || (G.card && G.card.quiz)) return;
+  openAlbum('game');
+});
 $('closeAlbumBtn').addEventListener('click', () => {
   $('album').classList.add('hidden');
-  $('intro').classList.remove('hidden');
+  $(albumFrom).classList.remove('hidden');
 });
 $('muteBtn').addEventListener('click', () => { muted = !muted; store.set('lb_mute', muted ? '1' : '0'); setTexts(); if (!muted) sfx('swipe'); });
 $('startBtn').addEventListener('click', start);
