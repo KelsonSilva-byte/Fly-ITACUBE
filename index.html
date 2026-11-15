@@ -24,6 +24,7 @@
   <div class="fact" data-t="introReal"></div>
   <button class="big" id="startBtn" data-t="start"></button>
   <button class="secBtn" id="openAlbumBtn"></button>
+  <button class="secBtn" id="openTutorialBtn"></button>
 </section>
 
 <!-- ===================== JOGO ===================== -->
@@ -118,6 +119,10 @@
   <div class="report-bar"><span class="pc-icon" aria-hidden="true"></span><h1 id="albumTitle"></h1><button class="lang" data-lang></button><button class="lang" id="closeAlbumBtn" type="button"></button></div>
   <p class="coll" id="albumSub"></p>
   <div class="book" id="albumGrid"></div>
+</section>
+<section id="tutorial" class="panel hidden" aria-labelledby="tutorialTitle">
+  <div class="report-bar"><span class="pc-icon" aria-hidden="true"></span><h1 id="tutorialTitle"></h1><button class="lang" data-lang></button><button class="lang" id="closeTutorialBtn" type="button"></button></div>
+  <div id="tutorialBody"></div>
 </section>
 <div id="studyWindows"></div>
 <footer data-t="footer"></footer>
@@ -1345,6 +1350,7 @@ function setTexts() {
     ? (muted ? 'Ativar som' : 'Silenciar')
     : (muted ? 'Unmute' : 'Mute'));
   $('albumGameBtn').setAttribute('aria-label', lang === 'pt' ? 'Álbum de descobertas' : 'Discovery album');
+  $('openTutorialBtn').textContent = lang === 'pt' ? '❓ Como jogar' : '❓ How to play';
   if (learnFn) $('learn').innerHTML = learnFn();
   if (discoveryReveal.length && !busy) renderDiscovery();
   const n = getUnlocked().length;
@@ -1887,6 +1893,134 @@ document.addEventListener('keydown', e => {
 });
 $('reportClose').addEventListener('click', () => act('R'));
 $('openAlbumBtn').addEventListener('click', () => openAlbum('intro'));
+/* ---------- Como jogar (tutorial) ---------- */
+// Os números vêm de R, para o tutorial acompanhar o balanceamento.
+const TUT = () => {
+  const pct = v => Math.round(v * 100);
+  return {
+  title: { pt: 'Como jogar', en: 'How to play' },
+  goal: { pt: 'Você comanda uma base no polo sul da Lua. Sobreviva ' + R.DAYS + ' dias, cuide do ar, da energia e da radiação, e faça descobertas.',
+          en: "You command a base at the Moon's south pole. Survive " + R.DAYS + ' days, look after air, power and radiation, and make discoveries.' },
+  goalH: { pt: 'Objetivo da missão', en: 'Mission goal' },
+  stars: [
+    { ico: '⭐', name: { pt: '1 estrela', en: '1 star' }, text: { pt: 'Chegar ao fim dos ' + R.DAYS + ' dias.', en: 'Reach the end of the ' + R.DAYS + ' days.' } },
+    { ico: '⭐', name: { pt: '2 estrelas', en: '2 stars' }, text: { pt: R.SCI_GOAL + ' pontos de ciência ou radiação abaixo de ' + R.RAD_SAFE + '.', en: R.SCI_GOAL + ' science points or radiation under ' + R.RAD_SAFE + '.' } },
+    { ico: '⭐', name: { pt: '3 estrelas', en: '3 stars' }, text: { pt: R.SCI_GOAL + ' pontos de ciência e radiação abaixo de ' + R.RAD_SAFE + '.', en: R.SCI_GOAL + ' science points and radiation under ' + R.RAD_SAFE + '.' } },
+  ],
+  resH: { pt: 'Recursos', en: 'Resources' },
+  res: [
+    { img: 'assets/hud/ar-cilindro.svg', name: { pt: 'Ar', en: 'Air' },
+      text: { pt: 'O cilindro mostra o ar que a tripulação respira. Se acabar, a missão termina.', en: 'The tank shows the air the crew breathes. If it runs out, the mission ends.' },
+      more: { pt: 'Começa em ' + R.AIR_START + ' de ' + R.AIR_MAX + '. Toda noite a tripulação gasta ' + R.AIR_USE + '.', en: 'Starts at ' + R.AIR_START + ' of ' + R.AIR_MAX + '. Every night the crew uses ' + R.AIR_USE + '.' } },
+    { img: 'assets/hud/energia.png', name: { pt: 'Energia', en: 'Power' },
+      text: { pt: 'O raio mostra a energia das baterias. Quase tudo na base gasta energia. Se acabar, a missão termina.', en: 'The bolt shows the battery power. Almost everything at the base uses power. If it runs out, the mission ends.' },
+      more: { pt: 'Começa em ' + R.PW_START + ' de ' + R.PW_MAX + '. O Sol dá de 0 a 2 por dia. O que passar de ' + R.PW_MAX + ' é perdido.', en: 'Starts at ' + R.PW_START + ' of ' + R.PW_MAX + '. The Sun gives 0 to 2 per day. Anything above ' + R.PW_MAX + ' is lost.' } },
+    { img: 'assets/hud/radiacao.png', name: { pt: 'Radiação', en: 'Radiation' },
+      text: { pt: 'O símbolo mostra a radiação que a tripulação já recebeu. Ela nunca desce. Se chegar a ' + R.RAD_LIMIT + ', a tripulação volta para casa.', en: 'The symbol shows the radiation the crew has received. It never goes down. At ' + R.RAD_LIMIT + ', the crew goes home.' },
+      more: { pt: 'Sobe ' + R.RAD_DAILY + ' por noite, mais nas saídas da base e muito nas tempestades solares.', en: 'Rises ' + R.RAD_DAILY + ' per night, more on trips outside and a lot during solar storms.' } },
+    { img: 'assets/hud/descobertas.png', name: { pt: 'Ciência', en: 'Science' },
+      text: { pt: 'O frasco conta os pontos de ciência. Eles vêm das pesquisas e valem estrelas.', en: 'The flask counts science points. They come from research and are worth stars.' },
+      more: { pt: 'Meta: ' + R.SCI_GOAL + ' pontos até o fim da missão.', en: 'Goal: ' + R.SCI_GOAL + ' points by the end of the mission.' } },
+  ],
+  hudH: { pt: 'Botões e sinais da tela', en: 'Buttons and signs on screen' },
+  hud: [
+    { img: 'assets/hud/album-descobertas.png', name: { pt: 'Painel de descobertas', en: 'Discovery terminal' }, text: { pt: 'Abre o álbum durante a missão. Fica bloqueado nas perguntas de memória.', en: 'Opens the album during the mission. It is locked during memory questions.' } },
+    { img: 'assets/hud/som-ligado.png', name: { pt: 'Som', en: 'Sound' }, text: { pt: 'Liga e desliga os sons do jogo.', en: 'Turns the game sounds on and off.' } },
+    { ico: '🌐', name: { pt: 'Idioma', en: 'Language' }, text: { pt: 'Troca entre português e inglês a qualquer momento.', en: 'Switches between Portuguese and English at any time.' } },
+    { html: '<span class="tut-arrow good">▲</span>', name: { pt: 'Seta verde', en: 'Green arrow' }, text: { pt: 'A escolha é boa para esse recurso.', en: 'The choice is good for that resource.' } },
+    { html: '<span class="tut-arrow bad">▼</span>', name: { pt: 'Seta vermelha', en: 'Red arrow' }, text: { pt: 'A escolha é ruim para esse recurso. Na radiação, subir é ruim.', en: 'The choice is bad for that resource. For radiation, going up is bad.' } },
+    { ico: '🔒', name: { pt: 'Opção travada', en: 'Locked option' }, text: { pt: 'Falta energia para essa opção. Escolha a outra.', en: 'There is not enough power for that option. Pick the other one.' } },
+    { ico: '⚠️', name: { pt: 'Medidor piscando', en: 'Blinking meter' }, text: { pt: 'O ar só dá para uma noite, ou a radiação está alta.', en: 'There is only air for one night, or radiation is high.' } },
+  ],
+  dayH: { pt: 'Como é um dia na base', en: 'A day at the base' },
+  day: [
+    { ico: '☀️', name: { pt: '1. Começo do dia', en: '1. Start of the day' }, text: { pt: 'Os painéis recebem a energia do Sol.', en: 'The panels get power from the Sun.' } },
+    { ico: '🫧', name: { pt: '2. Suporte de vida', en: '2. Life support' }, text: { pt: 'Você decide se gasta energia para fazer ar.', en: 'You decide whether to spend power to make air.' } },
+    { ico: '🔬', name: { pt: '3. Pesquisa', en: '3. Research' }, text: { pt: 'Você escolhe entre duas pesquisas.', en: 'You choose between two kinds of research.' } },
+    { ico: '🎲', name: { pt: '4. Fim do dia', en: '4. End of the day' }, text: { pt: 'Pode vir um problema, uma boa notícia, uma tempestade ou nada.', en: 'A problem, good news, a storm or nothing may come.' } },
+    { ico: '🌙', name: { pt: '5. Noite', en: '5. Night' }, text: { pt: 'A tripulação gasta ' + R.AIR_USE + ' de ar e recebe ' + R.RAD_DAILY + ' de radiação.', en: 'The crew uses ' + R.AIR_USE + ' air and takes ' + R.RAD_DAILY + ' radiation.' } },
+  ],
+  decH: { pt: 'Decisões', en: 'Decisions' },
+  dec: [
+    { ico: '👆', name: { pt: 'Escolha', en: 'Choice' }, text: { pt: 'Cada carta tem duas opções. Deslize a carta, toque num botão ou use as setas ← →.', en: 'Each card has two options. Swipe the card, tap a button or use the ← → keys.' } },
+    { ico: '⚖️', name: { pt: 'Troca', en: 'Trade-off' }, text: { pt: 'Nenhuma escolha é de graça: toda opção troca uma coisa por outra.', en: 'No choice is free: every option trades one thing for another.' } },
+    { ico: '📊', name: { pt: 'Previsão', en: 'Preview' }, text: { pt: 'Antes de escolher, as setas aparecem em cima dos recursos que vão mudar.', en: 'Before you choose, arrows appear over the resources that will change.' } },
+    { ico: '🔬', name: { pt: 'Dentro ou fora', en: 'Inside or outside' }, text: { pt: 'Pesquisar dentro da base gasta energia. Sair da base rende ciência, mas traz radiação.', en: 'Research inside the base uses power. Going outside brings science, but also radiation.' } },
+  ],
+  stormH: { pt: 'Tempestades solares', en: 'Solar storms' },
+  stormIntro: { pt: 'As tempestades do jogo aconteceram de verdade em 2024 e 2025. Os dados vêm do DONKI, da NASA.', en: 'The storms in the game really happened in 2024 and 2025. The data comes from NASA DONKI.' },
+  storm: [
+    { ico: '🚨', name: { pt: 'Alerta', en: 'Alert' }, text: { pt: 'Carregar o escudo no alerta custa ' + R.SHIELD_PW + ' de energia e bloqueia ' + pct(R.BLOCK_READY) + '% das partículas.', en: 'Charging the shield at the alert costs ' + R.SHIELD_PW + ' power and blocks ' + pct(R.BLOCK_READY) + '% of the particles.' } },
+    { ico: '🛡️', name: { pt: 'Escudo de emergência', en: 'Emergency shield' }, text: { pt: 'Ligado só na chegada, custa a mesma energia e bloqueia ' + pct(R.BLOCK_RUSH) + '%.', en: 'Turned on only at arrival, it costs the same power and blocks ' + pct(R.BLOCK_RUSH) + '%.' } },
+    { ico: '☢️', name: { pt: 'Sem escudo', en: 'No shield' }, text: { pt: 'A tripulação recebe toda a radiação: ' + R.STORM[1] + ' na tempestade fraca, ' + R.STORM[2] + ' na média e ' + R.STORM[3] + ' na forte.', en: 'The crew takes all the radiation: ' + R.STORM[1] + ' in a weak storm, ' + R.STORM[2] + ' in a medium one and ' + R.STORM[3] + ' in a strong one.' } },
+    { ico: '🚙', name: { pt: 'Fora da base', en: 'Outside the base' }, text: { pt: 'Quem saiu da base no dia da tempestade recebe radiação extra, sem proteção.', en: 'Anyone who went outside on a storm day takes extra radiation, with no protection.' } },
+    { ico: '💥', name: { pt: 'Sem aviso', en: 'No warning' }, text: { pt: 'Algumas tempestades chegam sem alerta. Guarde energia para o escudo de emergência.', en: 'Some storms arrive with no alert. Save power for the emergency shield.' } },
+  ],
+  cardsH: { pt: 'Tipos de cartas', en: 'Card types' },
+  cards: [
+    { ico: '☀️', name: { pt: 'Dia', en: 'Day' }, text: { pt: 'Mostra a energia que os painéis geram hoje.', en: 'Shows the power the panels make today.' } },
+    { ico: '🫧', name: { pt: 'Suporte de vida', en: 'Life support' }, text: { pt: 'Ligar ou poupar equipamentos que dão ar.', en: 'Turn on or save equipment that makes air.' } },
+    { ico: '🔬', name: { pt: 'Pesquisa', en: 'Research' }, text: { pt: 'Escolha uma pesquisa dentro da base ou outra fora.', en: 'Choose research inside the base or outside.' } },
+    { ico: '🚨', name: { pt: 'Alerta solar', en: 'Solar alert' }, text: { pt: 'Aviso de explosão real no Sol. Dá para carregar o escudo.', en: 'A real flare warning. You can charge the shield.' } },
+    { ico: '🛡️', name: { pt: 'Tempestade', en: 'Storm' }, text: { pt: 'A chegada das partículas e o resultado do escudo.', en: 'The particles arrive and the shield shows its result.' } },
+    { ico: '⚠️', name: { pt: 'Problema', en: 'Problem' }, text: { pt: 'Algo para resolver no fim do dia.', en: 'Something to fix at the end of the day.' } },
+    { ico: '🎁', name: { pt: 'Boa notícia', en: 'Good news' }, text: { pt: 'Algo bom no fim do dia, com um custo.', en: 'Something good at the end of the day, with a cost.' } },
+    { ico: '🧠', name: { pt: 'Pergunta de memória', en: 'Memory question' }, text: { pt: 'Lembre uma descoberta anterior.', en: 'Recall an earlier discovery.' } },
+    { ico: '📓', name: { pt: 'Descoberta', en: 'Discovery' }, text: { pt: 'Revela um fato real da NASA e vai para o álbum.', en: 'Reveals a real NASA fact and goes to the album.' } },
+  ],
+  discH: { pt: 'Descobertas e perguntas', en: 'Discoveries and questions' },
+  disc: [
+    { ico: '📓', name: { pt: 'Uma descoberta por dia', en: 'One discovery per day' }, text: { pt: 'A primeira pesquisa do dia revela uma descoberta. Sem pesquisa, ela vem à noite.', en: 'The first research of the day reveals a discovery. With no research, it comes at night.' } },
+    { ico: '🗂️', name: { pt: 'Álbum', en: 'Album' }, text: { pt: 'São ' + DISC.length + ' descobertas. Cada missão traz até ' + R.DAYS + ', então jogue de novo para completar.', en: 'There are ' + DISC.length + ' discoveries. Each mission brings up to ' + R.DAYS + ', so play again to complete it.' } },
+    { ico: '🧠', name: { pt: 'Pergunta de memória', en: 'Memory question' }, text: { pt: 'Alguns dias depois, o jogo pergunta sobre uma descoberta. Leia o álbum antes!', en: 'A few days later, the game asks about a discovery. Read the album first!' } },
+    { ico: '🎉', name: { pt: 'Acertou', en: 'Right answer' }, text: { pt: 'Ganha ' + R.QUIZ_OK_AIR + ' de ar e ' + R.QUIZ_OK_PW + ' de energia.', en: 'You gain ' + R.QUIZ_OK_AIR + ' air and ' + R.QUIZ_OK_PW + ' power.' } },
+    { ico: '🤔', name: { pt: 'Errou', en: 'Wrong answer' }, text: { pt: 'Perde ' + R.QUIZ_FAIL_AIR + ' de ar e ' + R.QUIZ_FAIL_PW + ' de energia.', en: 'You lose ' + R.QUIZ_FAIL_AIR + ' air and ' + R.QUIZ_FAIL_PW + ' power.' } },
+  ],
+  tipsH: { pt: 'Dicas', en: 'Tips' },
+  tips: [
+    { ico: '🔋', name: { pt: 'Guarde energia', en: 'Save power' }, text: { pt: 'Tente manter ' + R.SHIELD_PW + ' de energia para o escudo.', en: 'Try to keep ' + R.SHIELD_PW + ' power for the shield.' } },
+    { ico: '🫧', name: { pt: 'Olhe o ar antes da noite', en: 'Check the air before night' }, text: { pt: 'Com ' + R.AIR_USE + ' de ar ou menos, a missão acaba à noite.', en: 'With ' + R.AIR_USE + ' air or less, the mission ends at night.' } },
+    { ico: '🔁', name: { pt: 'Errar faz parte', en: 'Mistakes are fine' }, text: { pt: 'Cada missão é diferente. Tente outra estratégia e veja o que muda.', en: 'Every mission is different. Try another strategy and see what changes.' } },
+  ],
+  };
+};
+function renderTutorial() {
+  const T = TUT();
+  $('tutorialTitle').textContent = tr(T.title);
+  const icon = e => e.img ? '<img src="' + e.img + '" alt="" width="36" height="36">' : e.html || e.ico;
+  const item = e => '<div class="d"><span class="i">' + icon(e) + '</span><b>' + tr(e.name) + '</b><span>' + tr(e.text) + '</span>'
+    + (e.more ? '<small class="base">' + tr(e.more) + '</small>' : '') + '</div>';
+  const block = (title, list, intro) => '<h2>' + tr(title) + '</h2>' + (intro ? '<p class="coll">' + tr(intro) + '</p>' : '')
+    + '<div class="book">' + list.map(item).join('') + '</div>';
+  $('tutorialBody').innerHTML = '<div class="fact">' + tr(T.goal) + '</div>'
+    + block(T.goalH, T.stars) + block(T.resH, T.res) + block(T.hudH, T.hud) + block(T.dayH, T.day)
+    + block(T.decH, T.dec) + block(T.stormH, T.storm, T.stormIntro) + block(T.cardsH, T.cards)
+    + block(T.discH, T.disc) + block(T.tipsH, T.tips);
+}
+function openTutorial() {
+  if ($('closeTutorialBtn').disabled) return;
+  const opening = $('tutorial').classList.contains('hidden');
+  $('intro').classList.add('hidden');
+  $('tutorial').classList.remove('hidden');
+  if (opening) { animateStudy($('tutorial')); sfx('windowOpen'); }
+  $('closeTutorialBtn').setAttribute('aria-label', lang === 'pt' ? 'Fechar tutorial' : 'Close tutorial');
+  $('closeTutorialBtn').textContent = lang === 'pt' ? '← Voltar' : '← Back';
+  renderTutorial();
+  window.scrollTo(0, 0);
+}
+$('openTutorialBtn').addEventListener('click', openTutorial);
+$('closeTutorialBtn').addEventListener('click', async () => {
+  const close = $('closeTutorialBtn');
+  if (close.disabled) return;
+  close.disabled = true;
+  sfx('windowClose');
+  await animateStudy($('tutorial'), true);
+  $('tutorial').classList.add('hidden');
+  $('intro').classList.remove('hidden');
+  close.disabled = false;
+  $('openTutorialBtn').focus();
+});
+
 $('albumGameBtn').addEventListener('click', () => {
   if (busy || !G || G.over || (G.card && G.card.quiz)) return;
   openAlbum('game');
@@ -2000,6 +2134,7 @@ $('againBtn').addEventListener('click', () => { factIdx++; start(); });
 document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click', () => {
   lang = lang === 'pt' ? 'en' : 'pt'; setTexts();
   if (!$('album').classList.contains('hidden')) openAlbum();
+  if (!$('tutorial').classList.contains('hidden')) renderTutorial();
   if (G && !busy && !discoveryReveal.length) { renderMeters(); if (G.over) renderEnd(); else renderCard(false); }
 }));
 setTexts();

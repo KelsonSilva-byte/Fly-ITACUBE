@@ -315,6 +315,20 @@ main:has(#game:not(.hidden)) > footer { display:none; }
 #albumTitle { flex:1; margin:0; font:inherit; }
 #albumSub { margin:.65rem .75rem; }
 #albumGrid { margin:.75rem; }
+/* Como jogar: mesma moldura do painel de descobertas */
+#tutorial { padding:0; border:4px solid #8591dc; border-radius:0; background:#171b4b; clip-path:var(--pixel-corners); }
+#tutorial #tutorialBody { margin:.75rem; }
+#tutorial h2 { font-family:var(--font-pixel); font-size:.8rem; line-height:1.7; color:#ffcf72; margin:1rem 0 .4rem; }
+#tutorial .fact { font-size:.85rem; }
+#tutorial .book .d { border-radius:0; }
+#tutorial .book .d .i img { display:block; width:36px; height:36px; object-fit:contain; image-rendering:pixelated; }
+#tutorial .book .d .i { font-size:1.4rem; }
+#tutorial .coll { font-size:.78rem; line-height:1.6; color:#f3f3ff; }
+#tutorial .book .d { align-items:start; }
+#tutorial .book .d .i { align-self:start; min-width:36px; text-align:center; }
+#tutorial .tut-arrow { display:inline-block; width:36px; height:36px; line-height:36px; border-radius:8px; font-size:1.2rem; font-weight:900; }
+#tutorial .tut-arrow.good { background:#14532d; color:#86efac; }
+#tutorial .tut-arrow.bad { background:#7f1d1d; color:#fca5a5; }
 .study-entry { border:2px solid #8591dc; background:#f3f3ff; color:#171b4b; margin:0; }
 .study-entry summary { padding:.65rem; font:.63rem/1.8 var(--font-pixel); overflow-wrap:anywhere; }
 .study-entry[open] summary { background:#303db1; color:#f3f3ff; }
