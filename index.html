@@ -174,7 +174,7 @@ const R = {
   DAYS: 10,
   AIR_START: 6, AIR_MAX: 10, AIR_USE: 2,
   PW_START: 4, PW_MAX: 10, SUN: [0, 1, 1, 1, 1, 2, 2, 2, 2, 2],   // 0 = sem sol(10%), 1 = parcial(40%), 2 = normal(50%)
-  RAD_LIMIT: 100, RAD_SAFE: 50, RAD_DAILY: 2,
+  RAD_LIMIT: 100, RAD_SAFE: 70, RAD_DAILY: 1,
   SCI_GOAL: 8,
   STORM: { 1: 20, 2: 40, 3: 70 },
   BLOCK_READY: 0.9, BLOCK_RUSH: 0.5, OUTSIDE: 0.6,
@@ -1722,9 +1722,9 @@ function renderEnd() {
   if (G.over === 'win') {
     art = '🧑‍🚀🎉🌍'; title = pt ? 'Missão cumprida!' : 'Mission complete!';
     text = sciOk && healthOk ? (pt ? 'Muitas descobertas e uma tripulação bem protegida. Equilíbrio de comandante!' : 'Lots of discoveries and a well-protected crew. A true commander\'s balance!')
-         : sciOk ? (pt ? `Muitas descobertas! Mas a tripulação recebeu bastante radiação. Astronautas de verdade tentam receber o mínimo possível. Para 3 estrelas, mantenha o medidor abaixo da metade.` : `Lots of discoveries! But the crew took a lot of radiation. Real astronauts try to get as little as possible. For 3 stars, keep the meter below half.`)
+         : sciOk ? (pt ? `Muitas descobertas! Mas a tripulação recebeu bastante radiação. Astronautas de verdade tentam receber o mínimo possível. Para 3 estrelas, mantenha o medidor abaixo de 70.` : `Lots of discoveries! But the crew took a lot of radiation. Real astronauts try to get as little as possible. For 3 stars, keep the meter below 70.`)
          : healthOk ? (pt ? `A tripulação ficou bem protegida! Para 3 estrelas, faça ${R.SCI_GOAL} descobertas.` : `The crew stayed well protected! For 3 stars, make ${R.SCI_GOAL} discoveries.`)
-         : (pt ? `Vocês voltaram para casa! Para mais estrelas: ${R.SCI_GOAL} descobertas e radiação abaixo da metade.` : `You made it home! For more stars: ${R.SCI_GOAL} discoveries and radiation below half.`);
+         : (pt ? `Vocês voltaram para casa! Para mais estrelas: ${R.SCI_GOAL} descobertas e radiação abaixo de 70.` : `You made it home! For more stars: ${R.SCI_GOAL} discoveries and radiation below 70.`);
   } else if (G.over === 'air') {
     art = '🫧🚀🌍'; title = pt ? 'O ar acabou: voltando para casa' : 'Out of air: heading home';
     text = pt ? 'A tripulação voltou em segurança, mas a missão terminou mais cedo. Isso acontece até com bons comandantes! Dica: a tripulação respira todo dia, então guarde energia para a máquina de oxigênio.'
