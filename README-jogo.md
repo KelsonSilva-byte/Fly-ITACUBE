@@ -81,7 +81,7 @@ In the game, that warning decides whether the shield can be charged.
 | Forgets the air | 0% | 0% |
 | Random choices | 5% | 1% |
 
-3 stars need **8 science points and radiation below half**. Surviving is not enough: ignoring the shield never reaches 3 stars.
+3 stars need **8 science points and radiation below 70**. Surviving is not enough: ignoring the shield never reaches 3 stars.
 
 The interface was also played automatically in a browser (20 full games, in both languages) with no errors.
 Swiping with a finger on a real phone has not been tested yet.
@@ -184,7 +184,7 @@ No jogo, esse aviso decide se dá para carregar o escudo.
 | Esquece o ar | 0% | 0% |
 | Escolhas aleatórias | 5% | 1% |
 
-3 estrelas exigem **8 pontos de ciência e radiação abaixo da metade**. Não basta sobreviver: quem ignora o escudo nunca chega a 3 estrelas.
+3 estrelas exigem **8 pontos de ciência e radiação abaixo de 70**. Não basta sobreviver: quem ignora o escudo nunca chega a 3 estrelas.
 
 A interface também foi jogada automaticamente no navegador (20 partidas completas, nos dois idiomas) sem erros.
 Arrastar com o dedo em um celular de verdade ainda não foi testado.
