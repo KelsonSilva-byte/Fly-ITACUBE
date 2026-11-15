@@ -218,18 +218,13 @@ const LIFE = [
 ];
 /* Carta de ciência: uma pesquisa dentro da base (custa energia) contra uma fora da base (custa radiação).
    `task` escolhe a animação; `pool` escolhe o grupo da descoberta. */
+/* Os rótulos são os próprios nomes das pesquisas, para o jogador saber qual descoberta vai ganhar. */
 const SCI = {
-  lab:   { key: 'lab', task: 'research', art: '🔬', label: B('Laboratório', 'Lab'), fx: { pw: -1, sci: 1 }, pool: 'rock',
-           say: B('O laboratório pode estudar pedras da Lua, mas gasta energia.', 'The lab can study Moon rocks, but it uses power.') },
-  scope: { key: 'scope', task: 'observe', art: '🔭', label: B('Telescópio', 'Telescope'), fx: { pw: -1, sci: 1 }, pool: 'sun',
-           say: B('O telescópio pode observar o Sol, mas gasta energia.', 'The telescope can watch the Sun, but it uses power.') },
-  rover: { key: 'rover', task: 'explore', art: '🚙', label: B('Jipe na cratera', 'Rover to the crater'), fx: { pw: -1, sci: 2, rad: 5, outside: true }, pool: 'crater',
-           say: B('Uma cratera perto pode ter gelo, mas fora da base não há escudo contra a radiação.', 'A nearby crater may have ice, but outside the base there is no shield against radiation.'),
-           sayAlert: B('O alerta solar está ligado, e a cratera está logo ali… Sair de jipe mesmo assim?', 'The solar alert is on, and the crater is right there… Drive out anyway?') },
-  ice:   { key: 'ice', task: 'sample', art: '🧊', label: B('Buscar gelo a pé', 'Walk to the ice'), fx: { rad: 3, sci: 1, outside: true }, pool: 'ice',
-           say: B('Um sensor achou gelo pertinho da base. Dá para ir a pé, mas lá fora tem mais radiação.', 'A sensor found ice close to the base. You can walk there, but there is more radiation outside.') },
-  rest:  { key: 'rest', task: 'power', art: '🔋', label: B('Recarregar baterias', 'Recharge batteries'), fx: { pw: 1, air: -1 },
-           say: B('As baterias estão quase vazias. Dá para recarregar e pesquisar outro dia.', 'The batteries are almost empty. You can recharge them and do research another day.') },
+  lab:   { key: 'lab', task: 'research', art: '🔬', label: B('Pesquisar pedras', 'Study rocks'), fx: { pw: -1, sci: 1 }, pool: 'rock' },
+  scope: { key: 'scope', task: 'observe', art: '🔭', label: B('Observar o Sol', 'Watch the Sun'), fx: { pw: -1, sci: 1 }, pool: 'sun' },
+  rover: { key: 'rover', task: 'explore', art: '🚙', label: B('Ver crateras', 'See craters'), fx: { pw: -1, sci: 2, rad: 5, outside: true }, pool: 'crater' },
+  ice:   { key: 'ice', task: 'sample', art: '🧊', label: B('Buscar gelo', 'Get ice'), fx: { rad: 3, sci: 1, outside: true }, pool: 'ice' },
+  rest:  { key: 'rest', task: 'power', art: '🔋', label: B('Recarregar baterias', 'Recharge batteries'), fx: { pw: 1, air: -1 } },
 };
 // Montada na hora em que aparece, para o resgate olhar a energia já com o Sol do dia.
 function sciCard(G, s) {
@@ -238,9 +233,8 @@ function sciCard(G, s) {
   else outside = s ? 'rover' : pick(['rover', 'ice']);             // dia de alerta: a tentação é o jipe
   if (G.pw <= R.RESCUE_PW) inside = 'rest';
   const a = SCI[inside], b = SCI[outside];
-  const sayB = s && s.flr && outside === 'rover' ? b.sayAlert : b.say;
-  return { id: 'sci', kind: 'sci', art: a.art + b.art, pair: [inside, outside],
-    text: B(`Hora da pesquisa! ${a.say.pt} ${sayB.pt}`, `Research time! ${a.say.en} ${sayB.en}`),
+  return { id: 'sci', kind: 'sci', art: a.art + b.art, pair: [inside, outside], warn: !!(s && s.flr),
+    text: B(`Está na hora da pesquisa! ${a.label.pt} ou ${b.label.pt}?`, `It's research time! ${a.label.en} or ${b.label.en}?`),
     L: a, R: b };
 }
 /* Fim do dia (sem tempestade): problema, boa notícia ou nada. Toda carta tem custo dos dois lados. */
@@ -1024,9 +1018,10 @@ function cardNote(c) {
     return c.first ? d : d + (pt ? ' · 🌙 À noite a tripulação respirou e os raios cósmicos passaram pela base.' : ' · 🌙 Overnight the crew breathed and cosmic rays passed through the base.');
   }
   if (c.id === 'flare') return pt ? 'Carregar o escudo leva tempo e gasta energia.' : 'Charging the shield takes time and uses power.';
-  if (c.kind === 'sci') return c.pair[0] === 'rest'
-    ? (pt ? '🔋 Pouca energia: hoje dá para recarregar no lugar de uma pesquisa.' : '🔋 Low power: today you can recharge instead of one research.')
-    : (pt ? '🔬 Escolha uma pesquisa · dentro da base gasta energia, fora recebe radiação.' : '🔬 Pick one research · inside the base uses power, outside gets radiation.');
+  if (c.kind === 'sci') {
+    if (c.pair[0] === 'rest') return pt ? '🔋 Pouca energia: hoje dá para recarregar no lugar de uma pesquisa.' : '🔋 Low power: today you can recharge instead of one research.';
+    return c.warn ? (pt ? '⚠️ Alerta solar ligado.' : '⚠️ Solar alert is on.') : '';
+  }
   if (c.type === 'problem') return pt ? '⚠️ Problema na base' : '⚠️ Problem at the base';
   if (c.type === 'good') return pt ? '🎁 Boa notícia' : '🎁 Good news';
   if (c.kind === 'result') return `☢️ +${c.met.inside + c.met.extra}`;
