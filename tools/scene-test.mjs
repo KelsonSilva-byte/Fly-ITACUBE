@@ -29,5 +29,12 @@ for(const kind of ['storm','meteors','explore','sample','oxygen','prepare','obse
 }
 promise=scene.play('farm',{enabled:true});await advance(2400);await promise;assert.equal(scene.snapshot.farm,true);
 scene.sync({day:3,sun:1,card:{kind:'day'},queue:[]});assert.equal(scene.snapshot.day,4);assert.equal(scene.snapshot.sun,1);
+scene.reset();await advance(6600);
+scene.sync({start:Date.parse('2025-03-14'),day:0,sun:3,card:{kind:'task'},queue:[1,2]});
+await advance(5000);assert.equal(scene.snapshot.kind,'idle');
+for (const lights of [false,true]) {
+ promise=scene.play('eclipse',{lights,clearance:0});await advance(9000);await promise;
+ await advance(1000);assert.equal(scene.snapshot.kind,'idle');
+}
 scene.stop();motion.matches=true;scene.reset();await scene.play('explore');assert.equal(scene.snapshot.kind,'idle');scene.stop();
 console.log('PASS: routes, completion, persistent dust/leak, shelter events, lighting, reduced motion.');

@@ -70,6 +70,11 @@
   <div class="deck" id="deck">
     <div class="card" id="card" tabindex="0" role="group" aria-live="polite">
       <span class="tag l" id="tagL"></span><span class="tag r" id="tagR"></span>
+      <div class="report-bar hidden" id="reportBar">
+        <span class="report-symbol" id="reportSymbol" aria-hidden="true"></span>
+        <strong id="reportTitle"></strong>
+        <button type="button" id="reportClose"></button>
+      </div>
       <div class="art" id="cArt" aria-hidden="true"></div>
       <div class="txt" id="cTxt"></div>
       <div class="note" id="cNote"></div>
@@ -282,8 +287,8 @@ const DATED_EVENTS = [
             'Lunar eclipse! Earth\'s shadow crossed the Moon and dimmed the light on the solar panels.'),
     record: B('Em 25 de março de 2024 ocorreu um eclipse lunar penumbral, dois dias após a tempestade solar de 23 de março.',
               'On March 25, 2024, a penumbral lunar eclipse occurred, two days after the March 23 solar storm.'),
-    L: { label: B('Poupar aquecimento', 'Save heating'), fx: { air: -1 } },
-    R: { label: B('Manter base aquecida', 'Keep base warm'), fx: { pw: -2 } } },
+    L: { label: B('Poupar energia e apagar as luzes', 'Save power and turn off the lights'), fx: { air: -1 } },
+    R: { label: B('Manter aquecimento e luzes', 'Keep heating and lights on'), fx: { pw: -2 } } },
 
   { id: 'donki_x87_2024_05', art: '🔭☀️',
     d: '2024-05-14T16:51Z', source: 'NASA DONKI',
@@ -302,8 +307,8 @@ const DATED_EVENTS = [
             'Partial lunar eclipse! Part of Earth\'s shadow cooled the Moon\'s surface for a few hours.'),
     record: B('Em 18 de setembro de 2024 ocorreu um eclipse lunar parcial, logo após a tempestade de partículas de 17 de setembro.',
               'On September 18, 2024, a partial lunar eclipse occurred, right after the September 17 particle storm.'),
-    L: { label: B('Poupar aquecimento', 'Save heating'), fx: { air: -1 } },
-    R: { label: B('Manter base aquecida', 'Keep base warm'), fx: { pw: -2 } } },
+    L: { label: B('Poupar energia e apagar as luzes', 'Save power and turn off the lights'), fx: { air: -1 } },
+    R: { label: B('Manter aquecimento e luzes', 'Keep heating and lights on'), fx: { pw: -2 } } },
 
   { id: 'geminids_2024_12', art: '☄️🧹',
     d: '2024-12-14T01:00Z', source: 'NASA Meteor Watch',
@@ -332,8 +337,8 @@ const DATED_EVENTS = [
             'Total lunar eclipse! Earth completely blocked the Sun and temperatures plunged at the base.'),
     record: B('Em 14 de março de 2025 ocorreu um eclipse lunar total, mergulhando a face visível da Lua na sombra da Terra.',
               'On March 14, 2025, a total lunar eclipse occurred, plunging the Moon\'s near side into Earth\'s shadow.'),
-    L: { label: B('Poupar aquecimento', 'Save heating'), fx: { air: -1 } },
-    R: { label: B('Manter base aquecida', 'Keep base warm'), fx: { pw: -2 } } },
+    L: { label: B('Poupar energia e apagar as luzes', 'Save power and turn off the lights'), fx: { air: -1 } },
+    R: { label: B('Manter aquecimento e luzes', 'Keep heating and lights on'), fx: { pw: -2 } } },
 ];
 /* Descobertas: cada ponto de ciência vira um fato real sobre a Lua ou o Sol. */
 const DISC = [
@@ -557,8 +562,8 @@ function buildDay(G) {
   G.queue = q;
 }
 
-function newGame() {
-  const m = pickMission();
+function newGame(eventCard) {
+  const m = eventCard ? {start:day0(eventCard.d),storms:{},dated:{0:eventCard}} : pickMission();
   const G = { day: 0, air: R.AIR_START, pw: R.PW_START, rad: 0, sci: 0, start: m.start, storms: m.storms, dated: m.dated || {},
               phase: Math.floor(rnd() * R.SUN.length), bags: {}, met: [], over: null, card: null, queue: [], wasted: 0, found: [], trips: 0, tripRad: 0, realLog: [], recall: [] };
   buildDay(G);
@@ -637,7 +642,7 @@ function stars(G) {
   return a && b ? 3 : a || b ? 2 : 1;
 }
 
-return { R, STORMS, DISC, newGame, choose, locked, effectFor, stars, setRng: f => { rnd = f; } };
+return { R, STORMS, DISC, DATED_EVENTS, newGame, choose, locked, effectFor, stars, setRng: f => { rnd = f; } };
 })();
 /*ENGINE-END*/
 
@@ -664,6 +669,10 @@ function tone(f, t0, dur, type, vol) {
 const SFX = {
   swipe: () => tone(320, 0, .06, 'triangle', .05),
   lock: () => tone(140, 0, .16, 'square', .05),
+  reveal: () => {
+    [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => tone(f, i * .075, .34, 'sine', .09));
+    tone(1318.51, .27, .28, 'sine', .035);
+  },
   disc: () => [523, 659, 784].forEach((f, i) => tone(f, i * .09, .14)),
   alert: () => [0, 1, 2].forEach(i => { tone(880, i * .3, .13, 'square', .04); tone(660, i * .3 + .15, .13, 'square', .04); }),
   storm: () => { for (let i = 0; i < 10; i++) tone(80 + Math.random() * 70, i * .12, .2, 'sawtooth', .06); },
@@ -809,17 +818,6 @@ function cardReal(c) {
 }
 
 /* Ícones de efeito: setas em vez de números */
-function effectText(fx) {
-  const arrows = (n, per) => (n > 0 ? '▲' : '▼').repeat(Math.min(3, Math.max(1, Math.round(Math.abs(n) / per))));
-  const p = [];
-  if (fx.prepared || fx.rush) p.push(lang === 'pt' ? 'Escudo' : 'Shield');
-  if (fx.pw) p.push(tr({pt: 'Energia', en: 'Power'}) + ' ' + arrows(fx.pw, 1));
-  if (fx.air) p.push(tr({pt: 'Ar', en: 'Air'}) + ' ' + arrows(fx.air, 1));
-  if (fx.sci) p.push(tr({pt: 'Ciência', en: 'Science'}) + ' ' + arrows(fx.sci, 1));
-  if (fx.rad) p.push(tr({pt: 'Radiação', en: 'Radiation'}) + ' ' + arrows(fx.rad, 5));
-  return p.join(' · ');
-}
-
 /* ---------- desenho ---------- */
 function setTexts() {
   document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
@@ -861,7 +859,14 @@ function renderCard(animate) {
   const card = $('card');
   card.className = 'card' + (c.alert ? ' alert' : '') + (animate ? ' in' : '');
   card.style.transform = '';
-  $('cArt').textContent = c.art;
+  const solarAlert = c.kind === 'flare';
+  card.classList.toggle('solar-alert', solarAlert);
+  $('reportBar').classList.toggle('hidden', !solarAlert);
+  $('reportSymbol').textContent = '!';
+  $('reportTitle').textContent = tr({pt: 'Alerta solar', en: 'Solar alert'});
+  $('reportClose').classList.add('hidden');
+  $('cTxt').removeAttribute('tabindex');
+  $('cArt').textContent = solarAlert ? '' : c.art;
   $('cTxt').textContent = cardText(c);
   $('cNote').textContent = cardNote(c);
   const real = cardReal(c);
@@ -872,7 +877,7 @@ function renderCard(animate) {
     const lk = locked(G, opt);
     btn.disabled = lk;
     const fxTxt = lk ? tr({pt: 'Energia insuficiente', en: 'Not enough power'})
-      : c.quiz ? '' : opt.hidden ? tr({pt: 'Efeito incerto', en: 'Uncertain outcome'}) : effectText(effectFor(G, opt));
+      : '';
     btn.innerHTML = `<span>${arrow === 'l' ? '← ' : ''}${tr(opt.label)}${arrow === 'r' ? ' →' : ''}</span><span class="fx">${fxTxt}</span>`;
   };
   if (!c.single) { fill($('btnL'), c.L, 'l'); $('tagL').textContent = tr(c.L.label); }
@@ -926,7 +931,14 @@ function renderDiscovery() {
   card.className = 'card discovery-reveal in' + (discoveryReveal.some(item => item.first) ? ' first' : '');
   card.style.transform = '';
   $('tagL').style.opacity = $('tagR').style.opacity = 0;
-  $('cArt').textContent = discoveryReveal.map(({ entry }) => entry.ico).join(' ');
+  $('reportBar').classList.remove('hidden');
+  $('reportSymbol').textContent = '';
+  $('reportTitle').textContent = tr({pt: 'Relatório de descobertas', en: 'Discovery report'});
+  $('reportClose').classList.remove('hidden');
+  $('reportClose').setAttribute('aria-label', tr({pt: 'Fechar relatório', en: 'Close report'}));
+  $('cArt').textContent = '';
+  $('cTxt').tabIndex = 0;
+  $('cTxt').scrollTop = 0;
   const content = discoveryReveal.map(({ entry: d, first }) => {
     const item = document.createElement('div');
     const name = document.createElement('strong');
@@ -934,7 +946,17 @@ function renderDiscovery() {
     name.textContent = tr(d.name);
     fact.textContent = tr(d.fact);
     item.classList.toggle('first-discovery', first);
-    item.append(name, fact);
+    const icon = document.createElement('span');
+    icon.className = 'report-entry-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = d.ico;
+    if (first) {
+      const badge = document.createElement('span');
+      badge.className = 'report-new';
+      badge.textContent = tr({pt: '✦ Novo', en: '✦ New'});
+      name.append(badge);
+    }
+    item.append(icon, name, fact);
     return item;
   });
   $('cTxt').replaceChildren(...content);
@@ -973,7 +995,6 @@ async function act(side) {
   preview(null);
   await playTaskScene(out);
   renderMeters();
-  if (out.night && !G.over) toast('🌙 🫧▼  ☢️▲');
   if (out.found?.length) {
     const unlocked = new Set(getUnlocked());
     discoveryReveal = out.found.map(entry => ({ entry, first: !unlocked.has(entry.id) }));
@@ -982,7 +1003,7 @@ async function act(side) {
     preview(null);
     showLearn(null);
     renderDiscovery();
-    sfx('disc');
+    sfx(discoveryReveal.some(item => item.first) ? 'reveal' : 'disc');
     busy = false;
     $('btnR').focus();
     return;
@@ -1011,9 +1032,14 @@ async function act(side) {
   busy = false;
 }
 
-function start() {
+function start(eventCard) {
   busy=false; lunarScene.reset();
-  discoveryReveal = []; G = newGame(); lockHits = 0; prog = null; showLearn(null);
+  discoveryReveal = []; G = newGame(eventCard); lockHits = 0; prog = null; showLearn(null);
+  if (eventCard) {
+    G.queue = G.queue.filter(card => card !== eventCard);
+    G.card = eventCard;
+    G.pw = R.PW_MAX;
+  }
   $('intro').classList.add('hidden'); $('end').classList.add('hidden'); $('game').classList.remove('hidden');
   renderMeters(); renderCard(true);
   if (!seen.has('hint')) { seen.add('hint'); $('card').classList.add('hint'); }
@@ -1247,7 +1273,7 @@ function resetDrag() {
 }
 
 card.addEventListener('pointerdown', event => {
-  if (busy || !G || (G.over && !discoveryReveal.length) || !event.isPrimary || event.button !== 0) return;
+  if (busy || !G || G.over || discoveryReveal.length || !event.isPrimary || event.button !== 0) return;
   drag = { id: event.pointerId, x: event.clientX };
   card.setPointerCapture(event.pointerId);
   card.classList.remove('snap', 'in', 'shake');
@@ -1283,16 +1309,17 @@ card.addEventListener('pointerup', drop); card.addEventListener('pointercancel',
   b.addEventListener('blur', () => { if (!busy) preview(null); });
 });
 document.addEventListener('keydown', e => {
-  if ($('game').classList.contains('hidden')) return;
+  if ($('game').classList.contains('hidden') || discoveryReveal.length) return;
   if (e.key === 'ArrowLeft') act('L'); else if (e.key === 'ArrowRight') act('R');
 });
+$('reportClose').addEventListener('click', () => act('R'));
 $('openAlbumBtn').addEventListener('click', openAlbum);
 $('closeAlbumBtn').addEventListener('click', () => {
   $('album').classList.add('hidden');
   $('intro').classList.remove('hidden');
 });
 $('muteBtn').addEventListener('click', () => { muted = !muted; store.set('lb_mute', muted ? '1' : '0'); setTexts(); if (!muted) sfx('swipe'); });
-$('startBtn').addEventListener('click', start);
+$('startBtn').addEventListener('click', () => start());
 $('againBtn').addEventListener('click', () => { factIdx++; start(); });
 document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click', () => {
   lang = lang === 'pt' ? 'en' : 'pt'; setTexts();
@@ -1301,6 +1328,9 @@ document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click'
 }));
 setTexts();
 window.__game = { get G() { return G; }, get busy() { return busy; }, lunarScene, R, STORMS, Engine, act, setLang: l => { lang = l; setTexts(); } };   // para testes
+const testEventId = new URLSearchParams(location.search).get('evento');
+const testEvent = Engine.DATED_EVENTS.find(event => event.id === testEventId);
+if (testEvent) start(testEvent);
 })();
 </script>
 </body>

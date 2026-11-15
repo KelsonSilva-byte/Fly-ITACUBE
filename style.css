@@ -221,15 +221,17 @@ body:has(#game:not(.hidden)) { background:#08091b; }
   #game .hintSwipe { grid-area:hint; align-self:center; }
 }
 
-#game .card.discovery-reveal.first {
-  min-height:12rem;
-  background:#fff3cd;
-  box-shadow:inset 0 0 0 3px #e2a63e, inset 0 0 0 6px #ffda85;
+@media (prefers-reduced-motion: no-preference) {
+  #game .discovery-reveal.in { animation:discoveryIn .48s ease-out; }
 }
-#game .discovery-reveal .txt { display:grid; gap:.85rem; }
-#game .discovery-reveal .txt p { margin:.35rem 0 0; font-size:.64rem; }
-#game .first-discovery strong { color:#754700; }
-#game .discovery-reveal .note { color:#58421f; }
+@media (prefers-reduced-motion: reduce) {
+  #game .discovery-reveal.in { animation:none; }
+}
+@keyframes discoveryIn {
+  0% { opacity:0; transform:translateY(8px) scale(.97); }
+  65% { opacity:1; transform:translateY(0) scale(1.025); }
+  100% { transform:translateY(0) scale(1); }
+}
 #game .choice .fx { white-space:normal; font-size:.68rem; }
 #game .choice .fx:empty { display:none; }
 
@@ -248,4 +250,52 @@ main:has(#game:not(.hidden)) > footer { display:none; }
 #game { min-height:0; }
 @media (orientation:landscape) and (min-width:640px) and (max-height:620px) {
   #game.scene-event .scene { height:auto; align-self:stretch; grid-column:1 / -1; }
+}
+
+#game .card.discovery-reveal, #game .card.solar-alert {
+  width:min(96%, 23rem); max-width:none; min-height:0; padding:0; gap:0; align-items:stretch;
+  border:4px solid #8591dc; background:#171b4b; color:#f3f3ff;
+  box-shadow:none; clip-path:var(--pixel-corners);
+}
+#game .card.discovery-reveal { touch-action:pan-y; cursor:default; user-select:text; }
+#game .discovery-reveal .art, #game .solar-alert .art { display:none; }
+.report-bar {
+  display:flex; align-items:center; gap:.5rem; padding:.35rem .5rem;
+  min-height:2.45rem; font:.61rem/1.6 var(--font-pixel); text-align:left;
+  background:#303db1; border-bottom:3px solid #8591dc;
+}
+.solar-alert .report-bar { background:#8f2943; }
+.report-symbol { flex:none; width:1rem; height:1rem; color:#ffcf72; font-size:.9rem; }
+.discovery-reveal .report-symbol { background:url("assets/hud/descobertas.png") center / contain no-repeat; image-rendering:pixelated; }
+#reportClose:not(.hidden) {
+  margin-left:auto; flex:none; width:2rem; height:2rem; display:grid; place-items:center;
+  background:#bd3448; clip-path:var(--pixel-corners);
+  box-shadow:inset 3px 3px #ff897c,inset -3px -3px #651c33;
+}
+#reportClose::before {
+  content:""; width:3px; height:3px; background:#f3f3ff;
+  box-shadow:-6px -6px #f3f3ff,-3px -3px #f3f3ff,3px 3px #f3f3ff,6px 6px #f3f3ff,
+             -6px 6px #f3f3ff,-3px 3px #f3f3ff,3px -3px #f3f3ff,6px -6px #f3f3ff;
+}
+#reportClose:focus-visible { background:#8f2943; box-shadow:inset 0 0 0 3px #ffcf72; }
+#game .discovery-reveal .txt {
+  display:grid; gap:.65rem; max-height:min(27dvh, 11rem); overflow-y:auto; overscroll-behavior:contain;
+  padding:.65rem; text-align:left; color:#171b4b; background:#f3f3ff;
+  scrollbar-color:#303db1 #d8dcff;
+}
+#game .discovery-reveal .txt > div + div { border-top:2px dashed #8591dc; padding-top:.65rem; }
+#game .discovery-reveal .txt p { margin:.35rem 0 0; font:normal .62rem/1.85 var(--font-pixel); }
+.report-entry-icon { margin-right:.4rem; }
+.report-new { display:inline-block; margin-left:.35rem; padding:.1rem .2rem; background:#ffcf72; font-size:.46rem; }
+#game .discovery-reveal .note, #game .solar-alert .txt, #game .solar-alert .note { padding:.5rem; color:#f3f3ff; }
+#game .solar-alert .real:not(.hidden) { margin:0 .5rem .5rem; }
+#lunarCanvas[data-animation="storm"] { filter:sepia(.22) saturate(1.55) hue-rotate(-24deg); }
+@media (prefers-reduced-motion:no-preference) {
+  #lunarCanvas[data-solar-impact="true"] { animation:solar-shake .36s steps(1,end) infinite; }
+}
+@keyframes solar-shake {
+  20% { transform:translate(-2px,1px); }
+  40% { transform:translate(2px,-1px); }
+  60% { transform:translate(-1px,-2px); }
+  80% { transform:translate(1px,2px); }
 }
