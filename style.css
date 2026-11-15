@@ -169,7 +169,12 @@ body:has(#game:not(.hidden)) { background:#08091b; }
 #game .meter { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; min-width:0;
   padding:.3rem .15rem; border:1px solid transparent; background:#101425; text-align:center; --level:0; }
 #game .meter small { font-size:clamp(.36rem, 1.65vw, .53rem); color:#f3f3ff; }
-#game .meter .pv { top:0; right:0; font-family:system-ui,sans-serif; }
+/* Setas de previsão: cobrem o ícone do recurso inteiro (3px maior de cada lado), com 90% de opacidade. */
+#game .meter { --icon:54px; }
+#game .meter .pv { top:calc(.3rem + 1px - 3px); left:50%; right:auto; transform:translateX(-50%); width:var(--icon); height:var(--icon);
+  display:flex; align-items:center; justify-content:center; padding:0; border-radius:10px; font-size:calc(var(--icon) * .55);
+  font-family:system-ui,sans-serif; line-height:1; }
+#game .meter.up .pv, #game .meter.down .pv { opacity:.9; }
 .meter-art { display:block; width:48px; height:48px; object-fit:contain; }
 .tank { width:100%; height:100%; shape-rendering:crispEdges; }
 .tank-fill { transform-box:fill-box; transform-origin:center bottom; transform:scaleY(var(--level)); }
@@ -206,6 +211,7 @@ body:has(#game:not(.hidden)) { background:#08091b; }
 @media (max-height:700px) {
   #game .card { min-height:0; }
   .meter-art { width:38px; height:38px; }
+  #game .meter { --icon:44px; }
   .meter-sprite { width:auto; }
   .meter-sprite.radiation { height:34px; }
 }
