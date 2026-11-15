@@ -165,7 +165,12 @@ function pickMission() {
     const i = Math.round((day0(e.d) - start) / DAY);
     if (i >= 1 && i < R.DAYS && (!storms[i] || e.sev > storms[i].sev)) storms[i] = e;
   });
-  return { start, storms };
+  const dated = {};
+  DATED_EVENTS.forEach(e => {
+    const i = Math.round((day0(e.d) - start) / DAY);
+    if (i >= 0 && i < R.DAYS && !storms[i]) dated[i] = e;
+  });
+  return { start, storms, dated };
 }
 
 /* ---------- cartas ---------- */
@@ -192,6 +197,21 @@ const ROVER_ALERT = { id: 'roverAlert', art: '🚙⚠️',
   L: { label: B('Ficar na base', 'Stay inside'), fx: {} },
   R: { label: B('Explorar de jipe', 'Explore by rover'), fx: { pw: -1, sci: 2, rad: 5, outside: true }, pool: 'crater' } };
 const EVENTS = [
+  { id: 'airlock', art: '🥾🧹',
+    text: B('Os trajes voltaram cheios de poeira lunar afiada na câmara de ar. Limpar agora?',
+            'The spacesuits came back covered in sharp Moon dust in the airlock. Clean them now?'),
+    L: { label: B('Limpar amanhã', 'Clean tomorrow'), fx: { air: -1 } },
+    R: { label: B('Aspirar agora', 'Vacuum now'), fx: { pw: -1 } } },
+  { id: 'filter', art: '🚰⚙️',
+    text: B('O filtro que recicla a água e o ar da tripulação está ficando entupido.',
+            'The filter that recycles the crew\'s water and air is getting clogged.'),
+    L: { label: B('Modo econômico', 'Eco mode'), fx: { pw: 1, air: -1 } },
+    R: { label: B('Limpar com força total', 'Full-power clean'), fx: { pw: -1, air: 1 } } },
+  { id: 'cargo', art: '📦🚙',
+    text: B('Um módulo de carga pousou pertinho da base com cilindros extras de ar e água!',
+            'A cargo pod landed close to the base with extra air and water tanks!'),
+    L: { label: B('Ficar na base', 'Stay inside'), fx: {} },
+    R: { label: B('Buscar de jipe', 'Fetch by rover'), fx: { pw: -1, air: 3, rad: 4, outside: true } } },
   { id: 'dust', art: '🧹☀️',
     text: B('A poeira da Lua cobriu os painéis solares.', 'Moon dust has covered the solar panels.'),
     L: { label: B('Deixar assim', 'Leave it'), fx: { pw: -1 } },
@@ -209,47 +229,67 @@ const EVENTS = [
     L: { label: B('Ficar na base', 'Stay inside'), fx: {} },
     R: { label: B('Buscar a amostra', 'Get the sample'), fx: { rad: 4, sci: 1, outside: true }, pool: 'ice' } },
 ];
-/* Eventos reais adicionais de missões lunares e observatórios da NASA */
-const REAL_EVENTS = [
-  { id: 'ladee_dust', art: '☄️🧹',
-    date: '2013-12-14T00:00Z', source: 'NASA LADEE',
-    link: 'https://science.nasa.gov/mission/ladee/',
-    text: B('Chuva de meteoros Geminídeas! Pedrinhas espaciais levantaram poeira lunar e cobriram os painéis solares.',
-            'Geminid meteor shower! Space pebbles kicked up Moon dust and coated the solar panels.'),
-    record: B('Em dezembro de 2013, a sonda LADEE da NASA mediu um grande aumento de poeira ao redor da Lua durante a chuva de meteoros Geminídeas.',
-              'In December 2013, NASA\'s LADEE probe measured a sharp rise in dust around the Moon during the Geminid meteor shower.'),
-    L: { label: B('Deixar sujo', 'Leave dusty'), fx: { pw: -1 } },
-    R: { label: B('Limpar lá fora', 'Clean outside'), fx: { pw: 2, rad: 4, outside: true } } },
-
-  { id: 'eclipse_lro', art: '🌍🌑',
-    date: '2025-03-14T06:58Z', source: 'NASA LRO Diviner',
-    link: 'https://science.nasa.gov/mission/lro/',
-    text: B('Eclipse lunar! A Terra bloqueou o Sol e deixou a base no escuro e no frio por várias horas.',
-            'Lunar eclipse! Earth blocked the Sun, leaving the base in the dark and cold for hours.'),
-    record: B('Durante eclipses lunares totais, o instrumento Diviner da sonda LRO mediu quedas bruscas de mais de 150 °C na superfície da Lua.',
-              'During total lunar eclipses, the Diviner instrument on NASA\'s LRO probe measured sudden surface temperature drops of over 150 °C.'),
+/* Eventos reais de 2024–2025 mapeados pela data exata (só aparecem no dia civil correspondente) */
+const DATED_EVENTS = [
+  { id: 'eclipse_2024_03', art: '🌍🌑',
+    d: '2024-03-25T07:12Z', source: 'NASA / Eclipse Lunar',
+    link: 'https://science.nasa.gov/eclipses/',
+    text: B('Eclipse lunar! A sombra da Terra passou pela Lua e reduziu a luz nos painéis solares.',
+            'Lunar eclipse! Earth\'s shadow crossed the Moon and dimmed the light on the solar panels.'),
+    record: B('Em 25 de março de 2024 ocorreu um eclipse lunar penumbral, dois dias após a tempestade solar de 23 de março.',
+              'On March 25, 2024, a penumbral lunar eclipse occurred, two days after the March 23 solar storm.'),
     L: { label: B('Poupar aquecimento', 'Save heating'), fx: { air: -1 } },
     R: { label: B('Manter base aquecida', 'Keep base warm'), fx: { pw: -2 } } },
 
-  { id: 'lro_impact', art: '💥🔧',
-    date: '2013-03-17T03:50Z', source: 'NASA LRO',
-    link: 'https://www.nasa.gov/solar-system/bright-explosion-on-the-moon/',
-    text: B('Um meteoroide bateu perto da base e jogou pedrinhas que furaram um cano de ar!',
-            'A meteoroid hit near the base and threw pebbles that punctured an air pipe!'),
-    record: B('Em 17 de março de 2013, telescópios da NASA registraram o clarão de um meteoroide batendo na Lua, formando uma cratera de 18 metros vista pela sonda LRO.',
-              'On March 17, 2013, NASA telescopes recorded the flash of a meteoroid hitting the Moon, carving an 18-meter crater imaged by LRO.'),
-    L: { label: B('Consertar depois', 'Fix later'), fx: { air: -2 } },
-    R: { label: B('Consertar agora', 'Fix now'), fx: { pw: -1 } } },
-
-  { id: 'donki_miss', art: '🔭☀️',
-    date: '2024-05-14T16:51Z', source: 'NASA DONKI',
+  { id: 'donki_x87_2024_05', art: '🔭☀️',
+    d: '2024-05-14T16:51Z', source: 'NASA DONKI',
     link: 'https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/30854/-1',
     text: B('Explosão solar gigante (classe X8.7) vista no Sol! A nuvem passou de raspão, mas o telescópio pode medir tudo.',
             'Giant solar flare (class X8.7) seen on the Sun! The cloud passed wide of the Moon, and the telescope can measure it.'),
-    record: B('Em 14 de maio de 2024, o Sol produziu uma explosão classe X8.7 — uma das mais fortes do ciclo — na borda solar, sem atingir diretamente a Terra e a Lua.',
-              'On May 14, 2024, the Sun produced an X8.7 class flare — one of the strongest of the cycle — near the solar limb without hitting Earth and the Moon directly.'),
+    record: B('Em 14 de maio de 2024, o Sol produziu uma explosão classe X8.7 — a mais forte daquele período — sem atingir diretamente a Terra e a Lua.',
+              'On May 14, 2024, the Sun produced an X8.7 class flare — the strongest of that period — without hitting Earth and the Moon directly.'),
     L: { label: B('Poupar energia', 'Save power'), fx: {} },
-    R: { label: B('Apontar telescópio', 'Point telescope'), fx: { pw: -1, sci: 1 }, pool: 'sun' } }
+    R: { label: B('Apontar telescópio', 'Point telescope'), fx: { pw: -1, sci: 1 }, pool: 'sun' } },
+
+  { id: 'eclipse_2024_09', art: '🌍🌑',
+    d: '2024-09-18T02:44Z', source: 'NASA / Eclipse Lunar',
+    link: 'https://science.nasa.gov/eclipses/',
+    text: B('Eclipse lunar parcial! Parte da sombra da Terra esfriou a superfície da Lua por algumas horas.',
+            'Partial lunar eclipse! Part of Earth\'s shadow cooled the Moon\'s surface for a few hours.'),
+    record: B('Em 18 de setembro de 2024 ocorreu um eclipse lunar parcial, logo após a tempestade de partículas de 17 de setembro.',
+              'On September 18, 2024, a partial lunar eclipse occurred, right after the September 17 particle storm.'),
+    L: { label: B('Poupar aquecimento', 'Save heating'), fx: { air: -1 } },
+    R: { label: B('Manter base aquecida', 'Keep base warm'), fx: { pw: -2 } } },
+
+  { id: 'geminids_2024_12', art: '☄️🧹',
+    d: '2024-12-14T01:00Z', source: 'NASA Meteor Watch',
+    link: 'https://science.nasa.gov/solar-system/meteors-meteorites/geminids/',
+    text: B('Pico da chuva de meteoros Geminídeas! Micrometeoritos levantaram poeira lunar nos painéis solares.',
+            'Peak of the Geminid meteor shower! Micrometeorites kicked up Moon dust onto the solar panels.'),
+    record: B('Em 14 de dezembro de 2024 ocorreu o pico anual das Geminídeas; na Lua sem atmosfera, esses grãos levantam poeira eletrostática.',
+              'On December 14, 2024, the annual Geminids peaked; on the airless Moon, these grains kick up electrostatic dust.'),
+    L: { label: B('Deixar sujo', 'Leave dusty'), fx: { pw: -1 } },
+    R: { label: B('Limpar lá fora', 'Clean outside'), fx: { pw: 2, rad: 4, outside: true } } },
+
+  { id: 'quadrantids_2025_01', art: '☄️🧹',
+    d: '2025-01-03T15:00Z', source: 'NASA Meteor Watch',
+    link: 'https://science.nasa.gov/solar-system/meteors-meteorites/quadrantids/',
+    text: B('Chuva de meteoros Quadrântidas! Poeira levantada por pequenos impactos cobriu os painéis solares.',
+            'Quadrantid meteor shower! Dust kicked up by tiny impacts coated the solar panels.'),
+    record: B('Em 3 de janeiro de 2025 ocorreu o pico das Quadrântidas, um dia antes da tempestade solar de 4 de janeiro.',
+              'On January 3, 2025, the Quadrantids peaked, one day before the January 4 solar storm.'),
+    L: { label: B('Deixar sujo', 'Leave dusty'), fx: { pw: -1 } },
+    R: { label: B('Limpar lá fora', 'Clean outside'), fx: { pw: 2, rad: 4, outside: true } } },
+
+  { id: 'eclipse_2025_03', art: '🌍🌑',
+    d: '2025-03-14T06:58Z', source: 'NASA / Eclipse Lunar',
+    link: 'https://science.nasa.gov/eclipses/',
+    text: B('Eclipse lunar total! A Terra bloqueou completamente o Sol e a temperatura despencou na base.',
+            'Total lunar eclipse! Earth completely blocked the Sun and temperatures plunged at the base.'),
+    record: B('Em 14 de março de 2025 ocorreu um eclipse lunar total, mergulhando a face visível da Lua na sombra da Terra.',
+              'On March 14, 2025, a total lunar eclipse occurred, plunging the Moon\'s near side into Earth\'s shadow.'),
+    L: { label: B('Poupar aquecimento', 'Save heating'), fx: { air: -1 } },
+    R: { label: B('Manter base aquecida', 'Keep base warm'), fx: { pw: -2 } } },
 ];
 /* Descobertas: cada ponto de ciência vira um fato real sobre a Lua ou o Sol. */
 const DISC = [
@@ -339,6 +379,7 @@ function bag(G, key, items) {
 }
 function buildDay(G) {
   const s = G.storms[G.day];
+  const dEv = G.dated[G.day];
   G.prepared = false; G.rush = false; G.outside = false;
   const q = [dayCard(G)];
   q.push(G.air <= R.AIR_USE ? LIFE[0] : pick(LIFE.flatMap(c => Array(c.w).fill(c))));
@@ -346,19 +387,18 @@ function buildDay(G) {
   q.push(s ? (s.flr ? ROVER_ALERT : LAB) : bag(G, 'sci', [LAB, ROVER]));
   if (s) {
     q.push(() => arrivalCard(G, s));
+  } else if (dEv) {
+    G.realLog.push({ day: G.day, ev: dEv });
+    q.push(dEv);
   } else {
-    const ev = bag(G, 'ev', [...EVENTS, ...REAL_EVENTS]);
-    if (ev.source && !G.realLog.some(x => x.ev.id === ev.id)) {
-      G.realLog.push({ day: G.day, ev });
-    }
-    q.push(ev);
+    q.push(bag(G, 'ev', EVENTS));
   }
   G.queue = q;
 }
 
 function newGame() {
   const m = pickMission();
-  const G = { day: 0, air: R.AIR_START, pw: R.PW_START, rad: 0, sci: 0, start: m.start, storms: m.storms,
+  const G = { day: 0, air: R.AIR_START, pw: R.PW_START, rad: 0, sci: 0, start: m.start, storms: m.storms, dated: m.dated,
               phase: Math.floor(rnd() * R.SUN.length), bags: {}, met: [], over: null, card: null, queue: [], wasted: 0, found: [], trips: 0, tripRad: 0, realLog: [] };
   buildDay(G);
   G.card = G.queue.shift();
@@ -582,8 +622,8 @@ function cardReal(c) {
     const s = c.storm, when = c.id === 'flare' ? s.flr : s.d;
     return `REAL · ${fmtDate(Date.parse(when), { month: 'short' })} · ${fmtTime(when)} UTC · NASA DONKI`;
   }
-  if (c.source && c.date) {
-    return `REAL · ${fmtDate(Date.parse(c.date), { month: 'short' })} · ${c.source}`;
+  if (c.source && c.d) {
+    return `REAL · ${fmtDate(Date.parse(c.d), { month: 'short' })} · ${c.source}`;
   }
   return '';
 }
@@ -787,7 +827,8 @@ function finish() {
 }
 function renderEnd() {
   if (!G || !G.over) return;
-  const pt = lang === 'pt', st = stars(G), sciOk = G.sci >= R.SCI_GOAL, healthOk = G.rad < R.RAD_SAFE;
+  const pt = lang === 'pt', st = stars(G), sciMin = R.SCI_MIN || 4;
+  const sciOk = G.sci >= R.SCI_GOAL, healthOk = G.rad < R.RAD_SAFE;
   $('stars').textContent = G.over === 'win' ? '⭐'.repeat(st) + '☆'.repeat(3 - st) : '';
   $('endSum').innerHTML = `<span>🔬 ${G.sci}</span><span>☢️ ${Math.min(100, G.rad)}%</span><span>📅 ${Math.min(G.day + (G.over === 'win' ? 0 : 1), R.DAYS)}/${R.DAYS}</span>`;
   let art, title, text;
@@ -805,12 +846,17 @@ function renderEnd() {
     art = '⚡🚀🌍'; title = pt ? 'A energia acabou: voltando para casa' : 'Out of power: heading home';
     text = pt ? 'Sem energia para aquecer a base e manter os equipamentos ligados, a tripulação voltou em segurança para a Terra. Isso acontece até com bons comandantes! Dica: nunca zere a bateria — deixe sempre uma reserva para emergências e dias de sombra.'
               : 'With no power left to heat the base and run vital systems, the crew returned safely to Earth. It happens to good commanders too! Tip: never drain the battery to zero — always keep a reserve for emergencies and shadowy days.';
+  } else if (G.over === 'nosci') {
+    art = '🔬🚀🌍'; title = pt ? 'Poucas descobertas: missão encerrada' : 'Too few discoveries: mission ended';
+    text = pt ? `A tripulação voltou segura, mas fez só ${G.sci} de ${sciMin} descobertas mínimas. Astronautas vão à Lua para pesquisar — e cada descoberta também ajuda a gerar ar, energia ou proteção para a base!`
+              : `The crew returned safely, but made only ${G.sci} of ${sciMin} minimum discoveries. Astronauts go to the Moon to research — and every discovery also helps generate air, power or shielding for the base!`;
   } else {
     art = '☢️🚀🌍'; title = pt ? 'Radiação demais: voltando para casa' : 'Too much radiation: heading home';
     text = pt ? 'A tripulação voltou para a Terra para se cuidar. Tente de novo com outra estratégia! Dica: deixe sempre um pouco de energia guardada. Uma tempestade solar pode chegar com pouco aviso, ou sem aviso nenhum.'
               : 'The crew returned to Earth to recover. Try again with another strategy! Tip: always keep some power in reserve. A solar storm can arrive with little warning, or none at all.';
   }
   $('endArt').textContent = art; $('endTitle').textContent = title; $('endText').textContent = text;
+
   // O que esta missão mostrou: frases curtas tiradas do que a criança fez.
   const has = m => G.met.some(x => x.mode === m), times = n => pt ? (n > 1 ? n + ' vezes' : '1 vez') : (n > 1 ? n + ' times' : 'once');
   const b = [];
@@ -821,6 +867,7 @@ function renderEnd() {
   if (lockHits) b.push(pt ? `🔒 Faltou energia ${times(lockHits)} para o que você queria. Não dá para ligar tudo ao mesmo tempo.` : `🔒 You ran short of power ${times(lockHits)} for what you wanted. You cannot turn everything on at once.`);
   if (G.wasted) b.push(pt ? `🔋 A bateria encheu e ${G.wasted} de energia do Sol se perdeu.` : `🔋 The battery filled up and ${G.wasted} of the Sun's power was lost.`);
   $('debrief').innerHTML = b.slice(0, 4).map(x => '<li>' + x + '</li>').join('');
+
   const found = G.found.map(id => DISC.find(d => d.id === id));
   $('bookTitle').textContent = (pt ? '📓 Caderno de descobertas' : '📓 Discovery notebook') + ` (${found.length})`;
   $('bookColl').textContent = prog ? (pt ? `Coleção neste aparelho: ${prog.n} de ${DISC.length} · Melhor missão: ${'⭐'.repeat(prog.best) || '—'}` : `Collection on this device: ${prog.n} of ${DISC.length} · Best mission: ${'⭐'.repeat(prog.best) || '—'}`) : '';
@@ -828,41 +875,52 @@ function renderEnd() {
     : `<p>${pt ? 'Nenhuma descoberta desta vez. O laboratório, o telescópio e o jipe fazem descobertas.' : 'No discoveries this time. The lab, the telescope and the rover make discoveries.'}</p>`;
   $('endFact').classList.toggle('hidden', found.length > 0);
   $('endFact').innerHTML = (pt ? '💡 <b>Você sabia?</b> ' : '💡 <b>Did you know?</b> ') + FACTS[factIdx % FACTS.length][pt ? 0 : 1];
+
   $('realIntro').textContent = pt
-    ? `Sua missão aconteceu entre ${fmtDate(G.start)} e ${fmtDate(G.start + (R.DAYS - 1) * DAY)}. Nesses dias, o Sol fez isto de verdade:`
-    : `Your mission took place between ${fmtDate(G.start)} and ${fmtDate(G.start + (R.DAYS - 1) * DAY)}. On those days, the Sun really did this:`;
-  const stormHtml = Object.keys(G.storms).map(Number).sort((a, b) => a - b).map(i => {
-    const s = G.storms[i], m = G.met.find(x => x.e === s);
-    return `<div class="ev"><div class="when">${fmtDate(Date.parse(s.d))} · ${fmtTime(s.d)} UTC · ${pt ? 'tempestade' : 'storm'} ${sevTxt(s.sev)}</div>
-      <div>${stormRecord(s)} <a href="${s.link}" target="_blank" rel="noopener">${pt ? 'Ver no DONKI' : 'See it on DONKI'}</a></div>
-      <div class="you">🎮 ${stormYou(i, m)}</div></div>`;
-  }).join('');
+    ? `Sua missão aconteceu entre ${fmtDate(G.start)} e ${fmtDate(G.start + (R.DAYS - 1) * DAY)}. Nesses dias, o Sol e o espaço fizeram isto de verdade:`
+    : `Your mission took place between ${fmtDate(G.start)} and ${fmtDate(G.start + (R.DAYS - 1) * DAY)}. On those days, the Sun and space really did this:`;
 
-  const extraHtml = (G.realLog || []).map(({ day, ev }) => `
-    <div class="ev"><div class="when">${fmtDate(Date.parse(ev.date))} · ${ev.source}</div>
-      <div>${tr(ev.record)} <a href="${ev.link}" target="_blank" rel="noopener">${pt ? 'Ver registro da NASA' : 'See NASA record'}</a></div>
-      <div class="you">🎮 ${pt ? `Aconteceu no Dia ${day + 1} da sua missão.` : `Happened on Day ${day + 1} of your mission.`}</div></div>
-  `).join('');
+  // Junta tempestades solares (DONKI) e eventos datados em ordem cronológica da missão
+  const timeline = [
+    ...Object.keys(G.storms).map(Number).map(i => {
+      const s = G.storms[i], m = G.met.find(x => x.e === s);
+      return {
+        day: i,
+        html: `<div class="ev"><div class="when">${fmtDate(Date.parse(s.d))} · ${fmtTime(s.d)} UTC · ${pt ? 'tempestade' : 'storm'} ${sevTxt(s.sev)}</div>
+          <div>${stormRecord(s)} <a href="${s.link}" target="_blank" rel="noopener">${pt ? 'Ver no DONKI' : 'See it on DONKI'}</a></div>
+          <div class="you">🎮 ${stormYou(i, m)}</div></div>`
+      };
+    }),
+    ...(G.realLog || []).map(({ day, ev }) => ({
+      day,
+      html: `<div class="ev"><div class="when">${fmtDate(Date.parse(ev.d))} · ${ev.source}</div>
+        <div>${tr(ev.record)} <a href="${ev.link}" target="_blank" rel="noopener">${pt ? 'Ver registro da NASA' : 'See NASA record'}</a></div>
+        <div class="you">🎮 ${pt ? `Aconteceu no Dia ${day + 1} da sua missão.` : `Happened on Day ${day + 1} of your mission.`}</div></div>`
+    }))
+  ].sort((a, b) => a.day - b.day);
 
-  $('realList').innerHTML = stormHtml + extraHtml;
+  $('realList').innerHTML = timeline.map(item => item.html).join('');
+
   $('srcBody').innerHTML = pt ? `
     <p><b>Dados reais:</b> ${STORMS.length} tempestades de partículas solares (eventos SEP) de 2024 e 2025, registradas no
-      <a href="https://ccmc.gsfc.nasa.gov/tools/DONKI/" target="_blank" rel="noopener">DONKI</a> da NASA e baixadas pela <a href="https://api.nasa.gov/" target="_blank" rel="noopener">api.nasa.gov</a>.
-      De cada uma usamos: a hora em que as partículas chegaram, a explosão solar ligada a ela (hora e classe) e a velocidade da nuvem de gás (CME).
+      <a href="https://ccmc.gsfc.nasa.gov/tools/DONKI/" target="_blank" rel="noopener">DONKI</a> da NASA e baixadas pela <a href="https://api.nasa.gov/" target="_blank" rel="noopener">api.nasa.gov</a>,
+      além de registros reais de eclipses lunares, chuvas de meteoros e explosões solares de 2024–2025 (<a href="https://science.nasa.gov/eclipses/" target="_blank" rel="noopener">NASA Science</a> / <a href="https://science.nasa.gov/mission/lro/" target="_blank" rel="noopener">LRO</a>).
+      De cada tempestade usamos: a hora em que as partículas chegaram, a explosão solar ligada a ela (hora e classe) e a velocidade da nuvem de gás (CME).
       Os dados foram baixados antes e guardados no jogo: <b>não são ao vivo</b>. As horas estão em UTC (hora universal).</p>
     <p><b>Por que esses dados:</b> o tempo entre ver a explosão e a chegada das partículas é o tempo real que uma tripulação teria para se proteger. No jogo, esse aviso decide se dá para carregar o escudo.</p>
     <p><b>Força da tempestade:</b> “forte” = o satélite GOES, perto da Terra e da Lua, detectou partículas acima de 100 MeV; “média” = acima de 10 MeV; “fraca” = só sondas mais distantes detectaram.
       MeV mede a energia das partículas: quanto maior, mais fácil elas atravessam paredes.</p>
-    <p><b>Simplificações:</b> os números de ar, energia e radiação são de jogo, não de engenharia. O “escudo” representa um abrigo protegido. Registros com menos de 48 horas de diferença contam como uma tempestade só.
+    <p><b>Simplificações:</b> os números de ar, energia e radiação são de jogo, não de engenharia. O “escudo” representa um abrigo protegido, e cada descoberta representa o uso de recursos locais (ISRU). Registros com menos de 48 horas de diferença contam como uma tempestade só.
       Quando o DONKI não liga nenhuma explosão a uma tempestade, o jogo mostra a tempestade sem aviso.</p>` : `
     <p><b>Real data:</b> ${STORMS.length} solar particle storms (SEP events) from 2024 and 2025, recorded in NASA's
-      <a href="https://ccmc.gsfc.nasa.gov/tools/DONKI/" target="_blank" rel="noopener">DONKI</a> and downloaded through <a href="https://api.nasa.gov/" target="_blank" rel="noopener">api.nasa.gov</a>.
-      From each one we use: the time the particles arrived, the solar flare linked to it (time and class) and the speed of the gas cloud (CME).
+      <a href="https://ccmc.gsfc.nasa.gov/tools/DONKI/" target="_blank" rel="noopener">DONKI</a> and downloaded through <a href="https://api.nasa.gov/" target="_blank" rel="noopener">api.nasa.gov</a>,
+      alongside real records of lunar eclipses, meteor showers and solar flares from 2024–2025 (<a href="https://science.nasa.gov/eclipses/" target="_blank" rel="noopener">NASA Science</a> / <a href="https://science.nasa.gov/mission/lro/" target="_blank" rel="noopener">LRO</a>).
+      From each storm we use: the time the particles arrived, the solar flare linked to it (time and class) and the speed of the gas cloud (CME).
       The data was downloaded in advance and stored in the game: <b>it is not live</b>. Times are in UTC.</p>
     <p><b>Why this data:</b> the time between seeing the flare and the particles arriving is the real time a crew would have to take cover. In the game, that warning decides whether the shield can be charged.</p>
     <p><b>Storm strength:</b> "strong" = the GOES satellite, near Earth and the Moon, detected particles above 100 MeV; "medium" = above 10 MeV; "weak" = only more distant probes detected it.
       MeV measures particle energy: the higher it is, the more easily particles pass through walls.</p>
-    <p><b>Simplifications:</b> the air, power and radiation numbers are game numbers, not engineering values. The "shield" stands for a protected shelter. Records less than 48 hours apart count as a single storm.
+    <p><b>Simplifications:</b> the air, power and radiation numbers are game numbers, not engineering values. The "shield" stands for a protected shelter, and each discovery represents In-Situ Resource Utilization (ISRU). Records less than 48 hours apart count as a single storm.
       When DONKI links no flare to a storm, the game shows that storm with no warning.</p>`;
 }
 
