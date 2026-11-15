@@ -125,3 +125,127 @@
   details { margin-top:1rem; font-size:.9rem; } summary { cursor:pointer; font-weight:800; }
   footer { color:var(--muted); font-size:.75rem; text-align:center; }
   @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+/* Identidade visual da tela de partida */
+@font-face {
+  font-family:"Base Lunar Pixel"; src:url("assets/hud/press-start-2p.ttf") format("truetype");
+  font-display:swap;
+}
+:root {
+  --font-pixel:"Base Lunar Pixel", monospace;
+  --pixel-corners:polygon(0 6px, 3px 6px, 3px 3px, 6px 3px, 6px 0, calc(100% - 6px) 0,
+    calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px,
+    100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%, 6px 100%, 6px calc(100% - 3px),
+    3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px));
+}
+#game { display:flex; flex:1; flex-direction:column; gap:.5rem; min-height:calc(100svh - 1.8rem); }
+body:has(#game:not(.hidden)) { background:#08091b; }
+#game .day, #game .date, #game .lang, #game .meter, #game .card .txt, #game .card .note,
+#game .card .real, #game .learn, #game .choice { font-family:var(--font-pixel); line-height:1.7; }
+#game .day { font-size:.8rem; }
+#game .date { display:flex; align-items:center; gap:.2rem; font-size:.52rem; }
+#game .date img { width:22px; height:22px; object-fit:contain; }
+#game .lang { min-height:44px; padding:0 .5rem; font-size:.55rem; background:#171b4b; }
+#muteBtn img { width:30px; height:30px; display:block; object-fit:contain; }
+#game img { image-rendering:pixelated; }
+#game .scene, #game .meter, #game .card, #game .learn, #game .choice, #game .lang {
+  clip-path:var(--pixel-corners); border-radius:0;
+}
+#game .scene {
+  flex:none; height:auto; aspect-ratio:967 / 275; border:0;
+  background:#08091b;
+}
+#game .ground { display:none; }
+#game .sun { left:6%; top:55%; width:12px; height:12px; background:none; box-shadow:none; }
+#game .base { right:21%; bottom:16%; width:19%; height:33%; background:none; font-size:0; }
+#game .shield { right:15%; bottom:16%; width:31%; height:55%; }
+#game .rover { bottom:14%; font-size:1.15rem; }
+.base-beacon { position:absolute; left:54%; top:62%; width:3px; height:3px; background:#ffcf72; animation:beacon 3s steps(2,end) infinite; }
+@keyframes beacon { 0%, 100% { opacity:.2; } 50% { opacity:1; } }
+.event-art { display:none; width:100%; height:100%; object-fit:contain; }
+
+#game .meters { grid-template-columns:repeat(4, minmax(0, 1fr)); gap:.35rem; }
+#game .meter { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; min-width:0;
+  padding:.3rem .15rem; border:1px solid transparent; background:#101425; text-align:center; --level:0; }
+#game .meter small { font-size:clamp(.36rem, 1.65vw, .53rem); color:#f3f3ff; }
+#game .meter .pv { top:0; right:0; font-family:system-ui,sans-serif; }
+.meter-art { display:block; width:48px; height:48px; object-fit:contain; }
+.tank { width:100%; height:100%; shape-rendering:crispEdges; }
+.tank-fill { transform-box:fill-box; transform-origin:center bottom; transform:scaleY(var(--level)); }
+.meter-sprite { position:relative; width:auto; }
+.meter-sprite.power { --sprite:url("assets/hud/energia.png"); aspect-ratio:162 / 239; }
+.meter-sprite.radiation { --sprite:url("assets/hud/radiacao.png"); aspect-ratio:220 / 206; height:44px; margin-block:2px; }
+.meter-sprite::before, .meter-sprite::after {
+  content:""; position:absolute; inset:0;
+  mask:var(--sprite) center / contain no-repeat;
+}
+.meter-sprite::before { background:#8591dc; }
+.meter-sprite::after { background:#ffcf72; clip-path:inset(calc((1 - var(--level)) * 100%) 0 0); }
+.meter-value { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.discovery-points { display:flex; justify-content:center; flex-wrap:wrap; gap:2px; max-width:100%; }
+.discovery-points i { width:3px; height:3px; background:#ffcf72; }
+
+#game .deck { min-height:0; }
+#game .card { width:min(86%, 21rem); min-height:12rem; padding:.8rem; background:#fff0d0; color:#08091b;
+  box-shadow:inset 0 0 0 3px #edcf9d, inset 0 0 0 6px #f8dfb2, inset 0 -9px #f4d6a5; }
+#game .card.alert { background:#fff1eb; box-shadow:inset 0 0 0 4px #edb3a0; }
+#game .card .txt { font-size:clamp(.58rem, 2.05vw, .73rem); }
+#game .card .note, #game .card .real { font-size:.49rem; }
+#game .card .art { font-size:2.15rem; }
+#game .card .art img { display:block; width:44px; height:44px; }
+#game .learn { align-self:center; width:min(91%, 22rem); min-height:2.7rem; border:0; padding:.45rem .55rem;
+  font-size:.49rem; background:#171b4b; gap:.45rem; overflow-wrap:anywhere; }
+#game .learn.show:not(.disc)::before { content:""; flex:none; width:20px; height:20px;
+  background:url("assets/hud/dica-lampada.svg") center / contain no-repeat; }
+#game .learn.disc { background:#28386b; }
+#game .choice { min-height:48px; padding:.45rem; font-size:.58rem; box-shadow:none; background:#303db1; color:#f3f3ff; }
+#game .choice.r { background:#ffcf72; color:#08091b; }
+#game .choice .fx { font-family:system-ui,sans-serif; font-size:.75rem; }
+#game .hintSwipe { margin:0; }
+@media (max-height:700px) {
+  #game .card { min-height:0; }
+  .meter-art { width:38px; height:38px; }
+  .meter-sprite { width:auto; }
+  .meter-sprite.radiation { height:34px; }
+}
+@media (orientation:landscape) and (min-width:640px) and (max-height:620px) {
+  main:has(#game:not(.hidden)) { max-width:900px; }
+  #game { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto minmax(0, 1fr) auto auto;
+    grid-template-areas:"top top" "scene deck" "meters learn" "hint choices"; }
+  #game .top { grid-area:top; }
+  #game .scene { grid-area:scene; align-self:center; }
+  #game .meters { grid-area:meters; }
+  #game .deck { grid-area:deck; }
+  #game .learn { grid-area:learn; }
+  #game .choices { grid-area:choices; }
+  #game .hintSwipe { grid-area:hint; align-self:center; }
+}
+
+#game .card.discovery-reveal.first {
+  min-height:12rem;
+  background:#fff3cd;
+  box-shadow:inset 0 0 0 3px #e2a63e, inset 0 0 0 6px #ffda85;
+}
+#game .discovery-reveal .txt { display:grid; gap:.85rem; }
+#game .discovery-reveal .txt p { margin:.35rem 0 0; font-size:.64rem; }
+#game .first-discovery strong { color:#754700; }
+#game .discovery-reveal .note { color:#58421f; }
+#game .choice .fx { white-space:normal; font-size:.68rem; }
+#game .choice .fx:empty { display:none; }
+
+/* The same pixel scene remains mounted throughout choices and discoveries. */
+#lunarCanvas { display:block; width:100%; height:100%; object-fit:contain; image-rendering:pixelated; }
+#game .scene { aspect-ratio:256 / 88; }
+.scene-caption { display:none; margin:0 1rem; text-align:center;
+  font: .55rem/1.8 var(--font-pixel); color:#ffcf72; background:#171b4b; padding:.8rem; clip-path:var(--pixel-corners); }
+#sceneDetail { color:#f3f3ff; margin:.7rem 0 0; font-size:.5rem; }
+.scene-event .deck { display:none; }
+#game.scene-event .scene { height:var(--event-height); aspect-ratio:auto; display:flex; flex-direction:column; justify-content:center; gap:1rem; }
+.scene-event #lunarCanvas { height:auto; flex:none; }
+.scene-event .scene-caption { display:block; }
+main:has(#game:not(.hidden)) { height:100svh; min-height:0; padding-bottom:.6rem; }
+main:has(#game:not(.hidden)) > footer { display:none; }
+#game { min-height:0; }
+@media (orientation:landscape) and (min-width:640px) and (max-height:620px) {
+  #game.scene-event .scene { height:auto; align-self:stretch; grid-column:1 / -1; }
+}
