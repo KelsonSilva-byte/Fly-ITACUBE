@@ -336,6 +336,113 @@ const DISC = [
   { id: 'light', pool: 'sun', ico: '⏱️', name: B('8 minutos', '8 minutes'),
     fact: B('A luz do Sol leva cerca de 8 minutos para chegar até a Terra e a Lua.', 'Sunlight takes about 8 minutes to reach Earth and the Moon.') },
 ];
+/* Desafios de memória: aparecem 1 ou 2 dias após a descoberta correspondente */
+const DISC_QUIZ = {
+  regolith: { art: '🪨🏗️',
+    text: B('Queremos cobrir o teto da base com regolito. Do que ele é feito?',
+            'We want to cover the base roof with regolith. What is it made of?'),
+    L: { label: B('Gelo derretido', 'Melted ice'), ok: false },
+    R: { label: B('Pó e pedrinhas de meteoritos', 'Dust & meteorite pebbles'), ok: true } },
+
+  old: { art: '⏳🪨',
+    text: B('A Terra pediu nossa pedra lunar mais antiga para estudo. Qual idade ela pode ter?',
+            'Earth asked for our oldest Moon rock to study. How old can it be?'),
+    L: { label: B('Mais de 4 bilhões de anos', 'Over 4 billion years old'), ok: true },
+    R: { label: B('Uns 500 anos', 'About 500 years old'), ok: false } },
+
+  glass: { art: '🟠🌋',
+    text: B('O jipe achou bolinhas de vidro laranja no solo! Como elas se formaram?',
+            'The rover found tiny orange glass beads in the soil! How were they formed?'),
+    L: { label: B('Por vulcões antigos da Lua', 'By ancient Moon volcanoes'), ok: true },
+    R: { label: B('Deixadas por foguetes', 'Left behind by rockets'), ok: false } },
+
+  plants: { art: '🌱🪨',
+    text: B('Faltou terra trazida da Terra para a estufa. Dá para plantar direto no solo lunar?',
+            'We ran out of Earth soil in the greenhouse. Can plants grow in Moon soil?'),
+    L: { label: B('Não, nada cresce nele', 'No, nothing grows in it'), ok: false },
+    R: { label: B('Sim, cientistas já conseguiram!', 'Yes, scientists already did it!'), ok: true } },
+
+  dust: { art: '✨🥾',
+    text: B('Por que a poeira lunar gruda e arranha tanto os trajes espaciais?',
+            'Why does Moon dust stick to and scratch spacesuits so much?'),
+    L: { label: B('É afiada, pois não há vento nem água', 'It is sharp, with no wind or water'), ok: true },
+    R: { label: B('Porque é molhada e pegajosa', 'Because it is wet and sticky'), ok: false } },
+
+  quake: { art: '〰️🏠',
+    text: B('Os sensores da base tremeram! A Lua tem tremores de verdade?',
+            'The base sensors shook! Does the Moon really have moonquakes?'),
+    L: { label: B('Não, a Lua é totalmente parada', 'No, the Moon never shakes'), ok: false },
+    R: { label: B('Sim, a Apollo já mediu vários', 'Yes, Apollo measured many'), ok: true } },
+
+  shadow: { art: '🕳️🔦',
+    text: B('Vamos mandar o jipe a uma cratera escura do polo sul. Há quanto tempo não bate Sol lá?',
+            'We are sending the rover into a dark south pole crater. How long has it been without Sun?'),
+    L: { label: B('Desde ontem à noite', 'Since last night'), ok: false },
+    R: { label: B('Há bilhões de anos', 'For billions of years'), ok: true } },
+
+  cold: { art: '🥶🌡️',
+    text: B('Vamos descer no fundo de uma cratera escura. Que frio vamos enfrentar lá?',
+            'We are going down into a dark crater. How cold will it be down there?'),
+    L: { label: B('Cerca de 240 °C abaixo de zero', 'About 240 °C below zero'), ok: true },
+    R: { label: B('Uns 5 °C abaixo de zero', 'About 5 °C below zero'), ok: false } },
+
+  prints: { art: '👣🚙',
+    text: B('O vento lunar vai apagar as trilhas do jipe para não nos perdermos?',
+            'Will lunar wind erase the rover tracks so we might get lost?'),
+    L: { label: B('Sim, em poucas horas', 'Yes, in a few hours'), ok: false },
+    R: { label: B('Não há vento: duram milhões de anos', 'No wind: they last millions of years'), ok: true } },
+
+  gravity: { art: '🦘📦',
+    text: B('Precisamos carregar uma caixa pesada na Lua. Quanto ela pesa aqui comparada à Terra?',
+            'We need to carry a heavy box on the Moon. How much does it weigh compared to Earth?'),
+    L: { label: B('Seis vezes menos', 'Six times less'), ok: true },
+    R: { label: B('Duas vezes mais', 'Two times more'), ok: false } },
+
+  peaks: { art: '🏔️☀️',
+    text: B('Onde devemos instalar os novos painéis solares no polo sul da Lua?',
+            'Where should we place the new solar panels at the Moon\'s south pole?'),
+    L: { label: B('No fundo de um buraco', 'At the bottom of a pit'), ok: false },
+    R: { label: B('Nos picos altos iluminados', 'On high sunlit peaks'), ok: true } },
+
+  lcross: { art: '💧🚀',
+    text: B('Como a missão LCROSS da NASA confirmou que existe água nas crateras escuras?',
+            'How did NASA\'s LCROSS mission confirm there is water in dark craters?'),
+    L: { label: B('Mergulhando um submarino', 'Diving a submarine'), ok: false },
+    R: { label: B('Analisando a nuvem de um impacto', 'Analyzing the cloud from an impact'), ok: true } },
+
+  iceuse: { art: '🧊⚙️',
+    text: B('Trouxemos bastante gelo lunar para a base! Além de beber, o que ele pode virar?',
+            'We brought lots of Moon ice to the base! Besides drinking water, what can it become?'),
+    L: { label: B('Oxigênio e combustível', 'Oxygen and rocket fuel'), ok: true },
+    R: { label: B('Apenas gelo para refrescos', 'Only ice for cold drinks'), ok: false } },
+
+  cycle: { art: '🔁☀️',
+    text: B('O Sol anda cheio de explosões este ano. Quanto dura o ciclo de atividade do Sol?',
+            'The Sun has lots of explosions this year. How long is the Sun\'s activity cycle?'),
+    L: { label: B('Cerca de 11 anos', 'About 11 years'), ok: true },
+    R: { label: B('Apenas 1 mês', 'Only 1 month'), ok: false } },
+
+  spots: { art: '⚫🔭',
+    text: B('O telescópio viu manchas escuras no Sol! O que acontece perto delas?',
+            'The telescope spotted dark sunspots on the Sun! What happens near them?'),
+    L: { label: B('O Sol esfria e apaga', 'The Sun cools down and goes dark'), ok: false },
+    R: { label: B('Acontecem explosões solares', 'Solar explosions happen'), ok: true } },
+
+  light: { art: '⏱️☀️',
+    text: B('Vimos um clarão no Sol pelo telescópio! Quanto tempo a luz levou para chegar até nós?',
+            'We saw a flash on the Sun through the telescope! How long did its light take to reach us?'),
+    L: { label: B('Cerca de 8 minutos', 'About 8 minutes'), ok: true },
+    R: { label: B('Cerca de 8 dias', 'About 8 days'), ok: false } },
+};
+
+function quizCard(discId) {
+  const q = DISC_QUIZ[discId], d = DISC.find(x => x.id === discId);
+  return {
+    id: 'quiz_' + discId, kind: 'quiz', quiz: true, disc: d, art: q.art, text: q.text,
+    L: { label: q.L.label, ok: q.L.ok, fx: {} },
+    R: { label: q.R.label, ok: q.R.ok, fx: {} },
+  };
+}
 function discover(G, pool, n) {
   const got = [];
   for (let i = 0; i < n; i++) {
@@ -343,7 +450,11 @@ function discover(G, pool, n) {
     if (!left.length) break;
     const same = left.filter(d => d.pool === pool);
     const d = pick(same.length ? same : left);
-    G.found.push(d.id); got.push(d);
+    G.found.push(d.id);
+    if (DISC_QUIZ[d.id] && !G.recall.some(x => x.id === d.id)) {
+      G.recall.push({ id: d.id, dueDay: G.day + 1 + Math.floor(rnd() * 2) });
+    }
+    got.push(d);
   }
   return got;
 }
@@ -395,6 +506,11 @@ function buildDay(G) {
   q.push(G.air <= R.AIR_USE ? LIFE[0] : pick(LIFE.flatMap(c => Array(c.w).fill(c))));
   if (s && s.flr) q.push(flareCard(s));
   q.push(s ? (s.flr ? ROVER_ALERT : LAB) : bag(G, 'sci', [LAB, ROVER]));
+  const dueIdx = G.recall.findIndex(x => x.dueDay <= G.day);
+  if (dueIdx !== -1) {
+    const [item] = G.recall.splice(dueIdx, 1);
+    q.push(quizCard(item.id));
+  }
   if (s) {
     q.push(() => arrivalCard(G, s));
   } else if (dEv) {
@@ -408,8 +524,8 @@ function buildDay(G) {
 
 function newGame() {
   const m = pickMission();
-  const G = { day: 0, air: R.AIR_START, pw: R.PW_START, rad: 0, sci: 0, start: m.start, storms: m.storms, dated: m.dated,
-              phase: Math.floor(rnd() * R.SUN.length), bags: {}, met: [], over: null, card: null, queue: [], wasted: 0, found: [], trips: 0, tripRad: 0, realLog: [] };
+  const G = { day: 0, air: R.AIR_START, pw: R.PW_START, rad: 0, sci: 0, start: m.start, storms: m.storms, dated: m.dated || {},
+              phase: Math.floor(rnd() * R.SUN.length), bags: {}, met: [], over: null, card: null, queue: [], wasted: 0, found: [], trips: 0, tripRad: 0, realLog: [], recall: [] };
   buildDay(G);
   G.card = G.queue.shift();
   return G;
@@ -433,6 +549,20 @@ function choose(G, side) {
   if (!opt || locked(G, opt)) return null;
   apply(G, opt.fx);
   const out = { card: c, side: c.single ? 'R' : side, opt };
+  if (c.quiz) {
+    if (opt.ok) {
+      G.air = Math.min(R.AIR_MAX, G.air + 3);
+      G.pw  = Math.min(R.PW_MAX, G.pw + 3);
+      G.rad = Math.max(0, G.rad - 12);
+      out.quizOk = true;
+    } else {
+      // Perde um pouco de ar e energia, mas trava acima do limite letal para não encerrar o jogo
+      G.pw = Math.max(1, G.pw - 2);
+      const safeAirFloor = Math.min(G.air, R.AIR_USE + 1);
+      G.air = Math.max(safeAirFloor, G.air - 2);
+      out.quizOk = false;
+    }
+  }
   if (opt.fx.sci) out.found = discover(G, opt.pool, opt.fx.sci);
   if (c.resolve) {
     const s = c.storm, dose = R.STORM[s.sev];
@@ -618,6 +748,7 @@ function cardText(c) {
 }
 function cardNote(c) {
   const pt = lang === 'pt';
+  if (c.quiz) return lang === 'pt' ? `🧠 Lembre da sua descoberta: ${tr(c.disc.name)}` : `🧠 Recall your discovery: ${tr(c.disc.name)}`;
   if ((c.id === 'o2' || c.id === 'farm') && G.air <= R.AIR_USE) return pt ? '⚠️ O ar só dá para esta noite!' : '⚠️ There is only enough air for tonight!';
   if (c.kind === 'day') {
     const d = `${t('day')} ${G.day + 1} ${t('of')} ${R.DAYS} · ${fmtDate(G.start + G.day * DAY)}`;
@@ -692,7 +823,8 @@ function renderCard(animate) {
   const fill = (btn, opt, arrow) => {
     const lk = locked(G, opt);
     btn.disabled = lk;
-    btn.innerHTML = `<span>${arrow === 'l' ? '← ' : ''}${tr(opt.label)}${arrow === 'r' ? ' →' : ''}</span><span class="fx">${lk ? t('locked') : fxIcons(opt.fx)}</span>`;
+    const fxTxt = c.quiz ? '🧠 ?' : (lk ? t('locked') : fxIcons(opt.fx));
+    btn.innerHTML = `<span>${arrow === 'l' ? '← ' : ''}${tr(opt.label)}${arrow === 'r' ? ' →' : ''}</span><span class="fx">${fxTxt}</span>`;
   };
   if (!c.single) { fill($('btnL'), c.L, 'l'); $('tagL').textContent = tr(c.L.label); }
   fill($('btnR'), c.R, c.single ? '' : 'r'); $('tagR').textContent = tr(c.R.label);
@@ -701,7 +833,7 @@ function renderCard(animate) {
 }
 function preview(side) {
   const c = G && G.card;
-  const fx = side && c ? (c.single ? c.R.fx : c[side].fx) : {};
+  const fx = side && c && !c.quiz ? (c.single ? c.R.fx : c[side].fx) : {};
   [['air', 1], ['pw', 1], ['rad', -1], ['sci', 1]].forEach(([k, goodDir]) => {
     const m = $('m_' + k), v = fx[k] || 0, pv = m.querySelector('.pv');
     m.classList.toggle('up', v > 0); m.classList.toggle('down', v < 0);
@@ -771,6 +903,14 @@ async function act(side) {
     if (out.night) keys.push('night');
     if (G.card.kind === 'day' && G.card.sun === 1) keys.push('low');
     if (!tip(keys)) showLearn(null);
+  }
+  if (c.quiz) {
+    if (out.quizOk) {
+      showLearn(() => `<span>🎉 <b>${lang === 'pt' ? 'Você lembrou! (+3 🫧  +3 ⚡  -12 ☢️)' : 'You remembered! (+3 🫧  +3 ⚡  -12 ☢️)'}</b><br>${tr(c.disc.fact)}</span>`, true);
+      sfx('disc');
+    } else {
+      showLearn(() => `<span>🤔 <b>${lang === 'pt' ? 'Quase! A base gastou um pouco de ar e energia.' : 'Close! The base spent a little air and power.'}</b><br>${tr(c.disc.fact)}</span>`, false);
+    }
   }
   if (G.card.kind === 'flare') sfx('alert');
   renderCard(true);
