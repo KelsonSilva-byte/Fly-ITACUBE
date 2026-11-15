@@ -5,3 +5,9 @@ data/notifications_*.json
 
 # Referencias, estudos e exportacoes de arte locais
 /artes/
+
+# Variáveis de ambiente e chaves de API (ex.: NASA_API_KEY)
+.env
+.env.*
+*.env
+!.env.example

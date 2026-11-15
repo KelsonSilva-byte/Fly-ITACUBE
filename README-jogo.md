@@ -15,10 +15,14 @@ There are three meters and one counter:
 - 🫧 **Air**: the crew breathes every night. If it runs out, the mission ends.
 - ⚡ **Power**: comes from the Sun and changes every day, because craters and mountains shade the solar panels.
 - ☢️ **Radiation**: rises a little every night (cosmic rays) and a lot during a solar storm. If the meter fills up, the crew goes home.
-- 🔬 **Discoveries**: the reason to be on the Moon.
+- 🔬 **Science**: the reason to be on the Moon.
 
 **The main lesson:** power is limited, and protecting the crew from a solar storm costs power that would be useful elsewhere.
 When there is not enough power for an option, that option is locked. No choice is free: every card trades one thing for another.
+
+Every day has a **science card** with two kinds of research: one inside the base (lab or telescope), which costs power,
+and one outside (rover or a walk to the ice), which costs radiation. When power is very low, the inside option becomes "recharge batteries".
+Calm days may end with a **problem** to fix (dusty panels, a leak, a clogged filter) or with **good news** (spare air, a backup battery, a cargo pod), and both still have a cost.
 
 ## Learning without lectures
 
@@ -67,17 +71,17 @@ In the game, that warning decides whether the shield can be charged.
 
 ## Balance (tested with automatic games)
 
-3,000 games per strategy, played through the game engine (`node tools/sim.mjs`):
+4,000 games per strategy, played through the game engine (`node tools/sim.mjs`). Memory questions are answered at random.
 
 | Strategy | Wins | 3 stars |
 |---|---|---|
-| Careful: keeps air up, saves power for the shield, researches with what is left | 99% | 42% |
-| Science only: never uses the shield, always drives out | 19% | 0% |
-| Safety only: always the shield, no research | 100% | 0% |
+| Careful: keeps air up, saves power for the shield, researches with what is left | 43% | 29% |
+| Science only: never uses the shield, always researches outside | 14% | 0% |
+| Safety only: always the shield, only researches inside | 26% | 19% |
 | Forgets the air | 0% | 0% |
-| Random choices | 24% | 1% |
+| Random choices | 5% | 1% |
 
-3 stars need **8 discoveries and radiation below half**. Surviving is not enough, and neither is hiding: no one-sided strategy reaches 3 stars.
+3 stars need **8 science points and radiation below half**. Surviving is not enough: ignoring the shield never reaches 3 stars.
 
 The interface was also played automatically in a browser (20 full games, in both languages) with no errors.
 Swiping with a finger on a real phone has not been tested yet.
@@ -113,10 +117,15 @@ São três medidores e um contador:
 - 🫧 **Ar**: a tripulação respira toda noite. Se acabar, a missão termina.
 - ⚡ **Energia**: vem do Sol e muda todo dia, porque crateras e montanhas fazem sombra nos painéis solares.
 - ☢️ **Radiação**: sobe um pouco toda noite (raios cósmicos) e muito durante uma tempestade solar. Se o medidor encher, a tripulação volta para casa.
-- 🔬 **Descobertas**: o motivo de estar na Lua.
+- 🔬 **Ciência**: o motivo de estar na Lua.
 
 **A lição principal:** energia é limitada, e proteger a tripulação de uma tempestade solar custa energia que faria falta em outra coisa.
 Quando não há energia para uma opção, ela fica travada. Nenhuma escolha é de graça: toda carta troca uma coisa por outra.
+
+A carta de manutenção do ar tem 12 variações (um gerador, um purificador, a eletrólise da água e outras), todas com os mesmos custos.
+Todo dia tem uma **carta de ciência** com duas pesquisas: uma dentro da base (laboratório ou telescópio), que custa energia,
+e uma fora (jipe ou buscar gelo a pé), que custa radiação. Com a energia muito baixa, a opção de dentro vira "recarregar baterias".
+Os dias calmos podem terminar com um **problema** para resolver (painéis sujos, vazamento, filtro entupido) ou com uma **boa notícia** (reserva de ar, bateria auxiliar, módulo de carga), e as duas coisas têm custo.
 
 ## Aprender sem aula
 
@@ -165,17 +174,17 @@ No jogo, esse aviso decide se dá para carregar o escudo.
 
 ## Equilíbrio (testado com partidas automáticas)
 
-3.000 partidas por estratégia, jogadas pelo motor do jogo (`node tools/sim.mjs`):
+4.000 partidas por estratégia, jogadas pelo motor do jogo (`node tools/sim.mjs`). As perguntas de memória são respondidas ao acaso.
 
 | Estratégia | Vitórias | 3 estrelas |
 |---|---|---|
-| Cuidadosa: mantém o ar, guarda energia para o escudo, pesquisa com a sobra | 99% | 42% |
-| Só ciência: nunca usa o escudo, sempre sai de jipe | 19% | 0% |
-| Só segurança: sempre o escudo, nenhuma pesquisa | 100% | 0% |
+| Cuidadosa: mantém o ar, guarda energia para o escudo, pesquisa com a sobra | 43% | 29% |
+| Só ciência: nunca usa o escudo, sempre pesquisa fora da base | 14% | 0% |
+| Só segurança: sempre o escudo, só pesquisa dentro da base | 26% | 19% |
 | Esquece o ar | 0% | 0% |
-| Escolhas aleatórias | 24% | 1% |
+| Escolhas aleatórias | 5% | 1% |
 
-3 estrelas exigem **8 descobertas e radiação abaixo da metade**. Não basta sobreviver, nem se esconder: nenhuma estratégia de um lado só chega a 3 estrelas.
+3 estrelas exigem **8 pontos de ciência e radiação abaixo da metade**. Não basta sobreviver: quem ignora o escudo nunca chega a 3 estrelas.
 
 A interface também foi jogada automaticamente no navegador (20 partidas completas, nos dois idiomas) sem erros.
 Arrastar com o dedo em um celular de verdade ainda não foi testado.

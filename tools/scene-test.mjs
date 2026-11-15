@@ -14,8 +14,10 @@ vm.runInContext(fs.readFileSync(new URL('../assets/scene/lunar-scene.js',import.
 const api=context.window.LunarScene,scene=api.create(canvas);
 async function advance(ms){for(let i=0;i<Math.ceil(ms/20);i++){now+=20;const batch=frames;frames=[];batch.forEach(fn=>fn(now));await Promise.resolve();}}
 const route=(id,side='R',extra={})=>api.actionsFor({card:{id},side,...extra}).map(x=>x.kind).join(',');
-for(const id of ['rover','roverAlert','cargo']) {assert.equal(route(id),'explore');assert.equal(route(id,'L'),'');}
-assert.equal(route('ice'),'sample');assert.equal(route('dust'),'clean');assert.equal(route('dust','L'),'');
+assert.equal(route('cargo'),'explore');assert.equal(route('cargo','L'),'');
+const sci=(task)=>api.actionsFor({card:{id:'sci',kind:'sci'},side:'L',opt:{task}}).map(x=>x.kind).join(',');
+for(const task of ['research','observe','explore','sample','power'])assert.equal(sci(task),task);
+assert.equal(route('dust'),'clean');assert.equal(route('dust','L'),'');
 assert.equal(route('flare'),'prepare');assert.equal(route('flare','L'),'research');
 assert.equal(route('eclipse_2025_03','L'),'eclipse');
 assert.equal(route('geminids_2024_12'),'meteors,clean');assert.equal(route('quadrantids_2025_01','L'),'meteors');

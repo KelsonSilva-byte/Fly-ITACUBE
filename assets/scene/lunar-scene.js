@@ -589,9 +589,11 @@ window.LunarScene.actionsFor = out => {
   if(out.card.quiz||out.card.kind==='day'||out.card.kind==='result')return [];
   if(id==='flare')return [{kind:right?'prepare':'research'}];
   if(id==='farm')return [{kind:'farm',enabled:right}];
+  // Carta de ciência: os dois lados são tarefas; a animação vem da opção escolhida.
+  if(out.card.kind==='sci')return out.opt?.task?[{kind:out.opt.task}]:[];
   if(!right)return [];
-  const kinds={rover:'explore',roverAlert:'explore',cargo:'explore',ice:'sample',
+  const kinds={cargo:'explore',
     dust:'clean',leak:'repair',filter:'filter',airlock:'airlock',o2:'oxygen',reserveAir:'oxygen',
-    reservePower:'power',lab:'research',signal:'research',scope:'observe',donki_x87_2024_05:'observe'};
+    reservePower:'power',signal:'research',donki_x87_2024_05:'observe'};
   return kinds[id]?[{kind:kinds[id]}]:[];
 };
