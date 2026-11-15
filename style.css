@@ -116,6 +116,11 @@
   .book .d { display:grid; grid-template-columns:auto 1fr; gap:.1rem .6rem; background:#0f2a1e; border-radius:12px; padding:.5rem .7rem; font-size:.88rem; line-height:1.35; }
   .book .d .i { grid-row:span 2; font-size:1.6rem; align-self:center; }
   .book .d b { color:#86efac; }
+  .book .d.now { border:2px solid var(--sci); }
+  .book .d.locked { background:#0e1630; opacity:.72; }
+  .book .d.locked b { color:var(--muted); }
+  .badgeNew { display:inline-block; background:var(--sci); color:var(--ink); font-size:.7rem; font-weight:900; padding:.05rem .4rem; border-radius:999px; margin-left:.35rem; vertical-align:middle; }
+  .secBtn { display:block; width:100%; font-size:1rem; padding:.7rem 1rem; border-radius:14px; background:#22305a; color:var(--text); border:2px solid var(--line); margin-top:.6rem; }
   .coll { color:var(--muted); font-size:.85rem; font-weight:700; }
   details { margin-top:1rem; font-size:.9rem; } summary { cursor:pointer; font-weight:800; }
   footer { color:var(--muted); font-size:.75rem; text-align:center; }

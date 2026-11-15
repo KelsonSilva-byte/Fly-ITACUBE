@@ -23,6 +23,7 @@
   </ul>
   <div class="fact" data-t="introReal"></div>
   <button class="big" id="startBtn" data-t="start"></button>
+  <button class="secBtn" id="openAlbumBtn"></button>
 </section>
 
 <!-- ===================== JOGO ===================== -->
@@ -89,7 +90,16 @@
     <div id="srcBody"></div>
   </details>
 </section>
-
+<!-- ===================== ÁLBUM DE DESCOBERTAS ===================== -->
+<section id="album" class="panel hidden" aria-live="polite">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:.5rem;">
+    <button class="lang" id="closeAlbumBtn"></button>
+    <button class="lang" data-lang></button>
+  </div>
+  <h1 id="albumTitle"></h1>
+  <p class="coll" id="albumSub"></p>
+  <div class="book" id="albumGrid"></div>
+</section>
 <footer data-t="footer"></footer>
 </main>
 
@@ -181,7 +191,7 @@ const LIFE = [
     R: { label: B('Ligar', 'Turn it on'), fx: { pw: -2, air: 4 } } },
   { id: 'farm', art: '🌱💡', w: 1,
     text: B('As plantas da estufa fazem ar para respirar, mas precisam de luz.', 'The greenhouse plants make air to breathe, but they need light.'),
-    L: { label: B('Apagar as luzes', 'Lights off'), fx: { pw: 1, air: -1 } },
+    L: { label: B('Apagar as luzes', 'Lights off'), fx: { pw: 1, air: -2 } },
     R: { label: B('Acender as luzes', 'Lights on'), fx: { pw: -1, air: 2 } } },
 ];
 const LAB = { id: 'lab', art: '🔬🪨',
@@ -200,13 +210,13 @@ const EVENTS = [
   { id: 'airlock', art: '🥾🧹',
     text: B('Os trajes voltaram cheios de poeira lunar afiada na câmara de ar. Limpar agora?',
             'The spacesuits came back covered in sharp Moon dust in the airlock. Clean them now?'),
-    L: { label: B('Limpar amanhã', 'Clean tomorrow'), fx: { air: -1 } },
+    L: { label: B('Limpar amanhã', 'Clean tomorrow'), fx: { air: -2 } },
     R: { label: B('Aspirar agora', 'Vacuum now'), fx: { pw: -1 } } },
   { id: 'filter', art: '🚰⚙️',
     text: B('O filtro que recicla a água e o ar da tripulação está ficando entupido.',
             'The filter that recycles the crew\'s water and air is getting clogged.'),
-    L: { label: B('Modo econômico', 'Eco mode'), fx: { pw: 1, air: -1 } },
-    R: { label: B('Limpar com força total', 'Full-power clean'), fx: { pw: -1, air: 1 } } },
+    L: { label: B('Modo econômico', 'Eco mode'), fx: { pw: 1, air: -2 } },
+    R: { label: B('Limpar com força total', 'Full-power clean'), fx: { pw: -1, air: 2 } } },
   { id: 'cargo', art: '📦🚙',
     text: B('Um módulo de carga pousou pertinho da base com cilindros extras de ar e água!',
             'A cargo pod landed close to the base with extra air and water tanks!'),
@@ -223,11 +233,11 @@ const EVENTS = [
   { id: 'scope', art: '🔭☀️',
     text: B('O telescópio pode observar o Sol hoje.', 'The telescope can watch the Sun today.'),
     L: { label: B('Deixar desligado', 'Keep it off'), fx: {} },
-    R: { label: B('Observar', 'Observe'), fx: { pw: -1, sci: 1 }, pool: 'sun' } },
+    R: { label: B('Observar', 'Observe'), fx: { pw: -2, sci: 1 }, pool: 'sun' } },
   { id: 'ice', art: '🧊👣',
     text: B('Um sensor achou gelo pertinho da base. Dá para ir a pé, mas lá fora tem mais radiação.', 'A sensor found ice close to the base. You can walk there, but there is more radiation outside.'),
     L: { label: B('Ficar na base', 'Stay inside'), fx: {} },
-    R: { label: B('Buscar a amostra', 'Get the sample'), fx: { rad: 4, sci: 1, outside: true }, pool: 'ice' } },
+    R: { label: B('Buscar a amostra', 'Get the sample'), fx: { rad: 3, sci: 1, outside: true }, pool: 'ice' } },
 ];
 /* Eventos reais de 2024–2025 mapeados pela data exata (só aparecem no dia civil correspondente) */
 const DATED_EVENTS = [
@@ -647,6 +657,10 @@ function setTexts() {
   document.querySelectorAll('[data-lang]').forEach(b => { b.textContent = lang === 'pt' ? '🌐 English' : '🌐 Português'; });
   $('muteBtn').textContent = muted ? '🔇' : '🔊';
   if (learnFn) $('learn').innerHTML = learnFn();
+  const n = getUnlocked().length;
+  $('openAlbumBtn').textContent = lang === 'pt'
+    ? `📓 Ver todas as descobertas (${n}/${DISC.length})`
+    : `📓 View all discoveries (${n}/${DISC.length})`;
 }
 function renderMeters() {
   const w = (id, v, max) => { $(id).style.width = Math.max(0, Math.min(100, v / max * 100)) + '%'; };
@@ -812,7 +826,46 @@ function stormYou(i, m) {
            : (pt ? 'sem escudo' : 'no shield');
   return (pt ? `Dia ${i + 1}: ${sh}` : `Day ${i + 1}: ${sh}`) + (m.outside ? (pt ? ', com o jipe lá fora' : ', with the rover outside') : '') + `. ☢️ +${m.inside + m.extra}`;
 }
+const POOL_HINT = {
+  rock:   ['🔬 Pesquise pedras no Laboratório', '🔬 Study rocks in the Lab'],
+  crater: ['🚙 Explore crateras de Jipe ou analise mapas', '🚙 Explore craters by Rover or analyze maps'],
+  ice:    ['🧊 Busque amostras de gelo perto da base', '🧊 Collect ice samples near the base'],
+  sun:    ['🔭 Observe o Sol com o Telescópio', '🔭 Observe the Sun with the Telescope'],
+};
 
+function getUnlocked() {
+  try { return JSON.parse(store.get('lb_disc') || '[]'); } catch (e) { return []; }
+}
+
+function renderAlbum(targetEl, currentFound = []) {
+  const pt = lang === 'pt';
+  const unlocked = new Set([...getUnlocked(), ...currentFound]);
+  const nowSet = new Set(currentFound);
+
+  targetEl.innerHTML = DISC.map(d => {
+    const isNow = nowSet.has(d.id);
+    const isOpen = unlocked.has(d.id);
+    if (isOpen) {
+      const badge = isNow ? `<span class="badgeNew">${pt ? 'Nesta missão!' : 'This mission!'}</span>` : '';
+      return `<div class="d${isNow ? ' now' : ''}"><span class="i">${d.ico}</span><b>${tr(d.name)}${badge}</b><span>${tr(d.fact)}</span></div>`;
+    }
+    const hint = POOL_HINT[d.pool] ? POOL_HINT[d.pool][pt ? 0 : 1] : '';
+    return `<div class="d locked"><span class="i">❓</span><b>${pt ? 'Descoberta bloqueada' : 'Locked discovery'}</b><span>${hint}</span></div>`;
+  }).join('');
+}
+
+function openAlbum() {
+  const pt = lang === 'pt', n = getUnlocked().length;
+  $('intro').classList.add('hidden');
+  $('album').classList.remove('hidden');
+  $('closeAlbumBtn').textContent = pt ? '← Voltar' : '← Back';
+  $('albumTitle').textContent = pt ? '📓 Álbum de descobertas' : '📓 Discovery album';
+  $('albumSub').textContent = pt
+    ? `Você já desbloqueou ${n} de ${DISC.length} descobertas científicas neste aparelho:`
+    : `You have unlocked ${n} of ${DISC.length} scientific discoveries on this device:`;
+  renderAlbum($('albumGrid'), []);
+  window.scrollTo(0, 0);
+}
 function finish() {
   // Coleção de descobertas e melhor resultado ficam guardados só neste navegador.
   let all = [];
@@ -869,10 +922,12 @@ function renderEnd() {
   $('debrief').innerHTML = b.slice(0, 4).map(x => '<li>' + x + '</li>').join('');
 
   const found = G.found.map(id => DISC.find(d => d.id === id));
-  $('bookTitle').textContent = (pt ? '📓 Caderno de descobertas' : '📓 Discovery notebook') + ` (${found.length})`;
-  $('bookColl').textContent = prog ? (pt ? `Coleção neste aparelho: ${prog.n} de ${DISC.length} · Melhor missão: ${'⭐'.repeat(prog.best) || '—'}` : `Collection on this device: ${prog.n} of ${DISC.length} · Best mission: ${'⭐'.repeat(prog.best) || '—'}`) : '';
-  $('book').innerHTML = found.length ? found.map(d => `<div class="d"><span class="i">${d.ico}</span><b>${tr(d.name)}</b><span>${tr(d.fact)}</span></div>`).join('')
-    : `<p>${pt ? 'Nenhuma descoberta desta vez. O laboratório, o telescópio e o jipe fazem descobertas.' : 'No discoveries this time. The lab, the telescope and the rover make discoveries.'}</p>`;
+const unlockedTotal = getUnlocked().length;
+  $('bookTitle').textContent = (pt ? '📓 Álbum de descobertas' : '📓 Discovery album') + ` (${unlockedTotal}/${DISC.length})`;
+  $('bookColl').textContent = pt
+    ? `Nesta missão: +${G.found.length} · Melhor resultado: ${'⭐'.repeat(prog ? prog.best : 0) || '—'}`
+    : `This mission: +${G.found.length} · Best result: ${'⭐'.repeat(prog ? prog.best : 0) || '—'}`;
+  renderAlbum($('book'), G.found);
   $('endFact').classList.toggle('hidden', found.length > 0);
   $('endFact').innerHTML = (pt ? '💡 <b>Você sabia?</b> ' : '💡 <b>Did you know?</b> ') + FACTS[factIdx % FACTS.length][pt ? 0 : 1];
 
@@ -956,11 +1011,17 @@ document.addEventListener('keydown', e => {
   if ($('game').classList.contains('hidden')) return;
   if (e.key === 'ArrowLeft') act('L'); else if (e.key === 'ArrowRight') act('R');
 });
+$('openAlbumBtn').addEventListener('click', openAlbum);
+$('closeAlbumBtn').addEventListener('click', () => {
+  $('album').classList.add('hidden');
+  $('intro').classList.remove('hidden');
+});
 $('muteBtn').addEventListener('click', () => { muted = !muted; store.set('lb_mute', muted ? '1' : '0'); setTexts(); if (!muted) sfx('swipe'); });
 $('startBtn').addEventListener('click', start);
 $('againBtn').addEventListener('click', () => { factIdx++; start(); });
 document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click', () => {
   lang = lang === 'pt' ? 'en' : 'pt'; setTexts();
+  if (!$('album').classList.contains('hidden')) openAlbum();
   if (G) { renderMeters(); if (G.over) renderEnd(); else renderCard(false); }
 }));
 setTexts();
