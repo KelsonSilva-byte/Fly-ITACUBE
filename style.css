@@ -31,9 +31,6 @@
   .ground { position:absolute; left:-12%; bottom:-78px; width:124%; height:124px; border-radius:50%;
             background:radial-gradient(ellipse 26px 7px at 22% 14%, #6f758b 60%, transparent 62%), radial-gradient(ellipse 18px 5px at 44% 22%, #6f758b 60%, transparent 62%),
                        radial-gradient(ellipse 22px 6px at 88% 16%, #6f758b 60%, transparent 62%), #9aa0b5; }
-  .base { position:absolute; right:22%; bottom:40px; width:84px; height:42px; border-radius:84px 84px 0 0; background:linear-gradient(#eef2ff, #b9c4e6);
-          display:flex; align-items:flex-end; justify-content:center; font-size:1.5rem; line-height:1.2; transition:background .3s; }
-  .base.hit { animation:hit .35s 4; }
   @keyframes hit { 50% { background:#fb7185; } }
   .shield { position:absolute; right:calc(22% - 26px); bottom:40px; width:136px; height:68px; border-radius:136px 136px 0 0;
             border:3px dashed rgba(125,211,252,.22); border-bottom:none; transition:all .4s; }
