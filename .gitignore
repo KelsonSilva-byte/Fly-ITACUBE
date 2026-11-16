@@ -14,3 +14,6 @@ data/notifications_*.json
 # Notas internas do projeto: ficam so no computador local, fora do GitHub
 /AGENTS.md
 /CONTEXTO.md
+
+# Configuracao local do Claude Code
+.claude/
