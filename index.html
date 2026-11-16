@@ -1020,6 +1020,8 @@ const SFX = {
   gfill: () => [262, 330, 392, 494, 587, 698].forEach((f, i) => tone(f, i * .12, .12, 'triangle', .03)),
   gdrain: () => [330, 277, 233, 196, 165, 147, 131, 110].forEach((f, i) => tone(f, i * .17, .15, 'triangle', .03)),
   swipe: () => tone(320, 0, .06, 'triangle', .05),
+  tap: () => { tone(660, 0, .05, 'square', .02); tone(880, .035, .06, 'square', .018); },
+  go: () => [392, 523, 659, 784].forEach((f, i) => tone(f, i * .07, .16, 'triangle', .04)),
   lock: () => tone(196, 0, .18, 'sine', .045, true),
   reveal: () => {
     [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => tone(f, i * .075, .34, 'sine', .045));
@@ -1170,16 +1172,19 @@ function kalimba(note, delay, volume, length = .42) {
 }
 let musicTimer, musicBeat = 0;
 function startMusic() {
-  if (muted || musicTimer || !G || G.over) return;
+  if (muted) return;
+  if (musicTimer) { if (ac && ac.state === 'suspended') ac.resume().catch(() => {}); return; }
   try {
     ac = ac || new (window.AudioContext || window.webkitAudioContext)();
     if (ac.state === 'suspended') ac.resume().catch(() => {});
     musicTimer = setInterval(() => {
       if (document.hidden || ac.state !== 'running') return;
-      const card = G?.card;
-      const risky = !!hazardKind || card?.alert || card?.kind === 'arrive' || card?.kind === 'flare'
+      // No menu e no tutorial (sem partida ativa) a música segue calma; o mesmo laço continua pelo jogo, sem reiniciar.
+      const live = !!G && !G.over && !$('game').classList.contains('hidden');
+      const card = live ? G.card : null;
+      const risky = live && (!!hazardKind || card?.alert || card?.kind === 'arrive' || card?.kind === 'flare'
         || [card?.L, card?.R].some(option => option?.fx?.outside || option?.fx?.rad > 0)
-        || ['storm', 'meteors'].includes(lunarScene.snapshot.kind);
+        || ['storm', 'meteors'].includes(lunarScene.snapshot.kind));
       const phrase = musicScore[Math.floor(musicBeat / 8)];
       const step = musicBeat % 8;
       const swell = (.44 + .56 * Math.sin(Math.PI * musicBeat / 64) ** 2) * (ac.currentTime < voiceUntil ? .23 : hazardKind ? .48 : 1);
@@ -1592,6 +1597,7 @@ async function act(side) {
 }
 
 function start(eventCard, reviewPreview = false) {
+  startMusic();
   busy=false; lunarScene.reset();
   discoveryReveal = []; G = newGame(eventCard, getUnlocked()); lockHits = 0; prog = null; showLearn(null);
   if (reviewPreview) {
@@ -2149,9 +2155,13 @@ $('closeAlbumBtn').addEventListener('click', async () => {
   $(albumFrom === 'game' ? 'albumGameBtn' : 'openAlbumBtn').focus();
 });
 $('muteBtn').addEventListener('click', () => { muted = !muted; store.set('lb_mute', muted ? '1' : '0'); setTexts(); if (muted) { stopMusic(); syncSceneAudio(false, wasFallen); } else { sfx('swipe'); startMusic(); } });
-$('startBtn').addEventListener('click', () => start());
+$('startBtn').addEventListener('click', () => { sfx('go'); start(); });
+// Navegadores só liberam áudio depois de um toque: o primeiro toque na tela inicial começa a música do menu.
+['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if ($('end').classList.contains('hidden')) startMusic(); }, { capture: true }));
+startMusic();
 $('againBtn').addEventListener('click', () => { factIdx++; start(); });
 document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click', () => {
+  sfx('tap');
   lang = lang === 'pt' ? 'en' : 'pt'; setTexts();
   if (!$('album').classList.contains('hidden')) openAlbum();
   if (!$('tutorial').classList.contains('hidden')) renderTutorial();
@@ -2212,7 +2222,7 @@ function homeStop() {
 }
 new MutationObserver(() => { $('intro').classList.contains('hidden') ? homeStop() : homeStart(); })
   .observe($('intro'), { attributes: true, attributeFilter: ['class'] });
-$('homeMuteBtn').addEventListener('click', () => $('muteBtn').click());
+$('homeMuteBtn').addEventListener('click', () => { sfx('tap'); $('muteBtn').click(); });
 $('openGuideBtn').addEventListener('click', () => openGuide());
 if (!$('intro').classList.contains('hidden')) homeStart();
 
@@ -2332,7 +2342,7 @@ function closeGuide(toGame) {
   if (toGame) start(); else { $('intro').classList.remove('hidden'); sfx('windowClose'); }
 }
 $('gdNext').addEventListener('click', () => {
-  if (guideI >= guideSlides().length - 1) return closeGuide(true);
+  if (guideI >= guideSlides().length - 1) { sfx('go'); return closeGuide(true); }
   guideI++; sfx('swipe'); guideRender();
 });
 $('gdBack').addEventListener('click', () => {
@@ -2340,7 +2350,7 @@ $('gdBack').addEventListener('click', () => {
   guideI--; sfx('swipe'); guideRender();
 });
 $('gdSkip').addEventListener('click', () => { guideI = guideSlides().length - 1; sfx('swipe'); guideRender(); });
-$('openTutorialBtn').addEventListener('click', () => { guideRun++; guideTimers.forEach(clearTimeout); if (guideScene) { try { guideScene.stop(); } catch (e) {} guideScene = null; } $('guide').classList.add('hidden'); });
+$('openTutorialBtn').addEventListener('click', () => { sfx('tap'); guideRun++; guideTimers.forEach(clearTimeout); if (guideScene) { try { guideScene.stop(); } catch (e) {} guideScene = null; } $('guide').classList.add('hidden'); });
 document.addEventListener('keydown', e => {
   if ($('guide').classList.contains('hidden')) return;
   if (e.key === 'ArrowRight') $('gdNext').click();

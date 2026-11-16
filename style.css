@@ -544,3 +544,21 @@ main img { -webkit-user-drag:none; }
 @keyframes gddz { 0% { --l:.9; } 60%, 100% { --l:0; } }
 #guide .art:has(.mock) .pcb { margin-top:auto; margin-bottom:10px; }
 @media (prefers-reduced-motion:reduce) { #guide .gcard, #guide .pwz { animation:none !important; } #guide .pwz { --l:0; } }
+
+/* Guia completo: toda a tipografia na fonte pixelada padrão do jogo */
+#tutorial, #tutorial h1, #tutorial h2, #tutorial button, #tutorial .d, #tutorial .d b, #tutorial .d span, #tutorial .d small,
+#tutorial .fact, #tutorial .coll { font-family:var(--font-pixel); }
+#tutorial h1 { font-size:.8rem; line-height:1.7; }
+#tutorial button { font-size:.55rem; }
+#tutorial .fact { font-size:.62rem; line-height:1.9; }
+#tutorial .coll { font-size:.58rem; line-height:1.9; }
+#tutorial .book .d { font-size:.6rem; line-height:1.85; }
+#tutorial .book .d b { font-size:.62rem; }
+#tutorial .book .d .base { font-size:.54rem; }
+
+/* Efeito de aperto nos botões do menu e do tutorial */
+.hbtn, .home-top .lang, #guide .btn, #guide .gd-skip, #guide .gd-full, #guide .gd-right .lang, #tutorial button { transition:transform .06s steps(2), filter .06s steps(2); }
+.hbtn:hover, #guide .btn:hover, .home-top .lang:hover, #tutorial button:hover { filter:brightness(1.18); }
+.hbtn:active, #guide .btn:active, .home-top .lang:active, #tutorial button:active { transform:translateY(3px) scale(.97); filter:brightness(1.3); }
+.hbtn.go:active, #guide .go:active { box-shadow:none; }
+@media (prefers-reduced-motion:reduce) { .hbtn, .home-top .lang, #guide .btn, #tutorial button { transition:none; } .hbtn:active, #guide .btn:active, .home-top .lang:active, #tutorial button:active { transform:none; } }
