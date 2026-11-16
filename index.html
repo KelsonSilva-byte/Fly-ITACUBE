@@ -3,28 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Base Lunar — Junior Astronaut Mission Trainer</title>
-<link rel="stylesheet" href="style.css?v=clear-shapes">
+<title>Space Survivors — Junior Astronaut Mission Trainer</title>
+<link rel="stylesheet" href="style.css?v=home-guide">
 </head>
 <body>
 <main>
 
 <!-- ===================== INÍCIO ===================== -->
-<section id="intro" class="panel min">
-  <div style="text-align:right"><button class="lang" data-lang></button></div>
-  <img class="mission-panorama" src="assets/hud/capa-base-lunar.svg" alt="Base Lunar"><div class="hero" aria-hidden="true"></div>
-  <h1 data-t="title"></h1>
-  <p data-t="intro1"></p>
-  <ul class="how">
-    <li data-t="how1"></li>
-    <li data-t="how2"></li>
-    <li data-t="how3"></li>
-    <li data-t="how4"></li>
-  </ul>
-  <div class="fact" data-t="introReal"></div>
-  <button class="big" id="startBtn" data-t="start"></button>
-  <button class="secBtn" id="openAlbumBtn"></button>
-  <button class="secBtn" id="openTutorialBtn"></button>
+<section id="intro" class="home" aria-labelledby="homeTitle">
+  <div class="home-cam" id="homeCam"><canvas id="homeCanvas" width="256" height="88" aria-hidden="true"></canvas></div>
+  <div class="home-shade"></div>
+  <div class="home-top"><button class="lang" data-lang></button><button class="lang home-snd" id="homeMuteBtn" type="button"><img src="assets/hud/som-ligado.png" alt="" width="24" height="24"></button></div>
+  <div class="home-head">
+    <h1 class="home-title" id="homeTitle">SPACE<br>SURVIVORS</h1>
+    <p class="home-sub" data-t="hSub"></p>
+    <div class="home-ui">
+      <button class="hbtn go" id="startBtn" type="button" data-t="hStart"></button>
+      <div class="home-grid">
+        <button class="hbtn" id="openGuideBtn" type="button" data-t="hGuide"></button>
+        <button class="hbtn dsc" id="openAlbumBtn" type="button"></button>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ===================== JOGO ===================== -->
@@ -127,6 +127,17 @@
 <div id="studyWindows"></div>
 <footer data-t="footer"></footer>
 </main>
+
+<!-- ===================== TUTORIAL EM TELAS ===================== -->
+<section id="guide" class="hidden" aria-label="Tutorial">
+  <div class="phone">
+    <div class="top"><span id="gdN"></span><span class="gd-right"><button class="lang" data-lang type="button"></button><button class="gd-skip" id="gdSkip" type="button"></button></span></div>
+    <div class="win"><div class="art" id="gdArt"></div><h2 id="gdH"></h2><p id="gdT"></p></div>
+    <div class="dots" id="gdDots"></div>
+    <button class="gd-full" id="openTutorialBtn" type="button"></button>
+    <div class="nav"><button class="btn" id="gdBack" type="button"></button><button class="btn go" id="gdNext" type="button"></button></div>
+  </div>
+</section>
 
 <script src="assets/scene/lunar-scene.js"></script>
 <script>
@@ -1003,6 +1014,11 @@ const SFX = {
   shift: () => [392, 494, 587].forEach((f, i) => tone(f, i * .09, .22, 'triangle', .035)),
   windowOpen: () => [440, 587].forEach((f, i) => tone(f, i * .055, .13, 'sine', .03)),
   windowClose: () => [587, 440].forEach((f, i) => tone(f, i * .05, .11, 'sine', .025)),
+  gstar0: () => tone(523, 0, .16, 'triangle', .04),
+  gstar1: () => tone(659, 0, .16, 'triangle', .04),
+  gstar2: () => [784, 1047].forEach((f, i) => tone(f, i * .08, .22, 'triangle', .04)),
+  gfill: () => [262, 330, 392, 494, 587, 698].forEach((f, i) => tone(f, i * .12, .12, 'triangle', .03)),
+  gdrain: () => [330, 277, 233, 196, 165, 147, 131, 110].forEach((f, i) => tone(f, i * .17, .15, 'triangle', .03)),
   swipe: () => tone(320, 0, .06, 'triangle', .05),
   lock: () => tone(196, 0, .18, 'sine', .045, true),
   reveal: () => {
@@ -1245,7 +1261,10 @@ function tip(keys) {
 }
 
 const T = {
-  title: ['Base Lunar: você no comando', 'Moon Base: you are in command'],
+  title: ['Space Survivors: você no comando', 'Space Survivors: you are in command'],
+  hSub: ['Você no comando', 'You are in command'],
+  hStart: ['▶ COMEÇAR', '▶ START'],
+  hGuide: ['? TUTORIAL', '? TUTORIAL'],
   intro1: ['Você comanda uma base no <b>polo sul da Lua</b> por <b>10 dias</b>. A cada carta, você decide: deslize para um lado ou para o outro.',
            'You command a base at the <b>Moon\'s south pole</b> for <b>10 days</b>. Each card is a decision: swipe one way or the other.'],
   how1: ['🫧 <b>Ar:</b> a tripulação respira todo dia. Se acabar, a missão termina.', '🫧 <b>Air:</b> the crew breathes every day. If it runs out, the mission ends.'],
@@ -1350,13 +1369,14 @@ function setTexts() {
     ? (muted ? 'Ativar som' : 'Silenciar')
     : (muted ? 'Unmute' : 'Mute'));
   $('albumGameBtn').setAttribute('aria-label', lang === 'pt' ? 'Álbum de descobertas' : 'Discovery album');
-  $('openTutorialBtn').textContent = lang === 'pt' ? '❓ Como jogar' : '❓ How to play';
+  $('openTutorialBtn').textContent = lang === 'pt' ? 'Guia completo' : 'Full guide';
+  $('homeMuteBtn').querySelector('img').src = muted ? 'assets/hud/som-desligado.png' : 'assets/hud/som-ligado.png';
+  $('homeMuteBtn').setAttribute('aria-label', mute.getAttribute('aria-label'));
   if (learnFn) $('learn').innerHTML = learnFn();
   if (discoveryReveal.length && !busy) renderDiscovery();
   const n = getUnlocked().length;
-  $('openAlbumBtn').textContent = lang === 'pt'
-    ? `📓 Ver todas as descobertas (${n}/${DISC.length})`
-    : `📓 View all discoveries (${n}/${DISC.length})`;
+  $('openAlbumBtn').innerHTML = '<span class="pc-icon" aria-hidden="true"></span>' + (lang === 'pt' ? 'CIÊNCIA ' : 'SCIENCE ') + n + '/' + DISC.length;
+  guideRefresh();
 }
 function renderMeters() {
   const setLevel = (meter, label, value, max, suffix) => {
@@ -2137,6 +2157,197 @@ document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click'
   if (!$('tutorial').classList.contains('hidden')) renderTutorial();
   if (G && !busy && !discoveryReveal.length) { renderMeters(); if (G.over) renderEnd(); else renderCard(false); }
 }));
+/* ---------- Tela inicial com a cena real ---------- */
+const homeCanvas = $('homeCanvas'), homeCam = $('homeCam');
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const homeScene = LunarScene.create(homeCanvas, () => {});
+let homeRun = 0, homeKind = 'intro', homeRaf = 0, homeDir = 0;
+let homeCur = { x: 184, y: 58, s: 5.2 }, homeTgt = { x: 184, y: 58, s: 5.2 };
+for (let i = 0; i < 70; i++) {
+  const s = document.createElement('i');
+  s.className = 'home-star';
+  s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 60 + '%';
+  s.style.animationDelay = Math.random() * 3 + 's';
+  homeCam.prepend(s);
+}
+function homeAim(x, y, s) { homeTgt = { x, y, s }; }
+function homeFrame() {
+  const W = homeCam.clientWidth, H = homeCam.clientHeight;
+  const k = Math.min(W, 460) / 294, minS = Math.max(W / 256, 4.4 * k);
+  for (const key in homeCur) homeCur[key] += (homeTgt[key] - homeCur[key]) * .035;
+  const S = Math.max(homeCur.s * k, minS);
+  homeCanvas.style.width = 256 * S + 'px'; homeCanvas.style.height = 88 * S + 'px';
+  const x = Math.min(0, Math.max(W - 256 * S, W / 2 - homeCur.x * S));
+  homeCanvas.style.transform = 'translate(' + x + 'px,' + (H - 88 * S) + 'px)';
+  homeRaf = requestAnimationFrame(homeFrame);
+}
+function homeDirector() {
+  const p = parseFloat(homeCanvas.dataset.progress || '0');
+  if (homeKind === 'intro') { p > .6 ? homeAim(150, 58, 4.8) : homeAim(184, 58, 5.2); }
+  else if (homeKind === 'explore') { p < .15 ? homeAim(176, 58, 4.8) : homeAim(45, 58, 4.6); }
+  else if (p < .18) homeAim(150, 58, 4.6);
+  else if (p < .40) homeAim(184, 58, 5);
+  else if (p < .58) homeAim(120, 50, 4.4);
+  else homeAim(62, 52, 4.4);
+}
+async function homeLoop(id) {
+  try {
+    homeScene.reset();
+    while (id === homeRun) {
+      homeKind = 'intro'; await homeScene.play('intro'); if (id !== homeRun) return;
+      homeKind = 'explore'; await homeScene.play('explore'); if (id !== homeRun) return;
+      homeKind = 'storm'; await homeScene.play('storm', { shield: 'ready' });
+    }
+  } catch (e) {}
+}
+function homeStart() {
+  if (homeRaf) return;
+  homeRun++; homeFrame();
+  if (reduceMotion) { homeScene.reset(); return; }
+  homeDir = setInterval(homeDirector, 60); homeLoop(homeRun);
+}
+function homeStop() {
+  homeRun++; cancelAnimationFrame(homeRaf); homeRaf = 0; clearInterval(homeDir);
+  try { homeScene.stop(); } catch (e) {}
+}
+new MutationObserver(() => { $('intro').classList.contains('hidden') ? homeStop() : homeStart(); })
+  .observe($('intro'), { attributes: true, attributeFilter: ['class'] });
+$('homeMuteBtn').addEventListener('click', () => $('muteBtn').click());
+$('openGuideBtn').addEventListener('click', () => openGuide());
+if (!$('intro').classList.contains('hidden')) homeStart();
+
+/* ---------- Tutorial em telas (11 telas curtas) ---------- */
+var guideI = 0, guideTimers = [], guideScene = null, guideRun = 0;
+const GU = { air: 'assets/hud/ar-cilindro.svg', pw: 'assets/hud/energia.png', rad: 'assets/hud/radiacao.png',
+  sci: 'assets/hud/descobertas.png', snd: 'assets/hud/som-ligado.png' };
+const gl = (pt, en) => lang === 'pt' ? pt : en;
+const gdMs = (img, ar, color, cls = 'fill', size = '') =>
+  '<div class="col"><div class="ms ' + cls + ' ' + size + '" style="--s:url(' + img + ');--ar:' + ar + (color ? ';--c:' + color : '') + '"></div></div>';
+const gdAir = (c, s) => gdMs(GU.air, '1', '#FFCF72', c, s), gdPw = (c, s) => gdMs(GU.pw, '162/239', null, c, s),
+  gdRad = (c, s) => gdMs(GU.rad, '220/206', '#ff764f', c, s), gdSci = (c, s) => gdMs(GU.sci, '200/222', '#ffcf72', c, s);
+const gdLab = (h, l) => '<div class="col">' + h + '<span>' + l + '</span></div>';
+const gdPix = (rows, col, h) => {
+  let d = '';
+  rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '#') d += 'M' + x + ' ' + y + 'h1v1h-1z'; }));
+  return '<svg viewBox="0 0 ' + rows[0].length + ' ' + rows.length + '" height="' + h + '" shape-rendering="crispEdges"><path fill="' + col + '" d="' + d + '"/></svg>';
+};
+const gdLock = h => gdPix(['..####..', '.##..##.', '.#....#.', '.#....#.', '########', '########', '###..###', '###..###', '####.###', '###..###', '########', '########'], '#FFCF72', h);
+const gdArrow = (up, bad) => '<span class="ar" style="font-size:18px;color:' + (bad ? '#FF514D' : '#8fe0aa') + ';margin-left:6px">' + (up ? '▲' : '▼') + '</span>';
+const gdRow = (spr, arrow) => '<div style="display:flex;align-items:center">' + spr + arrow + '</div>';
+const STAR_D = 'M4 0h1v2h1v1h3v1H7v1h1v2h1v1H6V7H5v2H4V7H3v1H0V7h1V5h1V4H0V3h3V2h1z';
+const gdStar = i => '<svg class="star" style="animation-delay:' + i * .55 + 's" viewBox="0 0 9 9" width="44" height="44" shape-rendering="crispEdges"><path style="animation-delay:' + i * .55 + 's" d="' + STAR_D + '"/></svg>';
+const GD_OK = '<svg viewBox="0 0 8 8" width="22" height="22" shape-rendering="crispEdges"><path fill="#8fe0aa" d="M6 1h2v2H7v1H6v1H5v1H4v1H3V7H2V6H1V5H0V3h2v1h1v1h1V4h1V3h1z"/></svg>';
+const GD_NO = '<svg viewBox="0 0 8 8" width="22" height="22" shape-rendering="crispEdges"><path fill="#FF514D" d="M0 0h2v1h1v1h2V1h1V0h2v2H7v1H6v2h1v1h1v2H6V7H5V6H3v1H2v1H0V6h1V5h1V3H1V2H0z"/></svg>';
+
+function guideSlides() {
+  const D = R.DAYS;
+  return [
+    { h: gl('Sua missão', 'Your mission'),
+      t: gl('Comande a base na Lua por ' + D + ' dias. Chegar ao fim já vale uma estrela.', 'Command the Moon base for ' + D + ' days. Reaching the end already earns one star.'),
+      a: () => gdStar(0) + gdStar(1) + gdStar(2), snd: [[540, 'gstar0'], [1090, 'gstar1'], [1640, 'gstar2']] },
+    { h: gl('Arraste a carta', 'Swipe the card'),
+      t: gl('Cada carta tem duas opções. Arraste para um lado ou toque no botão.', 'Each card has two options. Swipe to one side or tap the button.'),
+      a: () => '<div class="arr">◀</div><div class="gcard">' + gl('QUAL<br>ESCOLHA?', 'WHICH<br>CHOICE?') + '</div><div class="arr">▶</div>',
+      snd: [[800, 'swipe'], [2400, 'swipe']] },
+    { h: gl('Toda escolha custa', 'Every choice has a cost'),
+      t: gl('Olhe as setas ao lado dos ícones: verde é bom, vermelha é ruim. A radiação só sobe.', 'Look at the arrows next to the icons: green is good, red is bad. Radiation only goes up.'),
+      a: () => '<div class="side"><span>' + gl('ESQUERDA', 'LEFT') + '</span>' + gdRow(gdSci('fill', 'sm'), gdArrow(1, 0)) + gdRow(gdPw('drain', 'sm'), gdArrow(0, 1))
+        + '</div><div class="side"><span>' + gl('DIREITA', 'RIGHT') + '</span>' + gdRow(gdAir('fill', 'sm'), gdArrow(1, 0)) + gdRow(gdRad('fill', 'sm'), gdArrow(1, 1)) + '</div>',
+      snd: [[0, 'gfill']] },
+    { h: gl('Os medidores', 'The meters'),
+      t: gl('O nível é o quanto o ícone está cheio.', 'The level is how full the icon is.'),
+      a: () => gdLab(gdAir('fill', 'md'), gl('AR', 'AIR')) + gdLab(gdPw('fill', 'md'), gl('ENERGIA', 'POWER')) + gdLab(gdRad('fill', 'md'), gl('RADIAÇÃO', 'RADIATION')),
+      snd: [[0, 'gfill'], [3200, 'gdrain']] },
+    { h: gl('Ar', 'Air'),
+      t: gl('O ar acaba toda noite. Sem ar, a missão termina.', 'Air runs down every night. With no air, the mission ends.'),
+      a: () => gdLab(gdAir('drain'), gl('O AR ACABA', 'AIR RUNS OUT')), snd: [[0, 'gdrain']] },
+    { h: gl('Sem energia, sem ação', 'No power, no action'),
+      t: gl('Algumas ações gastam energia. Se faltar, a opção fica trancada e você precisa escolher a outra.', 'Some actions use power. If it runs short, the option is locked and you must pick the other one.'),
+      a: () => '<div style="display:flex;align-items:center;gap:14px">' + gdPw('pwz', '') + '<span class="lk">' + gdLock(96) + '</span></div>',
+      snd: [[0, 'gdrain'], [2900, 'lock']] },
+    { h: gl('Radiação', 'Radiation'),
+      t: gl('Aqui é o contrário: quanto mais cheio, pior.', 'Here it is the opposite: the fuller, the worse.'),
+      a: () => gdLab(gdRad('fill'), gl('ENCHENDO = PERIGO', 'FILLING = DANGER')), snd: [[0, 'gfill']] },
+    { h: gl('Tempestades de verdade', 'Real storms'),
+      t: gl('Elas aconteceram de verdade. Guarde energia para o escudo!', 'They really happened. Save power for the shield!'),
+      a: () => '<canvas id="gdCanvas" width="256" height="88"></canvas>', scene: true },
+    { h: gl('Ciência', 'Science'),
+      t: gl('Pesquisar rende descobertas reais da NASA para o seu álbum.', 'Research brings real NASA discoveries for your album.'),
+      a: () => '<div class="col fl"><i class="bub b1"></i><i class="bub b2"></i><i class="bub b3"></i><i class="gl g1"></i><i class="gl g2"></i><img src="' + GU.sci
+        + '" alt="" style="height:130px;image-rendering:pixelated;transform:translateX(9px)"><span class="cnt"><b>3/' + D + '</b><b>4/' + D + '</b></span></div>',
+      snd: [[0, 'disc'], [1500, 'reveal']] },
+    { h: gl('Relatório de descobertas', 'Discovery report'),
+      t: gl('Abra quando quiser, pelo botão do topo. Só não vale durante uma pergunta: nada de colar!', 'Open it any time with the top button. Just not during a question: no cheating!'),
+      a: () => '<div class="mock"><span>' + gl('DIA 1 DE ' + D, 'DAY 1 OF ' + D) + '</span><span class="hud"><span class="b hi"><span class="pc-icon sm"></span><span class="lk2">' + gdLock(16)
+        + '</span></span><span class="b"><img src="' + GU.snd + '" alt=""></span><span class="b en">' + gl('EN', 'PT') + '</span></span></div><div class="pt">▲ ' + gl('AQUI', 'HERE')
+        + '</div><div class="col pcb"><span class="pc-icon" style="transform:scale(1.6);margin:12px 0 26px"></span><span>' + gl('MENOS NAS<br>PERGUNTAS', 'NOT DURING<br>QUESTIONS')
+        + '</span></div><div class="mini"><div class="mt">' + gl('RELATÓRIO', 'REPORT') + '</div><div class="ml"></div><div class="ml s"></div><div class="ml"></div></div>',
+      snd: [[600, 'windowOpen'], [2600, 'windowClose'], [3300, 'lock']] },
+    { h: gl('Perguntas surpresa', 'Surprise questions'),
+      t: gl('O jogo pergunta sobre uma descoberta. Lembre-se do que leu!', 'The game asks about a discovery. Remember what you read!'),
+      a: () => '<div class="qwrap"><div class="q qa">' + gl('VOCÊ<br>LEMBRA?', 'DO YOU<br>REMEMBER?') + '</div></div><div class="res"><div class="side ok">' + GD_OK + '<span class="plus">'
+        + gl('+ AR<br>+ ENERGIA', '+ AIR<br>+ POWER') + '</span></div><div class="side no">' + GD_NO + '<span class="minus">' + gl('- AR<br>- ENERGIA', '- AIR<br>- POWER') + '</span></div></div>',
+      snd: [[1200, 'win'], [2850, 'lose']] },
+  ];
+}
+function guideRender() {
+  const S = guideSlides(), s = S[guideI], art = $('gdArt');
+  guideRun++;
+  guideTimers.forEach(clearTimeout); guideTimers = [];
+  if (guideScene) { try { guideScene.stop(); } catch (e) {} guideScene = null; }
+  art.innerHTML = s.a();
+  $('gdH').textContent = s.h.toUpperCase(); $('gdT').textContent = s.t;
+  $('gdN').textContent = (guideI + 1) + '/' + S.length;
+  $('gdDots').innerHTML = S.map((_, j) => '<i class="' + (j === guideI ? 'on' : '') + '"></i>').join('');
+  $('gdBack').textContent = '◀ ' + (guideI ? gl('VOLTAR', 'BACK') : 'MENU');
+  $('gdNext').textContent = guideI === S.length - 1 ? gl('JOGAR', 'PLAY') + ' ▶' : gl('PRÓXIMO', 'NEXT') + ' ▶';
+  $('gdSkip').textContent = gl('PULAR', 'SKIP') + ' ▶▶';
+  $('openTutorialBtn').textContent = gl('Guia completo', 'Full guide');
+  if (!reduceMotion) (s.snd || []).forEach(([ms, k]) => guideTimers.push(setTimeout(() => sfx(k), ms)));
+  if (s.scene) {
+    const c = $('gdCanvas'), my = guideRun;
+    c.style.width = '1024px'; c.style.height = '352px';
+    c.style.transform = 'translate(' + (art.clientWidth / 2 - 573) + 'px,-58px)';
+    guideScene = LunarScene.create(c, () => {});
+    guideScene.reset();
+    guideScene.sync({ day: 4, queue: [1, 1, 1, 1, 1], card: { kind: 'day' }, dated: { 5: { id: 'eclipse_2024_03' } }, sun: 3 });
+    if (!reduceMotion) (async () => {
+      try {
+        await guideScene.play('intro'); if (my !== guideRun) return;
+        sfx('alert'); guideTimers.push(setTimeout(() => sfx('storm'), 9000));
+        await guideScene.play('storm', { shield: 'ready' });
+      } catch (e) {}
+    })();
+  }
+}
+function guideRefresh() { if ($('guide') && !$('guide').classList.contains('hidden')) guideRender(); }
+function openGuide() {
+  $('intro').classList.add('hidden'); $('guide').classList.remove('hidden');
+  guideI = 0; guideRender(); sfx('windowOpen');
+}
+function closeGuide(toGame) {
+  guideRun++; guideTimers.forEach(clearTimeout); guideTimers = [];
+  if (guideScene) { try { guideScene.stop(); } catch (e) {} guideScene = null; }
+  $('guide').classList.add('hidden');
+  if (toGame) start(); else { $('intro').classList.remove('hidden'); sfx('windowClose'); }
+}
+$('gdNext').addEventListener('click', () => {
+  if (guideI >= guideSlides().length - 1) return closeGuide(true);
+  guideI++; sfx('swipe'); guideRender();
+});
+$('gdBack').addEventListener('click', () => {
+  if (!guideI) return closeGuide(false);
+  guideI--; sfx('swipe'); guideRender();
+});
+$('gdSkip').addEventListener('click', () => { guideI = guideSlides().length - 1; sfx('swipe'); guideRender(); });
+$('openTutorialBtn').addEventListener('click', () => { guideRun++; guideTimers.forEach(clearTimeout); if (guideScene) { try { guideScene.stop(); } catch (e) {} guideScene = null; } $('guide').classList.add('hidden'); });
+document.addEventListener('keydown', e => {
+  if ($('guide').classList.contains('hidden')) return;
+  if (e.key === 'ArrowRight') $('gdNext').click();
+  else if (e.key === 'ArrowLeft') $('gdBack').click();
+  else if (e.key === 'Escape') closeGuide(false);
+});
+
 setTexts();
 window.__game = { get G() { return G; }, get busy() { return busy; }, lunarScene, R, STORMS, Engine, act, setLang: l => { lang = l; setTexts(); } };   // para testes
 if (new URLSearchParams(location.search).get('teste') === 'revisao') start(undefined, true);

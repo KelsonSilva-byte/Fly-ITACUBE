@@ -1,6 +1,6 @@
 # Continuidade do Fly ITACUBE
 
-Base Lunar é um jogo de navegador, em português e inglês, para crianças de 7 a 12 anos administrarem uma base lunar. O modo de jogo, o desafio e as fontes científicas estão em [CONTEXTO.md](CONTEXTO.md) e [README-jogo.md](README-jogo.md).
+Space Survivors é um jogo de navegador, em português e inglês, para crianças de 7 a 12 anos administrarem uma base lunar. O modo de jogo, o desafio e as fontes científicas estão em [CONTEXTO.md](CONTEXTO.md) e [README-jogo.md](README-jogo.md).
 
 ## Onde paramos
 
@@ -56,3 +56,9 @@ Atualizado em 15/11/2026 (noite), depois da integração visual.
 Abrir as duas prévias no navegador e conferir a fonte, o relatório e o alerta. Depois testar uma partida real com som ligado, usando janela privativa para repetir o primeiro registro. Só então integrar ao `index.html`. As artes de abertura e de fim de missão continuam em aberto. O balanceamento fica com a equipe, não com esta frente; se surgir problema de equilíbrio durante os testes visuais, registre o caso para quem assumir essa frente.
 
 Este arquivo é o ponto de retomada compartilhado. Se o Claude Code não carregar `AGENTS.md` automaticamente, indique o arquivo no início da sessão.
+
+## Nome do jogo e tela inicial (15/11, noite)
+- O jogo agora se chama **Space Survivors** (PT e EN). Nomes internos como `capa-base-lunar.svg`, a fonte "Base Lunar Pixel" e as chaves `lb_*` do localStorage não foram renomeados de propósito.
+- Tela inicial (`#intro`): a cena real (`LunarScene`) ao fundo com câmera contínua, título, botões Começar, Tutorial e Ciência n/40, idioma e som. O laço da cena só roda enquanto `#intro` está visível.
+- Tutorial em telas (`#guide`, 11 telas curtas PT/EN, com animações e sons `gstar0-2`, `gfill`, `gdrain`). O "Guia completo" feito pelo Luis continua em `#tutorial`, aberto pelo link na parte de baixo do guia.
+- Pendências: os sprites do HUD usam `mask` com URL, então só aparecem servidos por http (não por duplo clique em `file://`); a tela final ainda usa o panorama antigo.
