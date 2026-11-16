@@ -11,3 +11,5 @@ data/notifications_*.json
 .env.*
 *.env
 !.env.example
+# Configuracao local do Claude Code
+.claude/
