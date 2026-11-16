@@ -1,4 +1,4 @@
-# Moon Base: you are in command
+# Space Survivors: you are in command
 
 Prototype for the **Build a Junior Astronaut Mission Trainer** challenge (NASA Space Apps 2026), by team Fly ITACUBE.
 Open `index.html` in a browser. No install, no internet, no account. The game is in English and Portuguese (button at the top).
@@ -102,7 +102,7 @@ Swiping with a finger on a real phone has not been tested yet.
 
 ---
 
-# Base Lunar: você no comando
+# Space Survivors: você no comando
 
 Protótipo para o desafio **Build a Junior Astronaut Mission Trainer** (NASA Space Apps 2026), da equipe Fly ITACUBE.
 Abra `index.html` no navegador. Não precisa instalar nada, nem de internet, nem de conta. O jogo está em português e inglês (botão no topo).
