@@ -96,7 +96,7 @@
 <section id="end" class="panel hidden" aria-live="polite">
   <div class="end-sky" id="endSky" aria-hidden="true"></div>
   <button class="lang end-lang" data-lang></button>
-  <canvas class="end-ship" id="endShip" width="96" height="80" aria-hidden="true"></canvas>
+  <canvas class="end-ship" id="endShip" width="96" height="112" aria-hidden="true"></canvas>
   <h1 id="endTitle"></h1>
   <p class="end-sub" id="endSub"></p>
   <div class="end-stars" id="stars" aria-hidden="true"></div>
@@ -1023,7 +1023,7 @@ const { R, STORMS, DISC, newGame, choose, locked, effectFor, stars } = Engine;
 const $ = id => document.getElementById(id);
 const lunarScene = LunarScene.create($('lunarCanvas'), syncSceneAudio);
 const DAY = 864e5;
-let lang = (navigator.language || 'pt').toLowerCase().startsWith('pt') ? 'pt' : 'en';
+let lang = 'en';   // inglês é o idioma padrão; o botão do topo troca para português
 let G = null, busy = false, lockHits = 0, prog = null, learnFn = null, discoveryReveal = [];
 const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
 let muted = store.get('lb_mute') === '1';
@@ -2732,11 +2732,14 @@ function drawShip(t, win) {
   const c = shipCtx, put = (x, y, col, w = 1, h = 1) => { c.fillStyle = col; c.fillRect(Math.round(x), Math.round(y), w, h); };
   const sprite = (rows, x, y) => rows.forEach((r, j) => { for (let i = 0; i < r.length; i++) if (r[i] !== '.') put(x + i, y + j, SHIP_PAL[r[i]]); });
   const ease = v => v * v * (3 - 2 * v), loop = t % 8000, chute = loop > 4200;
-  c.clearRect(0, 0, 96, 80);
-  if (shipEarth.complete && shipEarth.naturalWidth) c.drawImage(shipEarth, 0, 44, 96, 96);
-  for (let x = 20; x < 76; x++) put(x, 44 + (48 - Math.sqrt(48 * 48 - (x - 48) ** 2)) - 1, 'rgba(154,217,245,.35)');
+  c.clearRect(0, 0, 96, 112);
+  if (shipEarth.complete && shipEarth.naturalWidth) c.drawImage(shipEarth, 12, 40, 72, 72);   // Terra inteira (24 px x 3)
+  for (let a = 0; a < 360; a += 4) {   // brilho da atmosfera ao redor do globo
+    const r = a * Math.PI / 180;
+    put(48 + Math.cos(r) * 37, 76 + Math.sin(r) * 37, 'rgba(154,217,245,.3)');
+  }
   const x = 42 + (chute ? Math.round(Math.sin(t / 500) * 2) : 0);
-  const y = chute ? 26 + Math.round(Math.min(1, (loop - 4200) / 3000) * 6) : Math.round(-14 + ease(Math.min(1, loop / 4200)) * 40);
+  const y = chute ? 22 + Math.round(Math.min(1, (loop - 4200) / 3000) * 6) : Math.round(-14 + ease(Math.min(1, loop / 4200)) * 36);
   if (!chute) {   // plasma atrás da cápsula, que cai com o escudo térmico para baixo
     const f = Math.floor(t / 70) % 3, h = 10 + f * 2;
     for (let j = 0; j < h; j++) {
@@ -2750,8 +2753,8 @@ function drawShip(t, win) {
   sprite(SHIP_DROP, x, y);
   if (!win && Math.floor(t / 300) % 2 === 0) put(x + 5, y - 1, '#FF514D', 1, 2);
   if (win && chute) for (let i = 0; i < 8; i++) {
-    const a = i * Math.PI / 4 + t / 900, d = 34 + 3 * Math.sin(t / 260 + i);
-    put(48 + Math.cos(a) * d, 28 + Math.sin(a) * d * .8, i % 2 ? '#FFCF72' : '#F3F3FF');
+    const a = i * Math.PI / 4 + t / 900, d = 42 + 3 * Math.sin(t / 260 + i);
+    put(48 + Math.cos(a) * d, 62 + Math.sin(a) * d * .75, i % 2 ? '#FFCF72' : '#F3F3FF');
   }
 }
 function playShip() {

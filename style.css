@@ -740,7 +740,7 @@ main img { -webkit-user-drag:none; }
 .end-earth i { position:absolute; left:108%; top:70%; width:5%; height:9%; background:#f3f3ff; box-shadow:0 0 0 2px #303db1; animation:endFly 4s steps(8) infinite alternate; }
 @keyframes endBob { to { transform:translateY(.5rem); } }
 @keyframes endFly { to { transform:translate(-520%, -260%); } }
-#end h1 { position:relative; z-index:1; margin:.4rem 0 0; font-size:clamp(.95rem, 5vw, 1.25rem); line-height:1.6; text-align:center; text-transform:uppercase; color:#ffe1a3; text-shadow:0 3px #ff983f, 0 6px #303db1; }
+#end h1 { position:relative; z-index:1; margin:1.4rem 0 0; font-size:clamp(.95rem, 5vw, 1.25rem); line-height:1.6; text-align:center; text-transform:uppercase; color:#ffe1a3; text-shadow:0 3px #ff983f, 0 6px #303db1; }
 .end-sub { position:relative; z-index:1; margin:.6rem 0 0; font-size:.5rem; line-height:1.9; text-align:center; color:#8591dc; }
 .end-stars { position:relative; z-index:1; display:flex; justify-content:center; gap:.5rem; margin:.7rem 0 .2rem; min-height:0; }
 .end-stars svg { width:2.9rem; height:2.9rem; }
@@ -776,7 +776,7 @@ body:has(#end:not(.hidden)) footer { display:none; }
 .end-rbody .book .d .base, .end-rbody .book .d .src, .end-rbody .book .d b, .end-rbody .book .d span { font-size:inherit; line-height:inherit; }
 .end-rbody .book .d .base { font-size:.54rem; }
 
-.end-ship { display:block; position:relative; z-index:1; width:min(78vw, 18rem); height:auto; aspect-ratio:96 / 80; margin:2rem auto 0; image-rendering:pixelated; }
+.end-ship { display:block; position:relative; z-index:1; width:min(56vw, 13rem); height:auto; aspect-ratio:96 / 112; margin:1.6rem auto 0; image-rendering:pixelated; }
 
 /* Relatório final: bloco "Na vida real" e botão Ver mais */
 .end-toolbar { display:flex; justify-content:flex-end; margin:.4rem 0; }
