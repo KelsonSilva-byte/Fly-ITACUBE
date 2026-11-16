@@ -93,28 +93,41 @@
 </section>
 
 <!-- ===================== FIM ===================== -->
-<section id="end" class="panel hidden min" aria-live="polite">
-  <div style="text-align:right"><button class="lang" data-lang></button></div>
-  <img class="mission-panorama" src="assets/hud/base-panoramica.png" alt=""><div class="hero" id="endArt" aria-hidden="true"></div>
-  <h1 id="endTitle" style="text-align:center"></h1>
-  <div class="stars" id="stars" aria-hidden="true"></div>
+<section id="end" class="panel hidden" aria-live="polite">
+  <div class="end-sky" id="endSky" aria-hidden="true"></div>
+  <button class="lang end-lang" data-lang></button>
+  <canvas class="end-ship" id="endShip" width="96" height="80" aria-hidden="true"></canvas>
+  <h1 id="endTitle"></h1>
+  <p class="end-sub" id="endSub"></p>
+  <div class="end-stars" id="stars" aria-hidden="true"></div>
   <div class="sum" id="endSum"></div>
-  <p id="endText"></p>
-  <p class="coll" id="debriefTitle"></p>
-  <ul class="debrief" id="debrief"></ul>
-  <button class="big" id="againBtn" data-t="again"></button>
-  <div class="fact" id="endFact"></div>
-  <h2 id="bookTitle"></h2>
-  <p class="coll" id="bookColl"></p>
-  <div class="book" id="book"></div>
-  <h2 data-t="realTitle"></h2>
-  <p id="realIntro"></p>
-  <div id="realList"></div>
-  <details>
-    <summary data-t="srcTitle"></summary>
-    <div id="srcBody"></div>
-  </details>
+  <div class="end-btns">
+    <button class="big" id="againBtn" data-t="again"></button>
+    <div class="two"><button class="secBtn" id="reportBtn" type="button"></button><button class="secBtn" id="albumEndBtn" type="button"></button></div>
+  </div>
 </section>
+  <div class="end-report hidden" id="endReport" role="dialog" aria-modal="true" aria-labelledby="endReportTitle">
+    <div class="end-rw">
+      <div class="report-bar"><span class="pc-icon" aria-hidden="true"></span><strong id="endReportTitle"></strong><button class="pc-close" id="endReportClose" type="button"></button></div>
+      <div class="end-rbody">
+        <p id="endText"></p>
+        <p class="coll" id="debriefTitle"></p>
+        <ul class="debrief" id="debrief"></ul>
+        <div class="fact" id="endFact"></div>
+        <h2 id="bookTitle"></h2>
+        <p class="coll" id="bookColl"></p>
+        <div class="book" id="book"></div>
+        <h2 data-t="realTitle"></h2>
+        <p id="realIntro"></p>
+        <div id="realList"></div>
+        <details>
+          <summary data-t="srcTitle"></summary>
+          <div id="srcBody"></div>
+        </details>
+      </div>
+    </div>
+  </div>
+
 <!-- ===================== ÁLBUM DE DESCOBERTAS ===================== -->
 <section id="album" class="panel hidden" aria-labelledby="albumTitle">
   <div class="report-bar"><span class="pc-icon" aria-hidden="true"></span><h1 id="albumTitle"></h1><button class="lang" data-lang></button><button class="lang" id="closeAlbumBtn" type="button"></button></div>
@@ -1318,7 +1331,7 @@ const T = {
   introReal: ['☀️ <b>As tempestades solares deste jogo aconteceram de verdade</b>, em 2024 e 2025. As datas e as horas vêm do DONKI, o banco de dados de clima espacial da NASA. Os dados estão guardados no jogo (não são ao vivo).',
               '☀️ <b>The solar storms in this game really happened</b>, in 2024 and 2025. Dates and times come from DONKI, NASA\'s space weather database. The data is stored in the game (it is not live).'],
   start: ['🚀 Começar missão', '🚀 Start mission'],
-  again: ['🔁 Jogar outra missão', '🔁 Play another mission'],
+  again: ['▶ Jogar outra missão', '▶ Play another mission'],
   mAir: ['ar', 'air'], mPw: ['energia', 'power'], mRad: ['radiação', 'radiation'], mSci: ['ciência', 'science'],
   swipe: ['Deslize a carta, toque nos botões ou use as setas ← →', 'Swipe the card, tap the buttons or use the ← → keys'],
   realTitle: ['☀️ Isso aconteceu de verdade!', '☀️ This really happened!'],
@@ -1940,7 +1953,8 @@ function finish() {
   prog = { n: all.length, best };
   sfx(G.over === 'win' ? 'win' : 'lose');
   $('game').classList.add('hidden'); $('end').classList.remove('hidden');
-  renderEnd(); window.scrollTo(0, 0); $('againBtn').focus();
+  $('endReport').classList.add('hidden');
+  renderEnd(); playShip(); window.scrollTo(0, 0); $('againBtn').focus();
 }
 /* ---------- Relatório final: 3 fatos tirados só da própria partida ---------- */
 const B = (pt, en) => ({ pt, en }); // o helper do motor fica dentro do seu bloco; aqui é a cópia da interface
@@ -2111,8 +2125,13 @@ function renderEnd() {
   if (!G || !G.over) return;
   const pt = lang === 'pt', st = stars(G), sciMin = R.SCI_MIN || 4;
   const sciOk = G.sci >= R.SCI_GOAL, healthOk = G.rad < R.RAD_SAFE;
-  $('stars').textContent = G.over === 'win' ? '⭐'.repeat(st) + '☆'.repeat(3 - st) : '';
-  $('endSum').innerHTML = `<span>🔬 ${G.sci}</span><span>☢️ ${Math.min(100, G.rad)}%</span><span>📅 ${Math.min(G.day + (G.over === 'win' ? 0 : 1), R.DAYS)}/${R.DAYS}</span>${quizStats.total ? `<span>🧠 ${quizStats.right}/${quizStats.total}${quizStats.best > 1 ? ' · 🔥x' + quizStats.best : ''}</span>` : ''}`;
+  const starSvg = on => `<svg viewBox="0 0 9 9" shape-rendering="crispEdges"><path fill="${on ? '#ffcf72' : '#303db1'}" d="${STAR_D}"/></svg>`;
+  $('stars').innerHTML = G.over === 'win' ? [0, 1, 2].map(i => starSvg(i < st)).join('') : '';
+  const chip = (img, value, label, bad) => `<div class="chip"><img src="assets/hud/${img}" alt=""><b class="${bad ? 'bad' : ''}">${value}</b><small>${label}</small></div>`;
+  $('endSum').innerHTML = chip('descobertas.png', G.sci, pt ? 'CIÊNCIA' : 'SCIENCE')
+    + chip('radiacao.png', Math.min(100, G.rad) + '%', pt ? 'RADIAÇÃO' : 'RADIATION', G.over === 'rad')
+    + chip('calendario.png', Math.min(G.day + (G.over === 'win' ? 0 : 1), R.DAYS) + '/' + R.DAYS, pt ? 'DIAS' : 'DAYS')
+    + (quizStats.total ? `<div class="chip"><span class="chip-ico" aria-hidden="true">🧠</span><b>${quizStats.right}/${quizStats.total}</b><small>${pt ? 'PERGUNTAS' : 'QUESTIONS'}</small></div>` : '');
   let art, title, text;
   if (G.over === 'win') {
     art = '🧑‍🚀🎉🌍'; title = pt ? 'Missão cumprida!' : 'Mission complete!';
@@ -2137,7 +2156,13 @@ function renderEnd() {
     text = pt ? 'A tripulação voltou para a Terra para se cuidar. Tente de novo com outra estratégia! Dica: deixe sempre um pouco de energia guardada. Uma tempestade solar pode chegar com pouco aviso, ou sem aviso nenhum.'
               : 'The crew returned to Earth to recover. Try again with another strategy! Tip: always keep some power in reserve. A solar storm can arrive with little warning, or none at all.';
   }
-  $('endArt').textContent = art; $('endTitle').textContent = title; $('endText').textContent = text;
+  $('endTitle').textContent = title; $('endText').textContent = text;
+  // Na tela só a primeira frase; o texto completo abre no relatório final.
+  $('endSub').textContent = text.split(/(?<=[.!?])\s/)[0];
+  $('endReportTitle').textContent = pt ? 'RELATÓRIO FINAL' : 'FINAL REPORT';
+  $('endReportClose').setAttribute('aria-label', pt ? 'Fechar relatório' : 'Close report');
+  $('reportBtn').textContent = pt ? 'RELATÓRIO FINAL' : 'FINAL REPORT';
+  $('albumEndBtn').textContent = (pt ? 'DESCOBERTAS ' : 'DISCOVERIES ') + getUnlocked().length + '/' + DISC.length;
 
   // Três fatos da missão: um acerto e até dois pontos para melhorar, só com dados da partida.
   const facts = missionFacts(G);
@@ -2567,14 +2592,75 @@ $('closeAlbumBtn').addEventListener('click', async () => {
   $('album').classList.add('hidden');
   $(albumFrom).classList.remove('hidden');
   close.disabled = false;
-  $(albumFrom === 'game' ? 'albumGameBtn' : 'openAlbumBtn').focus();
+  $(albumFrom === 'game' ? 'albumGameBtn' : albumFrom === 'end' ? 'albumEndBtn' : 'openAlbumBtn').focus();
 });
 $('muteBtn').addEventListener('click', () => { muted = !muted; store.set('lb_mute', muted ? '1' : '0'); setTexts(); if (muted) { stopMusic(); syncSceneAudio(false, wasFallen); } else { sfx('swipe'); startMusic(); } });
 $('startBtn').addEventListener('click', () => { sfx('go'); start(); });
 // Navegadores só liberam áudio depois de um toque: o primeiro toque na tela inicial começa a música do menu.
 ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if ($('end').classList.contains('hidden')) startMusic(); }, { capture: true }));
 startMusic();
-$('againBtn').addEventListener('click', () => { factIdx++; start(); });
+$('againBtn').addEventListener('click', () => { factIdx++; sfx('go'); start(); });
+async function toggleEndReport(open) {
+  const box = $('endReport');
+  if (open) {
+    box.classList.remove('hidden'); sfx('windowOpen'); animateStudy(box.firstElementChild);
+    box.querySelector('.end-rbody').scrollTop = 0; $('endReportClose').focus();
+  } else if (!box.classList.contains('hidden')) {
+    sfx('windowClose'); await animateStudy(box.firstElementChild, true);
+    box.classList.add('hidden'); $('reportBtn').focus();
+  }
+}
+$('reportBtn').addEventListener('click', () => toggleEndReport(true));
+$('endReportClose').addEventListener('click', () => toggleEndReport(false));
+$('endReport').addEventListener('click', e => { if (e.target === $('endReport')) toggleEndReport(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleEndReport(false); });
+$('albumEndBtn').addEventListener('click', () => openAlbum('end'));
+// Retorno à Terra: a cápsula esquenta na entrada, abre o paraquedas e flutua sobre a Terra (desenhada em pixels por código).
+const SHIP_PAL = { W:'#F3F3FF', L:'#AAAFC7', K:'#565D80', M:'#8591DC', D:'#171B4B', Y:'#FFCF72', O:'#FF983F', R:'#FF514D', C:'#9AD9F5', E:'#FFE1A3' };
+const SHIP_DROP = ['....DDD....', '...MWWWM...', '..MWWCWWM..', '..MWWWWWM..', '.MWWWWWWWM.', '.KKKKKKKKK.'];
+const SHIP_CHUTE = ['..WWWWWWWWW..', '.WWRWWWWWRWW.', 'WWRRWWWWWRRWW', 'WRRRWWWWWRRRW', 'WWRWWWWWWWRWW', '.W.WWWWWWW.W.'];
+const shipEarth = new Image(); shipEarth.src = 'assets/hud/terra-pixel.png';
+const shipCtx = $('endShip').getContext('2d');
+shipCtx.imageSmoothingEnabled = false;
+let shipRun = 0;
+function drawShip(t, win) {
+  const c = shipCtx, put = (x, y, col, w = 1, h = 1) => { c.fillStyle = col; c.fillRect(Math.round(x), Math.round(y), w, h); };
+  const sprite = (rows, x, y) => rows.forEach((r, j) => { for (let i = 0; i < r.length; i++) if (r[i] !== '.') put(x + i, y + j, SHIP_PAL[r[i]]); });
+  const ease = v => v * v * (3 - 2 * v), loop = t % 8000, chute = loop > 4200;
+  c.clearRect(0, 0, 96, 80);
+  if (shipEarth.complete && shipEarth.naturalWidth) c.drawImage(shipEarth, 0, 44, 96, 96);
+  for (let x = 20; x < 76; x++) put(x, 44 + (48 - Math.sqrt(48 * 48 - (x - 48) ** 2)) - 1, 'rgba(154,217,245,.35)');
+  const x = 42 + (chute ? Math.round(Math.sin(t / 500) * 2) : 0);
+  const y = chute ? 26 + Math.round(Math.min(1, (loop - 4200) / 3000) * 6) : Math.round(-14 + ease(Math.min(1, loop / 4200)) * 40);
+  if (!chute) {   // plasma atrás da cápsula, que cai com o escudo térmico para baixo
+    const f = Math.floor(t / 70) % 3, h = 10 + f * 2;
+    for (let j = 0; j < h; j++) {
+      const w = 2 + Math.floor(j * .7) + (f === 1 ? 1 : 0);
+      put(x + 5 - Math.floor(w / 2), y - 1 - j, j < 3 ? '#FFE1A3' : j < 6 ? '#FFCF72' : j < 9 ? '#FF983F' : '#FF514D', w, 1);
+    }
+  } else {
+    sprite(SHIP_CHUTE, x - 1, y - 18);
+    for (let j = 0; j < 12; j++) { put(x + 2 + Math.round(j * .25), y - 12 + j, '#AAAFC7'); put(x + 8 - Math.round(j * .25), y - 12 + j, '#AAAFC7'); }
+  }
+  sprite(SHIP_DROP, x, y);
+  if (!win && Math.floor(t / 300) % 2 === 0) put(x + 5, y - 1, '#FF514D', 1, 2);
+  if (win && chute) for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4 + t / 900, d = 34 + 3 * Math.sin(t / 260 + i);
+    put(48 + Math.cos(a) * d, 28 + Math.sin(a) * d * .8, i % 2 ? '#FFCF72' : '#F3F3FF');
+  }
+}
+function playShip() {
+  const id = ++shipRun, win = G && G.over === 'win', start = performance.now();
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { shipEarth.onload = () => drawShip(6500, win); drawShip(6500, win); return; }
+  const frame = now => {
+    if (id !== shipRun || $('end').classList.contains('hidden')) return;
+    drawShip(now - start, win);
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+// Estrelas do fundo da tela final.
+$('endSky').innerHTML = Array.from({ length: 36 }, (_, i) => `<i style="left:${(i * 53) % 100}%;top:${(i * 29) % 55}%;animation-delay:${(i % 6) * .4}s"></i>`).join('');
 document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click', () => {
   sfx('tap');
   lang = lang === 'pt' ? 'en' : 'pt'; setTexts();

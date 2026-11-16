@@ -726,3 +726,54 @@ main img { -webkit-user-drag:none; }
 @keyframes qs-thump { 33% { transform:translate(3px,-3px); } 66% { transform:translate(-3px,3px); } }
 @keyframes qs-star { 0% { opacity:1; transform:translate(0,0); } 40% { opacity:1; transform:translate(calc(var(--x) * .55), calc(var(--h) * -1)); }
   100% { opacity:0; transform:translate(var(--x), 140px); } }
+
+/* ---------- Tela final (identidade Space Survivors): Terra, estrelas, relatório em janela ---------- */
+#end { position:relative; overflow:hidden; min-height:min(94dvh, 48rem); padding:1rem 1rem 1.1rem; display:flex; flex-direction:column;
+  background:radial-gradient(ellipse at 50% 24%, #1a2160 0, #08091b 62%); border:3px solid #8591dc; border-radius:0; clip-path:var(--pixel-corners);
+  font-family:var(--font-pixel); color:#f3f3ff; }
+#end h1, #end button, #end h2, #end p, #end summary { font-family:var(--font-pixel); }
+.end-sky { position:absolute; inset:0; pointer-events:none; }
+.end-sky i { position:absolute; width:2px; height:2px; background:#f3f3ff; animation:homeTw 3s steps(2) infinite; }
+.end-lang { position:absolute; top:.6rem; right:.6rem; z-index:3; border-radius:0; clip-path:var(--pixel-corners); background:#171b4b; color:#f3f3ff; font-size:.5rem; min-height:36px; padding:0 .6rem; }
+.end-earth { position:relative; z-index:1; margin:2.4rem auto 0; width:min(56vw, 13rem); aspect-ratio:1; }
+.end-earth img { display:block; width:100%; height:100%; image-rendering:pixelated; animation:endBob 4s steps(4) infinite alternate; }
+.end-earth i { position:absolute; left:108%; top:70%; width:5%; height:9%; background:#f3f3ff; box-shadow:0 0 0 2px #303db1; animation:endFly 4s steps(8) infinite alternate; }
+@keyframes endBob { to { transform:translateY(.5rem); } }
+@keyframes endFly { to { transform:translate(-520%, -260%); } }
+#end h1 { position:relative; z-index:1; margin:.4rem 0 0; font-size:clamp(.95rem, 5vw, 1.25rem); line-height:1.6; text-align:center; text-transform:uppercase; color:#ffe1a3; text-shadow:0 3px #ff983f, 0 6px #303db1; }
+.end-sub { position:relative; z-index:1; margin:.6rem 0 0; font-size:.5rem; line-height:1.9; text-align:center; color:#8591dc; }
+.end-stars { position:relative; z-index:1; display:flex; justify-content:center; gap:.5rem; margin:.7rem 0 .2rem; min-height:0; }
+.end-stars svg { width:2.9rem; height:2.9rem; }
+#end .sum { position:relative; z-index:1; display:grid; grid-template-columns:repeat(auto-fit, minmax(5rem, 1fr)); gap:.4rem; margin:.7rem 0; font-weight:400; }
+#end .chip { background:#171b4b; clip-path:var(--pixel-corners); padding:.5rem .2rem; text-align:center; font-size:.5rem; line-height:1.6; }
+#end .chip img { display:block; margin:0 auto .25rem; width:1.75rem; height:1.75rem; object-fit:contain; image-rendering:pixelated; }
+#end .chip .chip-ico { display:block; height:1.75rem; margin-bottom:.25rem; font-size:1.2rem; line-height:1.75rem; }
+#end .chip b { display:block; font-weight:400; color:#ffcf72; font-size:.7rem; }
+#end .chip b.bad { color:#ff514d; }
+#end .chip small { display:block; font-size:.4rem; color:#8591dc; margin-top:.15rem; }
+.end-btns { position:relative; z-index:1; margin-top:auto; display:grid; gap:.5rem; }
+.end-btns .two { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; }
+#end .big { margin:0; border-radius:0; clip-path:var(--pixel-corners); background:#ffcf72; color:#171b4b; box-shadow:0 4px #bd8a3c; font-size:.7rem; padding:1rem .5rem; }
+#end .secBtn { margin:0; border:0; border-radius:0; clip-path:var(--pixel-corners); background:#171b4b; color:#f3f3ff; font-size:.5rem; line-height:1.7; padding:.85rem .4rem; }
+#end .big:hover, #end .secBtn:hover { filter:brightness(1.18); }
+#end .big:active, #end .secBtn:active { transform:translateY(3px) scale(.98); }
+@media (prefers-reduced-motion:reduce) { .end-sky i, .end-earth img, .end-earth i { animation:none; } }
+/* Sem o rodapé de crédito na tela final. */
+body:has(#end:not(.hidden)) footer { display:none; }
+
+/* Janela do relatório final: mesma moldura do relatório de descobertas */
+.end-report { position:fixed; inset:0; z-index:40; display:flex; justify-content:center; padding:.75rem; background:rgba(4,5,15,.82); }
+.end-report.hidden { display:none; }
+.end-rw { width:min(100%, 30rem); display:flex; flex-direction:column; min-height:0; border:4px solid #8591dc; background:#171b4b; color:#f3f3ff; clip-path:var(--pixel-corners); }
+.end-rw .report-bar { flex:none; }
+.end-rbody { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:.7rem; font:.58rem/1.95 var(--font-pixel); scrollbar-color:#303db1 #171b4b; }
+.end-rbody p, .end-rbody .fact, .end-rbody .coll, .end-rbody .debrief li, .end-rbody .ev, .end-rbody .book .d, .end-rbody details, .end-rbody summary, .end-rbody small, .end-rbody a { font:inherit; }
+.end-rbody .fact, .end-rbody .debrief li, .end-rbody .ev, .end-rbody details, .end-rbody .book .d { border-radius:0; }
+.end-rbody h2 { font-size:.62rem; line-height:1.8; color:#ffcf72; margin:1rem 0 .4rem; }
+.end-rbody .fx-card .fx-tag { border-radius:0; font-size:.46rem; }
+.end-rbody summary { color:#8591dc; cursor:pointer; }
+.end-rbody a { color:#9ad9f5; }
+.end-rbody .book .d .base, .end-rbody .book .d .src, .end-rbody .book .d b, .end-rbody .book .d span { font-size:inherit; line-height:inherit; }
+.end-rbody .book .d .base { font-size:.54rem; }
+
+.end-ship { display:block; position:relative; z-index:1; width:min(78vw, 18rem); height:auto; aspect-ratio:96 / 80; margin:2rem auto 0; image-rendering:pixelated; }
