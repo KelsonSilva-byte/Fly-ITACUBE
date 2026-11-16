@@ -857,7 +857,7 @@ function bag(G, key, items) {
 function buildDay(G) {
   const s = G.storms[G.day];
   const dEv = G.dated[G.day];
-  G.prepared = false; G.rush = false; G.outside = false;
+  G.prepared = false; G.rush = false; G.outside = false; G.alertPw = null;
   const q = [dayCard(G)];
   q.push(G.air <= R.AIR_USE ? pick(O2_CARDS) : pick(LIFE.flatMap(c => Array(c.w).fill(c))));
   if (s && s.flr) q.push(flareCard(s));
@@ -886,7 +886,7 @@ function newGame(eventCard, seen = []) {
   const m = eventCard ? {storms:{},dated:{0:eventCard}} : pickMission();
   const G = { day: 0, air: R.AIR_START, pw: R.PW_START, rad: 0, sci: 0, storms: m.storms, dated: m.dated || {},
               phase: Math.floor(rnd() * R.SUN.length), bags: {}, met: [], over: null, card: null, queue: [], wasted: 0, found: [], trips: 0, tripRad: 0, realLog: [], recall: [],
-              seen: [...seen], discDay: -1, picks: [] };
+              seen: [...seen], discDay: -1, picks: [], quizOk: 0, quizFail: 0, alertPw: null };
   buildDay(G);
   G.card = G.queue.shift();
   return G;
@@ -911,21 +911,23 @@ function choose(G, side) {
   if (!opt || locked(G, opt)) return null;
   const known = effectFor(G, opt);
   const fx = opt.resolveFx ? { ...known, ...opt.resolveFx() } : known;
+  const before = { pw: G.pw, air: G.air };
   apply(G, fx);
   const out = { card: c, side: c.single ? 'R' : side, opt, fx };
-  // Decisões de eventos reais da NASA ficam registradas para o relatório final.
-  if (c.source) G.picks.push({ day: G.day, ev: c, side: out.side, fx });
+  // Relatório final: estado da base na hora das decisões importantes.
+  if (c.source) G.picks.push({ day: G.day, ev: c, side: out.side, fx, after: { pw: G.pw, air: G.air } });
+  if (c.id === 'flare') G.alertPw = before.pw;
   if (c.quiz) {
     if (opt.ok) {
       G.air = Math.min(R.AIR_MAX, G.air + R.QUIZ_OK_AIR);
       G.pw = Math.min(R.PW_MAX, G.pw + R.QUIZ_OK_PW);
-      out.quizOk = true;
+      out.quizOk = true; G.quizOk++;
     } else {
       // Perde um pouco de ar e energia, mas trava acima do limite letal para não encerrar o jogo
       G.pw = Math.max(1, G.pw - R.QUIZ_FAIL_PW);
       const safeAirFloor = Math.min(G.air, R.AIR_USE + 1);
       G.air = Math.max(safeAirFloor, G.air - R.QUIZ_FAIL_AIR);
-      out.quizOk = false;
+      out.quizOk = false; G.quizFail++;
     }
   }
   // Só a primeira ação de ciência do dia revela uma descoberta; os pontos de ciência continuam contando.
@@ -936,7 +938,8 @@ function choose(G, side) {
     const block = mode === 'ready' ? R.BLOCK_READY : mode === 'rush' ? R.BLOCK_RUSH : 0;
     const inside = Math.round(dose * (1 - block));
     const extra = G.outside ? Math.round(dose * R.OUTSIDE) : 0;
-    const m = { e: s, day: G.day, mode, block, inside, extra, outside: G.outside };
+    const m = { e: s, day: G.day, mode, block, inside, extra, outside: G.outside,
+                warned: !!s.flr, alertPw: G.alertPw, arrivePw: before.pw };
     G.rad += inside + extra; G.tripRad += extra;
     G.met.push(m);
     out.storm = m;
@@ -1721,67 +1724,169 @@ function finish() {
   $('game').classList.add('hidden'); $('end').classList.remove('hidden');
   renderEnd(); window.scrollTo(0, 0); $('againBtn').focus();
 }
-/* Dica para cada evento datado da NASA: o que o jogador poderia ter feito. */
+/* ---------- Relatório final: 3 fatos tirados só da própria partida ---------- */
 const B = (pt, en) => ({ pt, en }); // o helper do motor fica dentro do seu bloco; aqui é a cópia da interface
+// Dica de cada evento datado, usada quando a escolha deixou a base com pouca energia ou pouco ar.
 const ECL_TIP = B('Eclipses escurecem os painéis. Guardar energia antes da sombra evita ficar sem ela.',
                   'Eclipses dim the panels. Saving power before the shadow keeps you from running dry.');
+const DUST_TIP = B('Poeira nos painéis tira energia, e limpar lá fora dá radiação. Limpe quando a radiação estiver baixa.',
+                   'Dust on the panels cuts power, and cleaning outside adds radiation. Clean when radiation is low.');
 const LESSON_DATED = {
-  eclipse_2024_03: ECL_TIP,
-  eclipse_2024_09: ECL_TIP,
-  eclipse_2025_03: ECL_TIP,
+  eclipse_2024_03: ECL_TIP, eclipse_2024_09: ECL_TIP, eclipse_2025_03: ECL_TIP,
   donki_x87_2024_05: B('Observar o Sol rende descoberta, mas custa energia. Com pouca energia, poupar é a escolha segura.',
                        'Watching the Sun gives a discovery but costs power. With little power, saving is the safe choice.'),
-  geminids_2024_12: B('Poeira nos painéis tira energia, mas limpar lá fora expõe a tripulação à radiação. Limpe com o escudo pronto ou quando a radiação estiver baixa.',
-                      'Dust on the panels cuts power, but cleaning outside exposes the crew to radiation. Clean when the shield is ready or radiation is low.'),
-  quadrantids_2025_01: B('Poeira nos painéis tira energia, mas limpar lá fora expõe a tripulação à radiação. Limpe com o escudo pronto ou quando a radiação estiver baixa.',
-                         'Dust on the panels cuts power, but cleaning outside exposes the crew to radiation. Clean when the shield is ready or radiation is low.'),
+  geminids_2024_12: DUST_TIP, quadrantids_2025_01: DUST_TIP,
 };
 
-function fxTxt(fx) {
-  const pt = lang === 'pt', sg = n => (n > 0 ? '+' : '') + n, parts = [];
-  if (fx.pw) parts.push(`${pt ? 'energia' : 'power'} ${sg(fx.pw)}`);
-  if (fx.air) parts.push(`${pt ? 'ar' : 'air'} ${sg(fx.air)}`);
-  if (fx.rad) parts.push(`${pt ? 'radiação' : 'radiation'} ${sg(fx.rad)}`);
-  if (fx.sci) parts.push(`${pt ? 'descobertas' : 'discoveries'} ${sg(fx.sci)}`);
-  return (pt ? 'Efeito: ' : 'Effect: ') + (parts.join(', ') || (pt ? 'nenhum' : 'none'))
-       + (fx.outside ? (pt ? ' (lá fora, sem escudo)' : ' (outside, no shield)') : '');
-}
-
-/* Até 3 fatos da missão, em ordem cronológica. Prioridade: tempestades mal preparadas,
-   eventos reais escolhidos pelo jogador, depois tempestades bem preparadas. */
+/* Um acerto e até dois pontos para melhorar. Sem pontos para melhorar, entram mais acertos;
+   sem acertos suficientes, entram mais pontos para melhorar. Cada lista é ordenada por peso. */
 function missionFacts(G) {
-  const pt = lang === 'pt', items = [];
-  for (const m of G.met) {
-    const s = m.e, dose = m.inside + m.extra, warned = !!s.flr;
-    const how = m.mode === 'ready' ? (pt ? 'Você carregou o escudo a tempo (bloqueou 90%)' : 'You charged the shield in time (it blocked 90%)')
-      : m.mode === 'rush' ? (pt ? 'Você ligou o escudo às pressas (bloqueou só 50%)' : 'You turned the shield on in a rush (it blocked only 50%)')
-      : (pt ? 'Você não ligou o escudo' : 'You did not turn the shield on');
-    const tip = m.mode === 'ready' ? (pt ? 'Bem feito: com o aviso, carregar o escudo protegeu a tripulação.' : 'Well done: with the warning, charging the shield protected the crew.')
-      : m.mode === 'rush' ? (pt ? 'Com o aviso curto, carregue o escudo assim que o alerta chegar: ele bloqueia 90%, não 50%.' : 'With a short warning, charge the shield as soon as the alert arrives: it blocks 90%, not 50%.')
-      : warned ? (pt ? 'O aviso chega antes das partículas. Carregar o escudo nesse intervalo protege a base.' : 'The warning comes before the particles. Charging the shield in that window protects the base.')
-      : (pt ? 'Esta tempestade não teve aviso. Manter energia guardada permite carregar o escudo a qualquer momento.' : 'This storm came with no warning. Keeping power in reserve lets you charge the shield at any time.');
-    items.push({
-      day: m.day, rank: m.mode === 'ready' ? 1 : 3, dose,
-      when: `${pt ? 'Dia' : 'Day'} ${m.day + 1}: ${pt ? 'tempestade solar' : 'solar storm'} ${sevTxt(s.sev)}`,
-      real: '',
-      you: how + (m.outside ? (pt ? ', com o jipe lá fora' : ', with the rover outside') : '') + '.',
-      effect: (pt ? 'Efeito: radiação ' : 'Effect: radiation ') + `+${dose}.`,
-      tip,
-    });
+  const pt = lang === 'pt', P = (a, b) => (pt ? a : b);
+  const vez = n => P(n > 1 ? `${n} vezes` : '1 vez', n > 1 ? `${n} times` : 'once');
+  const dia = d => P(`dia ${d + 1}`, `day ${d + 1}`);
+  const SH = R.SHIELD_PW, ready = Math.round(R.BLOCK_READY * 100), rush = Math.round(R.BLOCK_RUSH * 100);
+  const endDay = G.over === 'win' ? R.DAYS : G.day + 1;
+  const good = [], bad = [];
+
+  // De onde veio a radiação (as saídas já incluem o que o jipe pegou durante tempestades).
+  const stormIn = G.met.reduce((a, m) => a + m.inside, 0);
+  const radParts = P(`Tempestades: +${stormIn}. Fora da base: +${G.tripRad}. Cada noite: +${R.RAD_DAILY}.`,
+                     `Storms: +${stormIn}. Outside the base: +${G.tripRad}. Each night: +${R.RAD_DAILY}.`);
+  const radTip = stormIn >= G.tripRad
+    ? P(`Carregue o escudo nos alertas: ele bloqueia ${ready}% das partículas.`, `Charge the shield at alerts: it blocks ${ready}% of the particles.`)
+    : P('Saia da base só com a radiação baixa: lá fora não há escudo.', 'Only go outside when radiation is low: there is no shield out there.');
+
+  // 1. Como a missão terminou
+  if (G.over === 'air') bad.push({ score: 100,
+    title: P(`O ar acabou no dia ${endDay}`, `Air ran out on day ${endDay}`),
+    body: P(`A tripulação respira ${R.AIR_USE} de ar por noite, e o tanque chegou a zero.`, `The crew breathes ${R.AIR_USE} air every night, and the tank hit zero.`),
+    tip: P(`Com o ar em ${2 * R.AIR_USE} ou menos, priorize o suporte de vida.`, `With air at ${2 * R.AIR_USE} or less, put life support first.`) });
+  if (G.over === 'pw') bad.push({ score: 100,
+    title: P(`A energia acabou no dia ${endDay}`, `Power ran out on day ${endDay}`),
+    body: P('Uma escolha deixou a bateria em zero e a base parou.', 'A choice left the battery at zero and the base shut down.'),
+    tip: P(`Guarde sempre ${SH} de energia: é o preço do escudo e ajuda nos dias de sombra.`, `Always keep ${SH} power: it is what the shield costs, and it helps on shadowy days.`) });
+  if (G.over === 'rad') bad.push({ score: 100,
+    title: P(`A radiação chegou a ${R.RAD_LIMIT} no dia ${endDay}`, `Radiation reached ${R.RAD_LIMIT} on day ${endDay}`),
+    body: radParts, tip: radTip });
+
+  if (G.over === 'win') {
+    good.push({ score: 40,
+      title: P(`A tripulação completou os ${R.DAYS} dias`, `The crew completed all ${R.DAYS} days`),
+      body: P('Ar, energia e radiação ficaram sob controle até o fim.', 'Air, power and radiation stayed under control to the end.') });
+    // 2. O que faltou (ou não) para as 3 estrelas
+    if (G.rad >= R.RAD_SAFE) bad.push({ score: 50,
+      title: P(`A radiação terminou em ${G.rad}`, `Radiation ended at ${G.rad}`),
+      body: P(`Para a 3ª estrela, ela precisa ficar abaixo de ${R.RAD_SAFE}. `, `For the 3rd star it must stay below ${R.RAD_SAFE}. `) + radParts,
+      tip: radTip });
+    else good.push({ score: 55,
+      title: P(`Radiação abaixo de ${R.RAD_SAFE}`, `Radiation below ${R.RAD_SAFE}`),
+      body: P(`A missão terminou com ${G.rad} de radiação. A tripulação voltou bem protegida.`, `The mission ended with ${G.rad} radiation. The crew came home well protected.`) });
+    if (G.sci < R.SCI_GOAL) bad.push({ score: 50,
+      title: P(`Faltaram ${R.SCI_GOAL - G.sci} descobertas`, `${R.SCI_GOAL - G.sci} discoveries short`),
+      body: P(`Você fez ${G.sci} de ${R.SCI_GOAL}. A meta também vale estrela.`, `You made ${G.sci} of ${R.SCI_GOAL}. The goal is worth a star too.`),
+      tip: P('A carta de pesquisa aparece todo dia. Pesquisar dentro da base não dá radiação.', 'The research card shows up every day. Research inside the base adds no radiation.') });
+    else good.push({ score: 55,
+      title: P(`${G.sci} descobertas`, `${G.sci} discoveries`),
+      body: P(`A meta era ${R.SCI_GOAL}, e você chegou lá.`, `The goal was ${R.SCI_GOAL}, and you made it.`) });
+  } else {
+    good.push({ score: 5,
+      title: P(`A tripulação aguentou ${endDay} de ${R.DAYS} dias`, `The crew lasted ${endDay} of ${R.DAYS} days`),
+      body: P('Todos voltaram para casa em segurança.', 'Everyone got home safely.') });
+    if (G.sci > 0) good.push({ score: 10,
+      title: P(`${G.sci} descoberta${G.sci > 1 ? 's' : ''}`, `${G.sci} discover${G.sci > 1 ? 'ies' : 'y'}`),
+      body: P('Mesmo com a missão curta, a ciência avançou.', 'Even in a short mission, science moved forward.') });
   }
-  for (const p of G.picks || []) {
-    const ev = p.ev, opt = ev[p.side];
-    items.push({
-      day: p.day, rank: 2, dose: 0,
-      when: `${pt ? 'Dia' : 'Day'} ${p.day + 1}`,
-      real: tr(ev.text),
-      you: (pt ? 'Você escolheu: ' : 'You chose: ') + tr(opt.label) + '.',
-      effect: fxTxt(p.fx),
-      tip: tr(LESSON_DATED[ev.id]),
-    });
+
+  // 3. Tempestades: carregar no alerta, ou o de emergência quando não houve aviso, conta como acerto.
+  const shielded = m => m.mode === 'ready' || (m.mode === 'rush' && !m.warned);
+  const okS = G.met.filter(shielded), badS = G.met.filter(m => !shielded(m));
+  if (okS.length) {
+    const saved = okS.reduce((a, m) => a + Math.round(R.STORM[m.e.sev] * m.block), 0);
+    good.push({ score: 60 + 5 * okS.length,
+      title: okS.length > 1 ? P(`Escudo ligado em ${okS.length} tempestades`, `Shield up in ${okS.length} storms`)
+                            : P(`Escudo ligado na tempestade do ${dia(okS[0].day)}`, `Shield up for the storm on ${dia(okS[0].day)}`),
+      body: P(`O escudo segurou ${saved} de radiação que teria entrado na base.`, `The shield stopped ${saved} radiation that would have entered the base.`) });
   }
-  items.sort((a, b) => b.rank - a.rank || b.dose - a.dose);
-  return items.slice(0, 3).sort((a, b) => a.day - b.day);
+  if (badS.length) {
+    const w = badS.reduce((a, m) => (m.inside + m.extra > a.inside + a.extra ? m : a));
+    const total = badS.reduce((a, m) => a + m.inside + m.extra, 0), d = dia(w.day), aPw = w.alertPw ?? 0;
+    let why, tip;
+    if (w.warned && aPw >= SH && w.mode === 'rush') {
+      why = P(`No alerta do ${d} você seguiu pesquisando e só ligou o escudo de emergência na chegada (bloqueou ${rush}%).`,
+              `At the alert on ${d} you kept researching and only used the emergency shield on arrival (it blocked ${rush}%).`);
+      tip = P(`Carregar no alerta custa os mesmos ${SH} de energia e bloqueia ${ready}%.`, `Charging at the alert costs the same ${SH} power and blocks ${ready}%.`);
+    } else if (w.warned && aPw >= SH) {
+      why = P(`No alerta do ${d} você tinha ${aPw} de energia, e o escudo custava ${SH}. Você escolheu não carregar.`,
+              `At the alert on ${d} you had ${aPw} power, and the shield cost ${SH}. You chose not to charge it.`);
+      tip = P(`Quando o alerta chegar e houver energia, carregue o escudo: ele bloqueia ${ready}%.`, `When an alert comes and you have power, charge the shield: it blocks ${ready}%.`);
+    } else if (w.warned) {
+      why = P(`No alerta do ${d} você tinha só ${aPw} de energia, e o escudo custava ${SH}.`,
+              `At the alert on ${d} you had only ${aPw} power, and the shield cost ${SH}.`);
+      tip = P(`Guarde ${SH} de energia: alertas podem chegar em qualquer dia.`, `Keep ${SH} power saved: alerts can come on any day.`);
+    } else if (w.arrivePw >= SH) {
+      why = P(`A tempestade do ${d} chegou sem aviso. Você tinha ${w.arrivePw} de energia, mas não usou o escudo de emergência.`,
+              `The storm on ${d} came with no warning. You had ${w.arrivePw} power, but did not use the emergency shield.`);
+      tip = P(`Sem aviso, o escudo de emergência ainda bloqueia ${rush}%.`, `With no warning, the emergency shield still blocks ${rush}%.`);
+    } else {
+      why = P(`A tempestade do ${d} chegou sem aviso, e você tinha só ${w.arrivePw} de energia.`,
+              `The storm on ${d} came with no warning, and you had only ${w.arrivePw} power.`);
+      tip = P(`Guarde ${SH} de energia: tempestades podem chegar sem aviso.`, `Keep ${SH} power saved: storms can come with no warning.`);
+    }
+    if (w.outside) why += ' ' + P(`O jipe estava lá fora: +${w.extra}.`, `The rover was outside: +${w.extra}.`);
+    bad.push({ score: 60 + total,
+      title: badS.length > 1 ? P(`${badS.length} tempestades sem escudo completo: +${total} de radiação`, `${badS.length} storms without a full shield: +${total} radiation`)
+                             : P(`Tempestade do ${d}: +${total} de radiação`, `Storm on ${d}: +${total} radiation`),
+      body: why, tip });
+  }
+
+  // 4. Saídas da base
+  if (G.tripRad >= 10) bad.push({ score: 30 + G.tripRad,
+    title: P(`Você saiu da base ${vez(G.trips)}`, `You left the base ${vez(G.trips)}`),
+    body: P(`Lá fora não há escudo: a tripulação recebeu +${G.tripRad} de radiação.`, `There is no shield outside: the crew took +${G.tripRad} radiation.`),
+    tip: P('Saia só com a radiação baixa e sem alerta de tempestade.', 'Only go out when radiation is low and there is no storm alert.') });
+  else if (!G.trips) good.push({ score: 12,
+    title: P('Tripulação dentro da base', 'Crew stayed inside'),
+    body: P('Sem saídas, ninguém pegou radiação extra lá fora.', 'With no trips out, nobody took extra radiation outside.') });
+
+  // 5. Uso da energia
+  if (lockHits >= 2) bad.push({ score: 25 + 3 * lockHits,
+    title: P(`Faltou energia ${vez(lockHits)}`, `You ran short of power ${vez(lockHits)}`),
+    body: P('Você tentou escolher opções que custavam mais energia do que havia na bateria.', 'You tried options that cost more power than the battery had.'),
+    tip: P('Antes de escolher, olhe a seta ▼ de energia e veja quanto vai sobrar.', 'Before choosing, check the ▼ power arrow to see what will be left.') });
+  if (G.wasted >= 3) bad.push({ score: 20 + G.wasted,
+    title: P(`${G.wasted} de energia do Sol se perdeu`, `${G.wasted} of the Sun's power was lost`),
+    body: P(`A bateria estava cheia (${R.PW_MAX}) e não guardou o resto.`, `The battery was full (${R.PW_MAX}) and could not store the rest.`),
+    tip: P('Com a bateria quase cheia, gaste energia em pesquisa ou no suporte de vida.', 'With the battery nearly full, spend power on research or life support.') });
+  if (!lockHits && !G.wasted && G.over !== 'pw') good.push({ score: 20,
+    title: P('Energia bem usada', 'Power well used'),
+    body: P('Nunca faltou energia para uma escolha, e nada do Sol foi desperdiçado.', `You never ran short for a choice, and none of the Sun's power was wasted.`) });
+
+  // 6. Perguntas de memória
+  const qs = n => (n > 1 ? 's' : '');
+  if (G.quizFail) bad.push({ score: 20 + 5 * G.quizFail,
+    title: P(`Errou ${G.quizFail} pergunta${qs(G.quizFail)} de memória`, `Missed ${G.quizFail} memory question${qs(G.quizFail)}`),
+    body: P(`Cada erro custou até ${R.QUIZ_FAIL_AIR} de ar e ${R.QUIZ_FAIL_PW} de energia.`, `Each miss cost up to ${R.QUIZ_FAIL_AIR} air and ${R.QUIZ_FAIL_PW} power.`),
+    tip: P('As perguntas vêm das descobertas. Leia cada uma no álbum.', 'Questions come from your discoveries. Read each one in the album.') });
+  else if (G.quizOk) good.push({ score: 30 + 5 * G.quizOk,
+    title: P(`Acertou ${G.quizOk} pergunta${qs(G.quizOk)} de memória`, `Got ${G.quizOk} memory question${qs(G.quizOk)} right`),
+    body: P(`Cada acerto rendeu +${R.QUIZ_OK_AIR} de ar e +${R.QUIZ_OK_PW} de energia.`, `Each right answer gave +${R.QUIZ_OK_AIR} air and +${R.QUIZ_OK_PW} power.`) });
+
+  // 7. Eventos datados que deixaram a base no limite
+  for (const p of G.picks) {
+    if (p.after.pw > 1 && p.after.air > R.AIR_USE) continue;
+    const name = tr(p.ev.text).split(/!|\.\s/)[0]; // primeira frase; não corta "X8.7"
+    bad.push({ score: 35,
+      title: `${name} (${dia(p.day)})`,
+      body: P(`Você escolheu "${tr(p.ev[p.side].label)}" e ficou com ${p.after.pw} de energia e ${p.after.air} de ar.`,
+              `You chose "${tr(p.ev[p.side].label)}" and were left with ${p.after.pw} power and ${p.after.air} air.`),
+      tip: tr(LESSON_DATED[p.ev.id]) });
+  }
+
+  const by = (a, b) => b.score - a.score;
+  good.sort(by); bad.sort(by);
+  const nBad = Math.min(2, bad.length), nGood = Math.min(3 - nBad, good.length);
+  const goods = good.slice(0, nGood), bads = bad.slice(0, 3 - nGood);
+  return [...goods.map(f => ({ ...f, kind: 'good' })), ...bads.map(f => ({ ...f, kind: 'bad' }))];
 }
 
 function renderEnd() {
@@ -1816,10 +1921,11 @@ function renderEnd() {
   }
   $('endArt').textContent = art; $('endTitle').textContent = title; $('endText').textContent = text;
 
-  // Três fatos da missão: tempestades e eventos reais, o que o jogador fez e o que poderia ter feito.
+  // Três fatos da missão: um acerto e até dois pontos para melhorar, só com dados da partida.
   const facts = missionFacts(G);
   $('debriefTitle').textContent = facts.length ? (pt ? 'O que aconteceu na sua missão' : 'What happened in your mission') : '';
-  $('debrief').innerHTML = facts.map(f => `<li class="fx-card"><div class="when">${f.when}</div>${f.real ? `<div class="fx-real">${f.real}</div>` : ''}<div class="fx-you">🎮 ${f.you} ${f.effect}</div><div class="fx-tip">💡 ${f.tip}</div></li>`).join('');
+  const tag = { good: pt ? "✓ Acerto" : "✓ Well done", bad: pt ? "! Para melhorar" : "! To improve" };
+  $('debrief').innerHTML = facts.map(f => `<li class="fx-card fx-${f.kind}"><span class="fx-tag">${tag[f.kind]}</span><b class="fx-title">${f.title}</b><span class="fx-body">${f.body}</span>${f.tip ? `<span class="fx-tip"><b>${pt ? 'Próxima vez:' : 'Next time:'}</b> ${f.tip}</span>` : ''}</li>`).join('');
 
   const found = G.found.map(id => DISC.find(d => d.id === id));
 const unlockedTotal = getUnlocked().length;

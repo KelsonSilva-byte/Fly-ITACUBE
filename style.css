@@ -109,11 +109,12 @@
   .ev .you { margin-top:.35rem; padding-top:.35rem; border-top:1px dashed var(--line); }
   .debrief { list-style:none; padding:0; margin:.6rem 0; display:grid; gap:.4rem; }
   .debrief li { background:#0e1630; border-radius:12px; padding:.5rem .7rem; font-size:.92rem; line-height:1.35; }
-  .debrief li.fx-card { display:grid; gap:.3rem; }
-  .fx-card .when { font-weight:800; color:#fde68a; }
-  .fx-card .fx-real { font-size:.86rem; opacity:.9; }
-  .fx-card .fx-you { border-top:1px dashed var(--line); padding-top:.3rem; }
-  .fx-card .fx-tip { color:#bfe7ff; }
+  .debrief li.fx-card { display:grid; gap:.3rem; justify-items:start; border-left:4px solid var(--fx, #64748b); }
+  .fx-card.fx-good { --fx:#4ade80; }
+  .fx-card.fx-bad { --fx:#fbbf24; }
+  .fx-card .fx-tag { background:var(--fx); color:#0b1020; font-weight:800; font-size:.72rem; padding:.1rem .45rem; border-radius:4px; text-transform:uppercase; letter-spacing:.03em; }
+  .fx-card .fx-title { color:#fde68a; }
+  .fx-card .fx-tip { border-top:1px dashed var(--line); padding-top:.3rem; color:#bfe7ff; justify-self:stretch; }
   .book { display:grid; gap:.4rem; }
   .book .d { display:grid; grid-template-columns:auto 1fr; gap:.1rem .6rem; background:#0f2a1e; border-radius:12px; padding:.5rem .7rem; font-size:.88rem; line-height:1.35; }
   .book .d .i { grid-row:span 4; font-size:1.6rem; align-self:center; }
