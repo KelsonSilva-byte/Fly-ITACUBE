@@ -100,6 +100,7 @@
   <div class="stars" id="stars" aria-hidden="true"></div>
   <div class="sum" id="endSum"></div>
   <p id="endText"></p>
+  <p class="coll" id="debriefTitle"></p>
   <ul class="debrief" id="debrief"></ul>
   <button class="big" id="againBtn" data-t="again"></button>
   <div class="fact" id="endFact"></div>
@@ -885,7 +886,7 @@ function newGame(eventCard, seen = []) {
   const m = eventCard ? {storms:{},dated:{0:eventCard}} : pickMission();
   const G = { day: 0, air: R.AIR_START, pw: R.PW_START, rad: 0, sci: 0, storms: m.storms, dated: m.dated || {},
               phase: Math.floor(rnd() * R.SUN.length), bags: {}, met: [], over: null, card: null, queue: [], wasted: 0, found: [], trips: 0, tripRad: 0, realLog: [], recall: [],
-              seen: [...seen], discDay: -1 };
+              seen: [...seen], discDay: -1, picks: [] };
   buildDay(G);
   G.card = G.queue.shift();
   return G;
@@ -912,6 +913,8 @@ function choose(G, side) {
   const fx = opt.resolveFx ? { ...known, ...opt.resolveFx() } : known;
   apply(G, fx);
   const out = { card: c, side: c.single ? 'R' : side, opt, fx };
+  // Decisões de eventos reais da NASA ficam registradas para o relatório final.
+  if (c.source) G.picks.push({ day: G.day, ev: c, side: out.side, fx });
   if (c.quiz) {
     if (opt.ok) {
       G.air = Math.min(R.AIR_MAX, G.air + R.QUIZ_OK_AIR);
@@ -1718,6 +1721,69 @@ function finish() {
   $('game').classList.add('hidden'); $('end').classList.remove('hidden');
   renderEnd(); window.scrollTo(0, 0); $('againBtn').focus();
 }
+/* Dica para cada evento datado da NASA: o que o jogador poderia ter feito. */
+const B = (pt, en) => ({ pt, en }); // o helper do motor fica dentro do seu bloco; aqui é a cópia da interface
+const ECL_TIP = B('Eclipses escurecem os painéis. Guardar energia antes da sombra evita ficar sem ela.',
+                  'Eclipses dim the panels. Saving power before the shadow keeps you from running dry.');
+const LESSON_DATED = {
+  eclipse_2024_03: ECL_TIP,
+  eclipse_2024_09: ECL_TIP,
+  eclipse_2025_03: ECL_TIP,
+  donki_x87_2024_05: B('Observar o Sol rende descoberta, mas custa energia. Com pouca energia, poupar é a escolha segura.',
+                       'Watching the Sun gives a discovery but costs power. With little power, saving is the safe choice.'),
+  geminids_2024_12: B('Poeira nos painéis tira energia, mas limpar lá fora expõe a tripulação à radiação. Limpe com o escudo pronto ou quando a radiação estiver baixa.',
+                      'Dust on the panels cuts power, but cleaning outside exposes the crew to radiation. Clean when the shield is ready or radiation is low.'),
+  quadrantids_2025_01: B('Poeira nos painéis tira energia, mas limpar lá fora expõe a tripulação à radiação. Limpe com o escudo pronto ou quando a radiação estiver baixa.',
+                         'Dust on the panels cuts power, but cleaning outside exposes the crew to radiation. Clean when the shield is ready or radiation is low.'),
+};
+
+function fxTxt(fx) {
+  const pt = lang === 'pt', sg = n => (n > 0 ? '+' : '') + n, parts = [];
+  if (fx.pw) parts.push(`${pt ? 'energia' : 'power'} ${sg(fx.pw)}`);
+  if (fx.air) parts.push(`${pt ? 'ar' : 'air'} ${sg(fx.air)}`);
+  if (fx.rad) parts.push(`${pt ? 'radiação' : 'radiation'} ${sg(fx.rad)}`);
+  if (fx.sci) parts.push(`${pt ? 'descobertas' : 'discoveries'} ${sg(fx.sci)}`);
+  return (pt ? 'Efeito: ' : 'Effect: ') + (parts.join(', ') || (pt ? 'nenhum' : 'none'))
+       + (fx.outside ? (pt ? ' (lá fora, sem escudo)' : ' (outside, no shield)') : '');
+}
+
+/* Até 3 fatos da missão, em ordem cronológica. Prioridade: tempestades mal preparadas,
+   eventos reais escolhidos pelo jogador, depois tempestades bem preparadas. */
+function missionFacts(G) {
+  const pt = lang === 'pt', items = [];
+  for (const m of G.met) {
+    const s = m.e, dose = m.inside + m.extra, warned = !!s.flr;
+    const how = m.mode === 'ready' ? (pt ? 'Você carregou o escudo a tempo (bloqueou 90%)' : 'You charged the shield in time (it blocked 90%)')
+      : m.mode === 'rush' ? (pt ? 'Você ligou o escudo às pressas (bloqueou só 50%)' : 'You turned the shield on in a rush (it blocked only 50%)')
+      : (pt ? 'Você não ligou o escudo' : 'You did not turn the shield on');
+    const tip = m.mode === 'ready' ? (pt ? 'Bem feito: com o aviso, carregar o escudo protegeu a tripulação.' : 'Well done: with the warning, charging the shield protected the crew.')
+      : m.mode === 'rush' ? (pt ? 'Com o aviso curto, carregue o escudo assim que o alerta chegar: ele bloqueia 90%, não 50%.' : 'With a short warning, charge the shield as soon as the alert arrives: it blocks 90%, not 50%.')
+      : warned ? (pt ? 'O aviso chega antes das partículas. Carregar o escudo nesse intervalo protege a base.' : 'The warning comes before the particles. Charging the shield in that window protects the base.')
+      : (pt ? 'Esta tempestade não teve aviso. Manter energia guardada permite carregar o escudo a qualquer momento.' : 'This storm came with no warning. Keeping power in reserve lets you charge the shield at any time.');
+    items.push({
+      day: m.day, rank: m.mode === 'ready' ? 1 : 3, dose,
+      when: `${pt ? 'Dia' : 'Day'} ${m.day + 1}: ${pt ? 'tempestade solar' : 'solar storm'} ${sevTxt(s.sev)}`,
+      real: '',
+      you: how + (m.outside ? (pt ? ', com o jipe lá fora' : ', with the rover outside') : '') + '.',
+      effect: (pt ? 'Efeito: radiação ' : 'Effect: radiation ') + `+${dose}.`,
+      tip,
+    });
+  }
+  for (const p of G.picks || []) {
+    const ev = p.ev, opt = ev[p.side];
+    items.push({
+      day: p.day, rank: 2, dose: 0,
+      when: `${pt ? 'Dia' : 'Day'} ${p.day + 1}`,
+      real: tr(ev.text),
+      you: (pt ? 'Você escolheu: ' : 'You chose: ') + tr(opt.label) + '.',
+      effect: fxTxt(p.fx),
+      tip: tr(LESSON_DATED[ev.id]),
+    });
+  }
+  items.sort((a, b) => b.rank - a.rank || b.dose - a.dose);
+  return items.slice(0, 3).sort((a, b) => a.day - b.day);
+}
+
 function renderEnd() {
   if (!G || !G.over) return;
   const pt = lang === 'pt', st = stars(G), sciMin = R.SCI_MIN || 4;
@@ -1750,16 +1816,10 @@ function renderEnd() {
   }
   $('endArt').textContent = art; $('endTitle').textContent = title; $('endText').textContent = text;
 
-  // O que esta missão mostrou: frases curtas tiradas do que a criança fez.
-  const has = m => G.met.some(x => x.mode === m), times = n => pt ? (n > 1 ? n + ' vezes' : '1 vez') : (n > 1 ? n + ' times' : 'once');
-  const b = [];
-  if (has('ready')) b.push(pt ? '🛡️ Você carregou o escudo antes da tempestade. Custou energia, mas bloqueou quase tudo.' : '🛡️ You charged the shield before the storm. It cost power, but it blocked almost everything.');
-  if (has('rush')) b.push(pt ? '⏱️ Ligado às pressas, o escudo bloqueou só metade. Em uma tempestade de verdade, o aviso é curto.' : '⏱️ Turned on in a rush, the shield blocked only half. In a real storm, the warning is short.');
-  if (has('none')) b.push(pt ? '☢️ Sem escudo, a tempestade atravessou a base. Um pouco de energia guardada teria ajudado.' : '☢️ With no shield, the storm went through the base. A little saved power would have helped.');
-  if (G.trips) b.push(pt ? `🚙 Você saiu da base ${times(G.trips)}. Lá fora não há escudo: +${G.tripRad} de radiação.` : `🚙 You left the base ${times(G.trips)}. There is no shield outside: +${G.tripRad} radiation.`);
-  if (lockHits) b.push(pt ? `🔒 Faltou energia ${times(lockHits)} para o que você queria. Não dá para ligar tudo ao mesmo tempo.` : `🔒 You ran short of power ${times(lockHits)} for what you wanted. You cannot turn everything on at once.`);
-  if (G.wasted) b.push(pt ? `🔋 A bateria encheu e ${G.wasted} de energia do Sol se perdeu.` : `🔋 The battery filled up and ${G.wasted} of the Sun's power was lost.`);
-  $('debrief').innerHTML = b.slice(0, 4).map(x => '<li>' + x + '</li>').join('');
+  // Três fatos da missão: tempestades e eventos reais, o que o jogador fez e o que poderia ter feito.
+  const facts = missionFacts(G);
+  $('debriefTitle').textContent = facts.length ? (pt ? 'O que aconteceu na sua missão' : 'What happened in your mission') : '';
+  $('debrief').innerHTML = facts.map(f => `<li class="fx-card"><div class="when">${f.when}</div>${f.real ? `<div class="fx-real">${f.real}</div>` : ''}<div class="fx-you">🎮 ${f.you} ${f.effect}</div><div class="fx-tip">💡 ${f.tip}</div></li>`).join('');
 
   const found = G.found.map(id => DISC.find(d => d.id === id));
 const unlockedTotal = getUnlocked().length;

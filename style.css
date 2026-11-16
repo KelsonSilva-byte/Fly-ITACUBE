@@ -109,6 +109,11 @@
   .ev .you { margin-top:.35rem; padding-top:.35rem; border-top:1px dashed var(--line); }
   .debrief { list-style:none; padding:0; margin:.6rem 0; display:grid; gap:.4rem; }
   .debrief li { background:#0e1630; border-radius:12px; padding:.5rem .7rem; font-size:.92rem; line-height:1.35; }
+  .debrief li.fx-card { display:grid; gap:.3rem; }
+  .fx-card .when { font-weight:800; color:#fde68a; }
+  .fx-card .fx-real { font-size:.86rem; opacity:.9; }
+  .fx-card .fx-you { border-top:1px dashed var(--line); padding-top:.3rem; }
+  .fx-card .fx-tip { color:#bfe7ff; }
   .book { display:grid; gap:.4rem; }
   .book .d { display:grid; grid-template-columns:auto 1fr; gap:.1rem .6rem; background:#0f2a1e; border-radius:12px; padding:.5rem .7rem; font-size:.88rem; line-height:1.35; }
   .book .d .i { grid-row:span 4; font-size:1.6rem; align-self:center; }
@@ -402,6 +407,6 @@ main img { -webkit-user-drag:none; }
 
 /* Telas inicial e final mínimas: só identidade e botão. Reverter removendo a classe .min. */
 #intro.min > p[data-t="intro1"], #intro.min .how, #intro.min .fact,
-#end.min .sum, #end.min #endText, #end.min #endFact, #end.min .debrief,
+#end.min .sum, #end.min #endText, #end.min #endFact,
 #end.min #bookTitle, #end.min #bookColl, #end.min #book, #end.min #realIntro,
 #end.min #realList, #end.min h2 { display: none !important; }
