@@ -39,7 +39,6 @@ Browser tests are in `tools/scene-ui-test.html` and `tools/ui-test.html` (serve 
 | `tools/` | DONKI download and embedding scripts, simulation and tests |
 | `data/` | Raw NASA JSON and the merged `storms.json` |
 | `README-jogo.md` | The full description of the game, the data and the simplifications |
-| `CONTEXTO.md`, `AGENTS.md` | Internal project notes in Portuguese |
 
 Branches: `main` has the delivered game, `base` is where the team merges work, and `arte` holds the art work in progress.
 

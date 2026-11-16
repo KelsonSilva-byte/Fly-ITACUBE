@@ -139,7 +139,6 @@ The interface was also played automatically in a browser in both languages; swip
 - `tools/fetch-donki.mjs`, `tools/build-storms.mjs`, `tools/embed-storms.mjs`: download the DONKI data, merge it and embed it in the game.
 - `tools/sim.mjs`, `tools/scene-test.mjs`, `tools/ui-test.html`, `tools/scene-ui-test.html`: balance test, scene tests and interface tests.
 - `data/`: raw NASA JSON and the merged `storms.json`.
-- `CONTEXTO.md`, `AGENTS.md`: internal project notes in Portuguese (team decisions and where we stopped).
 
 ## Tests
 
