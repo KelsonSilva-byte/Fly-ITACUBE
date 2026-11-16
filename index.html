@@ -112,6 +112,7 @@
       <div class="end-rbody">
         <p id="endText"></p>
         <p class="coll" id="debriefTitle"></p>
+        <div class="end-toolbar"><button class="btn-more" id="debriefAll" type="button"></button></div>
         <ul class="debrief" id="debrief"></ul>
         <div class="fact" id="endFact"></div>
         <h2 id="bookTitle"></h2>
@@ -927,7 +928,7 @@ function newGame(eventCard, seen = []) {
   const m = eventCard ? {storms:{},dated:{0:eventCard}} : pickMission();
   const G = { day: 0, air: R.AIR_START, pw: R.PW_START, rad: 0, sci: 0, storms: m.storms, dated: m.dated || {},
               phase: Math.floor(rnd() * R.SUN.length), bags: {}, met: [], over: null, card: null, queue: [], wasted: 0, found: [], trips: 0, tripRad: 0, realLog: [], recall: [],
-              seen: [...seen], discDay: -1, picks: [], quizOk: 0, quizFail: 0, alertPw: null };
+              seen: [...seen], discDay: -1, picks: [], quizOk: 0, quizFail: 0, quizMissed: [], alertPw: null };
   buildDay(G);
   G.card = G.queue.shift();
   return G;
@@ -968,7 +969,7 @@ function choose(G, side) {
       G.pw = Math.max(1, G.pw - R.QUIZ_FAIL_PW);
       const safeAirFloor = Math.min(G.air, R.AIR_USE + 1);
       G.air = Math.max(safeAirFloor, G.air - R.QUIZ_FAIL_AIR);
-      out.quizOk = false; G.quizFail++;
+      out.quizOk = false; G.quizFail++; if (c.disc) G.quizMissed.push(c.disc.id);
     }
   }
   // Só a primeira ação de ciência do dia revela uma descoberta; os pontos de ciência continuam contando.
@@ -1970,6 +1971,117 @@ const LESSON_DATED = {
   geminids_2024_12: DUST_TIP, quadrantids_2025_01: DUST_TIP,
 };
 
+/* ---------- "Na vida real": cada fato do relatório ganha um dado real, tirado do banco do jogo ---------- */
+// Para cada tipo de fato: dado principal e fatos extras (ids do álbum). Os números das regras vêm de R.
+const REAL_KIND = {
+  shieldOk:  { extra: ['light', 'sdo', 'cme', 'cycle'] },
+  shieldBad: { extra: ['light', 'sdo', 'cme', 'nofield'] },
+  radOk:     { main: 'issdose', extra: ['wind', 'nofield', 'lavatube', 'cme'] },
+  radEnd:    { main: 'wind', extra: ['nofield', 'issdose', 'lavatube', 'cme'] },
+  trips:     { main: 'issdose', extra: ['nofield', 'lavatube', 'dust', 'wind'] },
+  inside:    { main: 'nofield', extra: ['lavatube', 'wind', 'issdose'] },
+  air:       { main: 'o2water', extra: ['recycle', 'oxyrock', 'iceuse', 'lcross'] },
+  power:     { main: 'lunarday', extra: ['shadow', 'peaks', 'swing', 'cold'] },
+  sci:       { main: 'lcross', extra: ['m3', 'lamp', 'prospector', 'iceuse', 'artemis'] },
+  done:      { main: 'artemis', extra: ['shackleton', 'peaks', 'm3', 'lromap', 'aitken'] },
+  quiz:      { extra: [] },
+  dated:     { extra: [] },
+};
+const REAL_DATED = {
+  eclipse_2024_03: ['lunarday', 'shadow', 'peaks', 'swing'], eclipse_2024_09: ['lunarday', 'shadow', 'peaks', 'swing'], eclipse_2025_03: ['lunarday', 'shadow', 'peaks', 'swing'],
+  geminids_2024_12: ['dust', 'lromap', 'gravity', 'prints'], quadrantids_2025_01: ['dust', 'lromap', 'gravity', 'prints'],
+  donki_x87_2024_05: ['spots', 'cycle', 'aurora', 'sdo', 'cme'],
+};
+function realRule(k) {
+  const pt = lang === 'pt', P = (a, b) => (pt ? a : b), SH = R.SHIELD_PW, ready = Math.round(R.BLOCK_READY * 100), rush = Math.round(R.BLOCK_RUSH * 100);
+  const N = (v, a, b) => [String(v), P(a, b)];
+  switch (k) {
+    case 'shieldOk': return { rule: P(`Carregar o escudo no alerta custa ${SH} de energia e bloqueia ${ready}% das partículas. Ligado só na chegada, bloqueia ${rush}%. Sem escudo, entra tudo.`,
+        `Charging the shield at the alert costs ${SH} power and blocks ${ready}% of the particles. Turned on only at arrival, it blocks ${rush}%. With no shield, everything gets in.`),
+      nums: [N(ready + '%', 'bloqueado com o escudo carregado', 'blocked with the shield charged'), N(SH, 'de energia por escudo', 'power per shield')] };
+    case 'shieldBad': return { rule: P(`Sem o escudo completo a tripulação recebe a radiação da tempestade: ${R.STORM[1]} na fraca, ${R.STORM[2]} na média e ${R.STORM[3]} na forte. Quem está fora da base recebe ainda mais.`,
+        `Without a full shield the crew takes the storm's radiation: ${R.STORM[1]} in a weak one, ${R.STORM[2]} in a medium one and ${R.STORM[3]} in a strong one. Anyone outside the base takes even more.`),
+      nums: [N('+' + R.STORM[3], 'radiação de uma tempestade forte', 'radiation of a strong storm'), N(SH, 'de energia custa o escudo', 'power the shield costs')] };
+    case 'radOk': return { rule: P(`Para a 3ª estrela a radiação precisa terminar abaixo de ${R.RAD_SAFE}. Ela sobe ${R.RAD_DAILY} por noite e nunca desce.`, `For the 3rd star radiation must end below ${R.RAD_SAFE}. It rises ${R.RAD_DAILY} per night and never goes down.`),
+      nums: [N('<' + R.RAD_SAFE, 'meta da 3ª estrela', 'goal for the 3rd star'), N('+' + R.RAD_DAILY, 'por noite, sempre', 'per night, always')] };
+    case 'radEnd': return { rule: P(`Ao chegar a ${R.RAD_LIMIT} de radiação a tripulação volta para casa. Ela sobe ${R.RAD_DAILY} por noite, mais nas saídas da base e muito nas tempestades.`,
+        `At ${R.RAD_LIMIT} radiation the crew goes home. It rises ${R.RAD_DAILY} per night, more on trips outside and a lot in storms.`),
+      nums: [N(R.RAD_LIMIT, 'limite de radiação', 'radiation limit'), N('+' + R.RAD_DAILY, 'por noite', 'per night')] };
+    case 'trips': case 'inside': return { rule: P('Pesquisar dentro da base não dá radiação. Sair rende ciência, mas lá fora não há escudo.', 'Research inside the base adds no radiation. Going out brings science, but there is no shield outside.'),
+      nums: [N('0', 'escudo lá fora', 'shield outside'), N('+' + R.RAD_DAILY, 'por noite, mesmo dentro', 'per night, even inside')] };
+    case 'air': return { rule: P(`A tripulação respira ${R.AIR_USE} de ar por noite. Se o tanque chegar a zero, a missão termina.`, `The crew breathes ${R.AIR_USE} air per night. If the tank hits zero, the mission ends.`),
+      nums: [N(R.AIR_USE, 'de ar gasto por noite', 'air used per night'), N(R.AIR_START + '/' + R.AIR_MAX, 'ar no começo da missão', 'air at the start')] };
+    case 'power': return { rule: P(`Quase tudo na base gasta energia. O Sol dá de 0 a 2 por dia e a bateria guarda no máximo ${R.PW_MAX}. Se zerar, a missão termina; se faltar, a opção fica trancada.`,
+        `Almost everything at the base uses power. The Sun gives 0 to 2 per day and the battery holds at most ${R.PW_MAX}. If it hits zero the mission ends; if it runs short, the option is locked.`),
+      nums: [N('0-2', 'energia do Sol por dia', 'Sun power per day'), N(R.PW_MAX, 'capacidade da bateria', 'battery capacity')] };
+    case 'sci': return { rule: P(`A primeira pesquisa do dia revela uma descoberta. A meta da missão é ${R.SCI_GOAL} pontos de ciência.`, `The first research of the day reveals a discovery. The mission goal is ${R.SCI_GOAL} science points.`),
+      nums: [N(R.SCI_GOAL, 'meta de ciência', 'science goal'), N(DISC.length, 'descobertas no álbum', 'discoveries in the album')] };
+    case 'done': return { rule: P(`Sobreviver aos ${R.DAYS} dias já vale uma estrela; ciência e radiação baixa valem as outras duas.`, `Surviving all ${R.DAYS} days is worth a star; science and low radiation are worth the other two.`),
+      nums: [N(R.DAYS, 'dias de missão', 'mission days'), N('3', 'estrelas possíveis', 'possible stars')] };
+    default: return null;
+  }
+}
+// Monta {main, extra[], rule, nums} para um fato; devolve null se não houver dado real ligado.
+function realInfo(real) {
+  if (!real) return null;
+  const pt = lang === 'pt', P = (a, b) => (pt ? a : b);
+  const disc = id => { const d = DISC.find(x => x.id === id); return d && { name: tr(d.name), fact: tr(d.fact), base: tr(d.base), src: d.src, id }; };
+  let main = null, extraIds = (REAL_KIND[real.k] || {}).extra || [], ruleKey = real.k;
+  if (real.storm) {
+    const s = real.storm;
+    main = { name: `${fmtDate(Date.parse(s.d))} · ${P('tempestade', 'storm')} ${sevTxt(s.sev)}`, fact: stormRecord(s), src: s.link,
+      base: s.flr ? P('Foi esse intervalo que você teve no jogo para carregar o escudo.', 'That was the gap you had in the game to charge the shield.')
+                  : P('Esta tempestade veio sem aviso: só o escudo de emergência ajudava.', 'This storm came with no warning: only the emergency shield helped.') };
+  } else if (real.ev) {
+    const e = real.ev;
+    main = { name: `${fmtDate(Date.parse(e.d))} · ${e.source}`, fact: tr(e.record), src: e.link, base: '' };
+    extraIds = REAL_DATED[e.id] || [];
+    ruleKey = null;
+  } else if (real.k === 'quiz') {
+    main = real.id && disc(real.id);
+  } else if (real.k === 'sci') {
+    main = disc(G.found[0] || REAL_KIND.sci.main);
+    extraIds = extraIds.filter(id => id !== (main && main.id));
+  } else if (REAL_KIND[real.k] && REAL_KIND[real.k].main) {
+    main = disc(REAL_KIND[real.k].main);
+  }
+  if (!main) return null;
+  const extra = extraIds.map(disc).filter(d => d && (!main.id || d.id !== main.id));
+  return { main, extra, ...(realRule(ruleKey) || {}) };
+}
+const realHost = u => { try { return new URL(u).hostname.replace('www.', ''); } catch (e) { return ''; } };
+function realBlock(r, label) {
+  const pt = lang === 'pt';
+  return `<div class="real"><span class="lbl">${label}</span><h4>${r.name}</h4><p>${r.fact}</p>${r.base ? `<p class="base">${pt ? 'Na base: ' : 'At the base: '}${r.base}</p>` : ''}`
+    + `<a class="src" href="${r.src}" target="_blank" rel="noopener">${pt ? 'Fonte: ' : 'Source: '}${realHost(r.src)} ↗</a></div>`;
+}
+function realHtml(real, i) {
+  const info = realInfo(real);
+  if (!info) return '';
+  const pt = lang === 'pt', id = 'realMore' + i;
+  const all = [info.main, ...info.extra];
+  return realBlock(info.main, pt ? 'NA VIDA REAL' : 'IN REAL LIFE')
+    + `<button class="btn-more" type="button" aria-expanded="false" aria-controls="${id}">${pt ? '▾ VER MAIS' : '▾ SEE MORE'}</button>`
+    + `<div class="real-more" id="${id}" hidden>`
+    + (info.rule ? `<div class="sec">${pt ? 'NO JOGO' : 'IN THE GAME'}</div><div class="rule"><b>${pt ? 'Como funciona:' : 'How it works:'}</b> ${info.rule}</div>`
+        + `<div class="nums">${info.nums.map(n => `<div><em>${n[0]}</em>${n[1]}</div>`).join('')}</div>` : '')
+    + (info.extra.length ? `<div class="sec">${pt ? 'MAIS DA NASA' : 'MORE FROM NASA'}</div>` + info.extra.map(e => realBlock(e, pt ? 'TAMBÉM NA NASA' : 'ALSO AT NASA')).join('') : '')
+    + `<div class="sec">LINKS</div><div class="real-links">${all.map(r => `<a href="${r.src}" target="_blank" rel="noopener">▸ ${r.name} · ${realHost(r.src)}</a>`).join('')}</div></div>`;
+}
+function toggleReal(btn, force) {
+  const box = document.getElementById(btn.getAttribute('aria-controls')), pt = lang === 'pt', open = force === undefined ? box.hidden : force;
+  box.hidden = !open; btn.setAttribute('aria-expanded', open);
+  btn.textContent = open ? (pt ? '▴ VER MENOS' : '▴ SEE LESS') : (pt ? '▾ VER MAIS' : '▾ SEE MORE');
+}
+$('debrief').addEventListener('click', e => { const b = e.target.closest('.btn-more'); if (b) { toggleReal(b); sfx('tap'); } });
+$('debriefAll').addEventListener('click', e => {
+  const open = e.currentTarget.dataset.open !== '1', pt = lang === 'pt';
+  e.currentTarget.dataset.open = open ? '1' : '0';
+  e.currentTarget.textContent = open ? (pt ? '▴ FECHAR TUDO' : '▴ CLOSE ALL') : (pt ? '▾ ABRIR TUDO' : '▾ OPEN ALL');
+  $('debrief').querySelectorAll('.btn-more').forEach(b => toggleReal(b, open));
+  sfx('tap');
+});
+
 /* Um acerto e até dois pontos para melhorar. Sem pontos para melhorar, entram mais acertos;
    sem acertos suficientes, entram mais pontos para melhorar. Cada lista é ordenada por peso. */
 function missionFacts(G) {
@@ -1989,42 +2101,42 @@ function missionFacts(G) {
     : P('Saia da base só com a radiação baixa: lá fora não há escudo.', 'Only go outside when radiation is low: there is no shield out there.');
 
   // 1. Como a missão terminou
-  if (G.over === 'air') bad.push({ score: 100,
+  if (G.over === 'air') bad.push({ score: 100, real: { k: 'air' },
     title: P(`O ar acabou no dia ${endDay}`, `Air ran out on day ${endDay}`),
     body: P(`A tripulação respira ${R.AIR_USE} de ar por noite, e o tanque chegou a zero.`, `The crew breathes ${R.AIR_USE} air every night, and the tank hit zero.`),
     tip: P(`Com o ar em ${2 * R.AIR_USE} ou menos, priorize o suporte de vida.`, `With air at ${2 * R.AIR_USE} or less, put life support first.`) });
-  if (G.over === 'pw') bad.push({ score: 100,
+  if (G.over === 'pw') bad.push({ score: 100, real: { k: 'power' },
     title: P(`A energia acabou no dia ${endDay}`, `Power ran out on day ${endDay}`),
     body: P('Uma escolha deixou a bateria em zero e a base parou.', 'A choice left the battery at zero and the base shut down.'),
     tip: P(`Guarde sempre ${SH} de energia: é o preço do escudo e ajuda nos dias de sombra.`, `Always keep ${SH} power: it is what the shield costs, and it helps on shadowy days.`) });
-  if (G.over === 'rad') bad.push({ score: 100,
+  if (G.over === 'rad') bad.push({ score: 100, real: { k: 'radEnd' },
     title: P(`A radiação chegou a ${R.RAD_LIMIT} no dia ${endDay}`, `Radiation reached ${R.RAD_LIMIT} on day ${endDay}`),
     body: radParts, tip: radTip });
 
   if (G.over === 'win') {
-    good.push({ score: 40,
+    good.push({ score: 40, real: { k: 'done' },
       title: P(`A tripulação completou os ${R.DAYS} dias`, `The crew completed all ${R.DAYS} days`),
       body: P('Ar, energia e radiação ficaram sob controle até o fim.', 'Air, power and radiation stayed under control to the end.') });
     // 2. O que faltou (ou não) para as 3 estrelas
-    if (G.rad >= R.RAD_SAFE) bad.push({ score: 50,
+    if (G.rad >= R.RAD_SAFE) bad.push({ score: 50, real: { k: 'radEnd' },
       title: P(`A radiação terminou em ${G.rad}`, `Radiation ended at ${G.rad}`),
       body: P(`Para a 3ª estrela, ela precisa ficar abaixo de ${R.RAD_SAFE}. `, `For the 3rd star it must stay below ${R.RAD_SAFE}. `) + radParts,
       tip: radTip });
-    else good.push({ score: 55,
+    else good.push({ score: 55, real: { k: 'radOk' },
       title: P(`Radiação abaixo de ${R.RAD_SAFE}`, `Radiation below ${R.RAD_SAFE}`),
       body: P(`A missão terminou com ${G.rad} de radiação. A tripulação voltou bem protegida.`, `The mission ended with ${G.rad} radiation. The crew came home well protected.`) });
-    if (G.sci < R.SCI_GOAL) bad.push({ score: 50,
+    if (G.sci < R.SCI_GOAL) bad.push({ score: 50, real: { k: 'sci' },
       title: P(`Faltaram ${R.SCI_GOAL - G.sci} descobertas`, `${R.SCI_GOAL - G.sci} discoveries short`),
       body: P(`Você fez ${G.sci} de ${R.SCI_GOAL}. A meta também vale estrela.`, `You made ${G.sci} of ${R.SCI_GOAL}. The goal is worth a star too.`),
       tip: P('A carta de pesquisa aparece todo dia. Pesquisar dentro da base não dá radiação.', 'The research card shows up every day. Research inside the base adds no radiation.') });
-    else good.push({ score: 55,
+    else good.push({ score: 55, real: { k: 'sci' },
       title: P(`${G.sci} descobertas`, `${G.sci} discoveries`),
       body: P(`A meta era ${R.SCI_GOAL}, e você chegou lá.`, `The goal was ${R.SCI_GOAL}, and you made it.`) });
   } else {
-    good.push({ score: 5,
+    good.push({ score: 5, real: { k: 'done' },
       title: P(`A tripulação aguentou ${endDay} de ${R.DAYS} dias`, `The crew lasted ${endDay} of ${R.DAYS} days`),
       body: P('Todos voltaram para casa em segurança.', 'Everyone got home safely.') });
-    if (G.sci > 0) good.push({ score: 10,
+    if (G.sci > 0) good.push({ score: 10, real: { k: 'sci' },
       title: P(`${G.sci} descoberta${G.sci > 1 ? 's' : ''}`, `${G.sci} discover${G.sci > 1 ? 'ies' : 'y'}`),
       body: P('Mesmo com a missão curta, a ciência avançou.', 'Even in a short mission, science moved forward.') });
   }
@@ -2034,7 +2146,7 @@ function missionFacts(G) {
   const okS = G.met.filter(shielded), badS = G.met.filter(m => !shielded(m));
   if (okS.length) {
     const saved = okS.reduce((a, m) => a + Math.round(R.STORM[m.e.sev] * m.block), 0);
-    good.push({ score: 60 + 5 * okS.length,
+    good.push({ score: 60 + 5 * okS.length, real: { k: 'shieldOk', storm: okS[0].e },
       title: okS.length > 1 ? P(`Escudo ligado em ${okS.length} tempestades`, `Shield up in ${okS.length} storms`)
                             : P(`Escudo ligado na tempestade do ${dia(okS[0].day)}`, `Shield up for the storm on ${dia(okS[0].day)}`),
       body: P(`O escudo segurou ${saved} de radiação que teria entrado na base.`, `The shield stopped ${saved} radiation that would have entered the base.`) });
@@ -2065,37 +2177,37 @@ function missionFacts(G) {
       tip = P(`Guarde ${SH} de energia: tempestades podem chegar sem aviso.`, `Keep ${SH} power saved: storms can come with no warning.`);
     }
     if (w.outside) why += ' ' + P(`O jipe estava lá fora: +${w.extra}.`, `The rover was outside: +${w.extra}.`);
-    bad.push({ score: 60 + total,
+    bad.push({ score: 60 + total, real: { k: 'shieldBad', storm: w.e },
       title: badS.length > 1 ? P(`${badS.length} tempestades sem escudo completo: +${total} de radiação`, `${badS.length} storms without a full shield: +${total} radiation`)
                              : P(`Tempestade do ${d}: +${total} de radiação`, `Storm on ${d}: +${total} radiation`),
       body: why, tip });
   }
 
   // 4. Saídas da base
-  if (G.tripRad >= 10) bad.push({ score: 30 + G.tripRad,
+  if (G.tripRad >= 10) bad.push({ score: 30 + G.tripRad, real: { k: 'trips' },
     title: P(`Você saiu da base ${vez(G.trips)}`, `You left the base ${vez(G.trips)}`),
     body: P(`Lá fora não há escudo: a tripulação recebeu +${G.tripRad} de radiação.`, `There is no shield outside: the crew took +${G.tripRad} radiation.`),
     tip: P('Saia só com a radiação baixa e sem alerta de tempestade.', 'Only go out when radiation is low and there is no storm alert.') });
-  else if (!G.trips) good.push({ score: 12,
+  else if (!G.trips) good.push({ score: 12, real: { k: 'inside' },
     title: P('Tripulação dentro da base', 'Crew stayed inside'),
     body: P('Sem saídas, ninguém pegou radiação extra lá fora.', 'With no trips out, nobody took extra radiation outside.') });
 
   // 5. Uso da energia
-  if (lockHits >= 2) bad.push({ score: 25 + 3 * lockHits,
+  if (lockHits >= 2) bad.push({ score: 25 + 3 * lockHits, real: { k: 'power' },
     title: P(`Faltou energia ${vez(lockHits)}`, `You ran short of power ${vez(lockHits)}`),
     body: P('Você tentou escolher opções que custavam mais energia do que havia na bateria.', 'You tried options that cost more power than the battery had.'),
     tip: P('Antes de escolher, olhe a seta ▼ de energia e veja quanto vai sobrar.', 'Before choosing, check the ▼ power arrow to see what will be left.') });
-  if (G.wasted >= 3) bad.push({ score: 20 + G.wasted,
+  if (G.wasted >= 3) bad.push({ score: 20 + G.wasted, real: { k: 'power' },
     title: P(`${G.wasted} de energia do Sol se perdeu`, `${G.wasted} of the Sun's power was lost`),
     body: P(`A bateria estava cheia (${R.PW_MAX}) e não guardou o resto.`, `The battery was full (${R.PW_MAX}) and could not store the rest.`),
     tip: P('Com a bateria quase cheia, gaste energia em pesquisa ou no suporte de vida.', 'With the battery nearly full, spend power on research or life support.') });
-  if (!lockHits && !G.wasted && G.over !== 'pw') good.push({ score: 20,
+  if (!lockHits && !G.wasted && G.over !== 'pw') good.push({ score: 20, real: { k: 'power' },
     title: P('Energia bem usada', 'Power well used'),
     body: P('Nunca faltou energia para uma escolha, e nada do Sol foi desperdiçado.', `You never ran short for a choice, and none of the Sun's power was wasted.`) });
 
   // 6. Perguntas de memória
   const qs = n => (n > 1 ? 's' : '');
-  if (G.quizFail) bad.push({ score: 20 + 5 * G.quizFail,
+  if (G.quizFail) bad.push({ score: 20 + 5 * G.quizFail, real: { k: 'quiz', id: G.quizMissed[0] },
     title: P(`Errou ${G.quizFail} pergunta${qs(G.quizFail)} de memória`, `Missed ${G.quizFail} memory question${qs(G.quizFail)}`),
     body: P(`Cada erro custou até ${R.QUIZ_FAIL_AIR} de ar e ${R.QUIZ_FAIL_PW} de energia.`, `Each miss cost up to ${R.QUIZ_FAIL_AIR} air and ${R.QUIZ_FAIL_PW} power.`),
     tip: P('As perguntas vêm das descobertas. Leia cada uma no álbum.', 'Questions come from your discoveries. Read each one in the album.') });
@@ -2107,7 +2219,7 @@ function missionFacts(G) {
   for (const p of G.picks) {
     if (p.after.pw > 1 && p.after.air > R.AIR_USE) continue;
     const name = tr(p.ev.text).split(/!|\.\s/)[0]; // primeira frase; não corta "X8.7"
-    bad.push({ score: 35,
+    bad.push({ score: 35, real: { k: 'dated', ev: p.ev },
       title: `${name} (${dia(p.day)})`,
       body: P(`Você escolheu "${tr(p.ev[p.side].label)}" e ficou com ${p.after.pw} de energia e ${p.after.air} de ar.`,
               `You chose "${tr(p.ev[p.side].label)}" and were left with ${p.after.pw} power and ${p.after.air} air.`),
@@ -2168,7 +2280,9 @@ function renderEnd() {
   const facts = missionFacts(G);
   $('debriefTitle').textContent = facts.length ? (pt ? 'O que aconteceu na sua missão' : 'What happened in your mission') : '';
   const tag = { good: pt ? "✓ Acerto" : "✓ Well done", bad: pt ? "! Para melhorar" : "! To improve" };
-  $('debrief').innerHTML = facts.map(f => `<li class="fx-card fx-${f.kind}"><span class="fx-tag">${tag[f.kind]}</span><b class="fx-title">${f.title}</b><span class="fx-body">${f.body}</span>${f.tip ? `<span class="fx-tip"><b>${pt ? 'Próxima vez:' : 'Next time:'}</b> ${f.tip}</span>` : ''}</li>`).join('');
+  $('debrief').innerHTML = facts.map((f, i) => `<li class="fx-card fx-${f.kind}"><span class="fx-tag">${tag[f.kind]}</span><b class="fx-title">${f.title}</b><span class="fx-body">${f.body}</span>${f.tip ? `<span class="fx-tip"><b>${pt ? 'Próxima vez:' : 'Next time:'}</b> ${f.tip}</span>` : ''}${realHtml(f.real, i)}</li>`).join('');
+  $('debriefAll').classList.toggle('hidden', !$('debrief').querySelector('.btn-more'));
+  $('debriefAll').dataset.open = '0'; $('debriefAll').textContent = pt ? '▾ ABRIR TUDO' : '▾ OPEN ALL';
 
   const found = G.found.map(id => DISC.find(d => d.id === id));
 const unlockedTotal = getUnlocked().length;

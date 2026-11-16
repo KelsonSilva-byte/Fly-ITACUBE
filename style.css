@@ -777,3 +777,24 @@ body:has(#end:not(.hidden)) footer { display:none; }
 .end-rbody .book .d .base { font-size:.54rem; }
 
 .end-ship { display:block; position:relative; z-index:1; width:min(78vw, 18rem); height:auto; aspect-ratio:96 / 80; margin:2rem auto 0; image-rendering:pixelated; }
+
+/* Relatório final: bloco "Na vida real" e botão Ver mais */
+.end-toolbar { display:flex; justify-content:flex-end; margin:.4rem 0; }
+.btn-more { font:.5rem/1.6 var(--font-pixel); padding:.55rem .7rem; background:#171b4b; color:#f3f3ff; border:0; border-radius:0; clip-path:var(--pixel-corners); cursor:pointer; min-height:2.1rem; justify-self:stretch; }
+.btn-more:hover { filter:brightness(1.25); } .btn-more:active { transform:translateY(2px); }
+.end-rbody .fx-card > * { max-width:100%; }
+.end-rbody .real { justify-self:stretch; background:#0b1a33; border:2px solid #2a5a86; padding:.5rem; display:grid; gap:.3rem; }
+.end-rbody .real .lbl { font-size:.4rem; color:#06101f; background:#9ad9f5; justify-self:start; padding:.1rem .35rem; }
+.end-rbody .real h4 { margin:0; font:inherit; font-size:.52rem; color:#9ad9f5; line-height:1.8; }
+.end-rbody .real p { margin:0; color:#dfe2ff; }
+.end-rbody .real .base { color:#fde68a; }
+.end-rbody .real .src, .end-rbody .real-links a { color:#9ad9f5; font-size:.45rem; text-decoration:underline; overflow-wrap:anywhere; }
+.real-more { justify-self:stretch; display:grid; gap:.45rem; }
+.real-more[hidden] { display:none; }
+.real-more .sec { font-size:.4rem; color:#8591dc; margin-top:.25rem; }
+.end-rbody .rule { background:#1a1440; border:2px solid #4a3d9a; padding:.45rem; color:#dfe2ff; }
+.end-rbody .rule b { color:#ffcf72; font-weight:400; }
+.end-rbody .nums { display:grid; grid-template-columns:1fr 1fr; gap:.3rem; }
+.end-rbody .nums div { background:#0e1230; padding:.3rem .4rem; font-size:.45rem; line-height:1.8; }
+.end-rbody .nums em { font-style:normal; color:#ffcf72; display:block; font-size:.6rem; }
+.real-links { display:grid; gap:.2rem; }
