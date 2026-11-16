@@ -2254,30 +2254,30 @@ function guideSlides() {
   return [
     { h: gl('Sua missão', 'Your mission'),
       t: gl('Comande a base na Lua por ' + D + ' dias. Chegar ao fim já vale uma estrela.', 'Command the Moon base for ' + D + ' days. Reaching the end already earns one star.'),
-      a: () => gdStar(0) + gdStar(1) + gdStar(2), snd: [[540, 'gstar0'], [1090, 'gstar1'], [1640, 'gstar2']] },
+      a: () => gdStar(0) + gdStar(1) + gdStar(2), snd: [[540, 'gstar0'], [1090, 'gstar1'], [1640, 'gstar2']], loop: 3600 },
     { h: gl('Arraste a carta', 'Swipe the card'),
       t: gl('Cada carta tem duas opções. Arraste para um lado ou toque no botão.', 'Each card has two options. Swipe to one side or tap the button.'),
       a: () => '<div class="arr">◀</div><div class="gcard">' + gl('QUAL<br>ESCOLHA?', 'WHICH<br>CHOICE?') + '</div><div class="arr">▶</div>',
-      snd: [[800, 'swipe'], [2400, 'swipe']] },
+      snd: [[800, 'swipe'], [2400, 'swipe']], loop: 3200 },
     { h: gl('Toda escolha custa', 'Every choice has a cost'),
       t: gl('Olhe as setas ao lado dos ícones: verde é bom, vermelha é ruim. A radiação só sobe.', 'Look at the arrows next to the icons: green is good, red is bad. Radiation only goes up.'),
       a: () => '<div class="side"><span>' + gl('ESQUERDA', 'LEFT') + '</span>' + gdRow(gdSci('fill', 'sm'), gdArrow(1, 0)) + gdRow(gdPw('drain', 'sm'), gdArrow(0, 1))
         + '</div><div class="side"><span>' + gl('DIREITA', 'RIGHT') + '</span>' + gdRow(gdAir('fill', 'sm'), gdArrow(1, 0)) + gdRow(gdRad('fill', 'sm'), gdArrow(1, 1)) + '</div>',
-      snd: [[0, 'gfill']] },
+      snd: [[0, 'gfill']], loop: 6400 },
     { h: gl('Os medidores', 'The meters'),
       t: gl('O nível é o quanto o ícone está cheio.', 'The level is how full the icon is.'),
       a: () => gdLab(gdAir('fill', 'md'), gl('AR', 'AIR')) + gdLab(gdPw('fill', 'md'), gl('ENERGIA', 'POWER')) + gdLab(gdRad('fill', 'md'), gl('RADIAÇÃO', 'RADIATION')),
-      snd: [[0, 'gfill'], [3200, 'gdrain']] },
+      snd: [[0, 'gfill'], [3200, 'gdrain']], loop: 6400 },
     { h: gl('Ar', 'Air'),
       t: gl('O ar acaba toda noite. Sem ar, a missão termina.', 'Air runs down every night. With no air, the mission ends.'),
-      a: () => gdLab(gdAir('drain'), gl('O AR ACABA', 'AIR RUNS OUT')), snd: [[0, 'gdrain']] },
+      a: () => gdLab(gdAir('drain'), gl('O AR ACABA', 'AIR RUNS OUT')), snd: [[0, 'gdrain']], loop: 3000 },
     { h: gl('Sem energia, sem ação', 'No power, no action'),
       t: gl('Algumas ações gastam energia. Se faltar, a opção fica trancada e você precisa escolher a outra.', 'Some actions use power. If it runs short, the option is locked and you must pick the other one.'),
       a: () => '<div style="display:flex;align-items:center;gap:14px">' + gdPw('pwz', '') + '<span class="lk">' + gdLock(96) + '</span></div>',
-      snd: [[0, 'gdrain'], [2900, 'lock']] },
+      snd: [[0, 'gdrain'], [2900, 'lock']], loop: 4000 },
     { h: gl('Radiação', 'Radiation'),
       t: gl('Aqui é o contrário: quanto mais cheio, pior.', 'Here it is the opposite: the fuller, the worse.'),
-      a: () => gdLab(gdRad('fill'), gl('ENCHENDO = PERIGO', 'FILLING = DANGER')), snd: [[0, 'gfill']] },
+      a: () => gdLab(gdRad('fill'), gl('ENCHENDO = PERIGO', 'FILLING = DANGER')), snd: [[0, 'gfill']], loop: 6400 },
     { h: gl('Tempestades de verdade', 'Real storms'),
       t: gl('Elas aconteceram de verdade. Guarde energia para o escudo!', 'They really happened. Save power for the shield!'),
       a: () => '<canvas id="gdCanvas" width="256" height="88"></canvas>', scene: true },
@@ -2285,19 +2285,19 @@ function guideSlides() {
       t: gl('Pesquisar rende descobertas reais da NASA para o seu álbum.', 'Research brings real NASA discoveries for your album.'),
       a: () => '<div class="col fl"><i class="bub b1"></i><i class="bub b2"></i><i class="bub b3"></i><i class="gl g1"></i><i class="gl g2"></i><img src="' + GU.sci
         + '" alt="" style="height:130px;image-rendering:pixelated;transform:translateX(9px)"><span class="cnt"><b>3/' + D + '</b><b>4/' + D + '</b></span></div>',
-      snd: [[0, 'disc'], [1500, 'reveal']] },
+      snd: [[0, 'disc'], [1500, 'reveal']], loop: 3000 },
     { h: gl('Relatório de descobertas', 'Discovery report'),
       t: gl('Abra quando quiser, pelo botão do topo. Só não vale durante uma pergunta: nada de colar!', 'Open it any time with the top button. Just not during a question: no cheating!'),
       a: () => '<div class="mock"><span>' + gl('DIA 1 DE ' + D, 'DAY 1 OF ' + D) + '</span><span class="hud"><span class="b hi"><span class="pc-icon sm"></span><span class="lk2">' + gdLock(16)
         + '</span></span><span class="b"><img src="' + GU.snd + '" alt=""></span><span class="b en">' + gl('EN', 'PT') + '</span></span></div><div class="pt">▲ ' + gl('AQUI', 'HERE')
         + '</div><div class="col pcb"><span class="pc-icon" style="transform:scale(1.6);margin:12px 0 26px"></span><span>' + gl('MENOS NAS<br>PERGUNTAS', 'NOT DURING<br>QUESTIONS')
         + '</span></div><div class="mini"><div class="mt">' + gl('RELATÓRIO', 'REPORT') + '</div><div class="ml"></div><div class="ml s"></div><div class="ml"></div></div>',
-      snd: [[600, 'windowOpen'], [2600, 'windowClose'], [3300, 'lock']] },
+      snd: [[600, 'windowOpen'], [2600, 'windowClose'], [3300, 'lock']], loop: 5000 },
     { h: gl('Perguntas surpresa', 'Surprise questions'),
       t: gl('O jogo pergunta sobre uma descoberta. Lembre-se do que leu!', 'The game asks about a discovery. Remember what you read!'),
       a: () => '<div class="qwrap"><div class="q qa">' + gl('VOCÊ<br>LEMBRA?', 'DO YOU<br>REMEMBER?') + '</div></div><div class="res"><div class="side ok">' + GD_OK + '<span class="plus">'
         + gl('+ AR<br>+ ENERGIA', '+ AIR<br>+ POWER') + '</span></div><div class="side no">' + GD_NO + '<span class="minus">' + gl('- AR<br>- ENERGIA', '- AIR<br>- POWER') + '</span></div></div>',
-      snd: [[1200, 'win'], [2850, 'lose']] },
+      snd: [[1200, 'win'], [2850, 'lose']], loop: 5000 },
   ];
 }
 function guideRender() {
@@ -2313,7 +2313,12 @@ function guideRender() {
   $('gdNext').textContent = guideI === S.length - 1 ? gl('JOGAR', 'PLAY') + ' ▶' : gl('PRÓXIMO', 'NEXT') + ' ▶';
   $('gdSkip').textContent = gl('PULAR', 'SKIP') + ' ▶▶';
   $('openTutorialBtn').textContent = gl('Guia completo', 'Full guide');
-  if (!reduceMotion) (s.snd || []).forEach(([ms, k]) => guideTimers.push(setTimeout(() => sfx(k), ms)));
+  // Os sons acompanham a animação, que se repete: o ciclo de sons recomeça no mesmo período (s.loop, em ms).
+  const playSnd = () => {
+    (s.snd || []).forEach(([ms, k]) => guideTimers.push(setTimeout(() => sfx(k), ms)));
+    if (s.loop) guideTimers.push(setTimeout(playSnd, s.loop));
+  };
+  if (!reduceMotion) playSnd();
   if (s.scene) {
     const c = $('gdCanvas'), my = guideRun;
     c.style.width = '1024px'; c.style.height = '352px';
@@ -2323,9 +2328,11 @@ function guideRender() {
     guideScene.sync({ day: 4, queue: [1, 1, 1, 1, 1], card: { kind: 'day' }, dated: { 5: { id: 'eclipse_2024_03' } }, sun: 3 });
     if (!reduceMotion) (async () => {
       try {
-        await guideScene.play('intro'); if (my !== guideRun) return;
-        sfx('alert'); guideTimers.push(setTimeout(() => sfx('storm'), 9000));
-        await guideScene.play('storm', { shield: 'ready' });
+        while (my === guideRun) {
+          await guideScene.play('intro'); if (my !== guideRun) return;
+          sfx('alert'); guideTimers.push(setTimeout(() => sfx('storm'), 9000));
+          await guideScene.play('storm', { shield: 'ready' });
+        }
       } catch (e) {}
     })();
   }
