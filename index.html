@@ -115,9 +115,6 @@
         <div class="end-toolbar"><button class="btn-more" id="debriefAll" type="button"></button></div>
         <ul class="debrief" id="debrief"></ul>
         <div class="fact" id="endFact"></div>
-        <h2 id="bookTitle"></h2>
-        <p class="coll" id="bookColl"></p>
-        <div class="book" id="book"></div>
         <h2 data-t="realTitle"></h2>
         <p id="realIntro"></p>
         <div id="realList"></div>
@@ -2285,12 +2282,6 @@ function renderEnd() {
   $('debriefAll').dataset.open = '0'; $('debriefAll').textContent = pt ? '▾ ABRIR TUDO' : '▾ OPEN ALL';
 
   const found = G.found.map(id => DISC.find(d => d.id === id));
-const unlockedTotal = getUnlocked().length;
-  $('bookTitle').textContent = (pt ? '📓 Álbum de descobertas' : '📓 Discovery album') + ` (${unlockedTotal}/${DISC.length})`;
-  $('bookColl').textContent = pt
-    ? `Nesta missão: +${G.found.length} · Melhor resultado: ${'⭐'.repeat(prog ? prog.best : 0) || '—'}`
-    : `This mission: +${G.found.length} · Best result: ${'⭐'.repeat(prog ? prog.best : 0) || '—'}`;
-  renderAlbum($('book'), G.found);
   $('endFact').classList.toggle('hidden', found.length > 0);
   $('endFact').innerHTML = (pt ? '💡 <b>Você sabia?</b> ' : '💡 <b>Did you know?</b> ') + FACTS[factIdx % FACTS.length][pt ? 0 : 1];
 
@@ -2774,7 +2765,11 @@ function playShip() {
   requestAnimationFrame(frame);
 }
 // Estrelas do fundo da tela final.
-$('endSky').innerHTML = Array.from({ length: 36 }, (_, i) => `<i style="left:${(i * 53) % 100}%;top:${(i * 29) % 55}%;animation-delay:${(i % 6) * .4}s"></i>`).join('');
+$('endSky').innerHTML = Array.from({ length: 120 }, (_, i) => {
+  const r = n => { const v = Math.sin(i * 12.9898 + n * 78.233) * 43758.5453; return v - Math.floor(v); };   // posições espalhadas, sempre as mesmas
+  const size = i % 9 === 0 ? 3 : i % 3 === 0 ? 2 : 1;
+  return `<i style="left:${(r(1) * 100).toFixed(1)}%;top:${(r(2) * 78).toFixed(1)}%;width:${size}px;height:${size}px;animation-delay:${(i % 7) * .45}s"></i>`;
+}).join('');
 document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click', () => {
   sfx('tap');
   lang = lang === 'pt' ? 'en' : 'pt'; setTexts();
