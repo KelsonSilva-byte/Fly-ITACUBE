@@ -1,11 +1,24 @@
 /* Pixel scene rendered on a 256 × 88 logical grid. No draft assets required. */
-window.LunarScene={create(canvas, onAudioFrame){
+window.LunarScene={create(canvas, onAudioFrame, options){
 'use strict';
+options=options||{};
 const earth = new Image();
 earth.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEISURBVEhLnZTRDcJADEO7BR9MwgxITMEXA7AB/LMfu4CC5FP66stdiWS1jRLbybVdlkGcLs9PD6zdFSQTrvfbJnc4nveJZbIRsih5NiHix+vdCOK+eibKaUROAuWYd+hOwh2zcQaZY0UeY+VDm3FKuClX7pWkewnmvDOgms0UvQY2uhoao8DvwDMRG5VzIiRzubg2AUKEvDqyCl2BAPf6D+yKKDIr5OrKCdgoMQfWDgXoJIPkJBXab6O3knh2HyGFcj7Xtw/Nuc8idEb3AfaXAipigwPJVd/IeyIzAm6CyHd/2RQYQcQUIG+LLJDdkTgj3NqDrUJORuQUIk8ZfD0rsHdXcAV7HX8BHIf5MP+E+eMAAAAASUVORK5CYII=';
 
-const ctx=canvas.getContext('2d');
-ctx.imageSmoothingEnabled=false;
+const mainCtx=canvas.getContext('2d');
+mainCtx.imageSmoothingEnabled=false;
+// Câmera de ação: quando um astronauta faz uma tarefa, a cena é desenhada num quadro de fundo (256 × 88)
+// e só a janela ao redor dele é ampliada, sem suavização, para manter os pixels nítidos.
+const offscreen=document.createElement('canvas');
+offscreen.width=256;offscreen.height=88;
+const offCtx=offscreen.getContext('2d');
+offCtx.imageSmoothingEnabled=false;
+let ctx=mainCtx;
+const camera=Object.assign({enabled:true,zoom:2,ease:160},options.camera||{});
+const cam={x:128,y:44,z:1,last:null};
+// Qual astronauta faz cada tarefa (0 painéis, 1 meio/terminal, 2 caixas e amostras).
+// Eventos (alerta, tempestade, meteoros, eclipse, saída do hover) ficam de fora: câmera normal.
+const focusCrew={clean:0,repair:1,filter:1,oxygen:1,power:1,farm:1,research:1,observe:1,prepare:1,airlock:1,sample:2};
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const shield={value:'none'};
 let skyTime=0, skyTarget=0, eclipseDay=null;
@@ -472,6 +485,21 @@ const layers = {
 };
 
 
+function updateCamera(scene){
+  const dt=cam.last===null?0:clamp(clock-cam.last,0,100);
+  cam.last=clock;
+  const who=focusCrew[scene.kind];
+  const on=camera.enabled&&!reduceMotion.matches&&who!==undefined&&scene.clip&&scene.progress<.96;
+  let tx=128,ty=44,tz=1;
+  if(on){
+    const pose=crewPose(crew[who],who,scene);
+    tx=pose.x;ty=pose.y+4;tz=camera.zoom;
+  }
+  const k=dt?1-Math.exp(-dt/Math.max(1,camera.ease)):1;
+  cam.x+=(tx-cam.x)*k;cam.y+=(ty-cam.y)*k;cam.z+=(tz-cam.z)*k;
+  if(Math.abs(cam.z-tz)<.004)cam.z=tz;
+  return cam.z>1.003;
+}
 function draw(){
   const clip=active,kind=clip?.kind||'idle';
   const raw=clip?between(clock,clip.start,clip.end):1;
@@ -507,12 +535,22 @@ function draw(){
     :kind==='intro'?1-between(progress,.01,.04):0;
   const protection=emergency&&shield.value!=='none'&&kind!=='meteors'?Math.min(between(progress,.59,.61),1-between(progress,.745,.77)):0;
   const scene={sky,dark,ground,base,sun,sunX,sunY,earthX:Math.round(earthX),earthY:Math.round(earthY),occultation:eclipse,door,protection,emergency,kind,clip,progress,time:clock,starTime:clock,blink:reduceMotion.matches||Math.floor(clock/420)%2===0,lit:clamp(.82-illumination/2+eclipse/4,0,1)};
+  const zoomed=updateCamera(scene);
+  ctx=zoomed?offCtx:mainCtx;
   ctx.clearRect(0,0,256,88);
   for(const [,drawLayer] of Object.values(layers)) drawLayer(scene);
   if (eclipse > 0) {
     rect(0, 0, 256, 88, 'rgba(5, 3, 12, ' + eclipse * .96 + ')');
     if (clip?.lights !== false) layers.luzes[1](scene);
   }
+  if(zoomed){
+    const w=256/cam.z,h=88/cam.z;
+    const vx=Math.round(clamp(cam.x-w/2,0,256-w)),vy=Math.round(clamp(cam.y-h/2,0,88-h));
+    mainCtx.clearRect(0,0,256,88);
+    mainCtx.drawImage(offscreen,vx,vy,w,h,0,0,256,88);
+  }
+  ctx=mainCtx;
+  canvas.dataset.zoom=cam.z.toFixed(2);
   canvas.dataset.solarImpact = kind === 'storm' && progress >= impactStart + .03 && progress < .766 ? 'true' : 'false';
   if (onAudioFrame) {
     const outward = kind === 'explore' ? between(progress, .41, .53) : 0;
@@ -556,7 +594,7 @@ async function play(kind,options={}){
   if(!durations[kind])throw new Error('Unknown scene: '+kind);
   await begin(kind,options);
 }
-function reset(){generation++;finishClip();skyTime=0;skyTarget=0;eclipseDay=null;state={day:1,hour:8,sun:3,dust:false,leak:false,power:true,farm:false};clock=0;lastNow=null;task=null;if(!running){running=true;const token=++loopId;requestAnimationFrame(now=>tick(now,token));}void begin('intro');}
+function reset(){cam.x=128;cam.y=44;cam.z=1;cam.last=null;generation++;finishClip();skyTime=0;skyTarget=0;eclipseDay=null;state={day:1,hour:8,sun:3,dust:false,leak:false,power:true,farm:false};clock=0;lastNow=null;task=null;if(!running){running=true;const token=++loopId;requestAnimationFrame(now=>tick(now,token));}void begin('intro');}
 function present(card){
   task=card?.id||null;
   if(task==='dust'||/^geminids|^quadrantids/.test(task||''))state.dust=true;
@@ -573,7 +611,7 @@ function stop(){generation++;loopId++;running=false;lastNow=null;finishClip();}
 reduceMotion.addEventListener?.('change',()=>{
   if(reduceMotion.matches&&active){clock=active.end;finishClip();draw();}
 });
-return {play,reset,present,sync,stop,get snapshot(){return {...state,kind:active?.kind||'idle',task};}};
+return {play,reset,present,sync,stop,camera,get snapshot(){return {...state,kind:active?.kind||'idle',task};}};
 
 }};
 

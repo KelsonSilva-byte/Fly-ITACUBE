@@ -7,7 +7,7 @@ let solarPixels=[];
 ctx.fillRect=(x,y,width)=>{if(ctx.fillStyle==='#FFE1A3')solarPixels.push([x,width]);};
 const canvas={getContext:()=>ctx,dataset:{}};
 const motion={matches:false};
-const context={window:{},document:{hidden:false},Image:class {complete=true;naturalWidth=24;},matchMedia:()=>motion,
+const context={window:{},document:{hidden:false,createElement:()=>({getContext:()=>ctx})},Image:class {complete=true;naturalWidth=24;},matchMedia:()=>motion,
  requestAnimationFrame:fn=>frames.push(fn),console};
 vm.createContext(context);
 vm.runInContext(fs.readFileSync(new URL('../assets/scene/lunar-scene.js',import.meta.url),'utf8'),context);
@@ -28,6 +28,13 @@ scene.present({id:'dust'});assert.equal(scene.snapshot.dust,true);
 let done=false;let promise=scene.play('clean').then(()=>done=true);await advance(1000);assert.equal(done,false);await advance(2200);await promise;assert.equal(scene.snapshot.dust,false);
 scene.present({id:'leak'});promise=scene.play('filter');await advance(3200);await promise;assert.equal(scene.snapshot.leak,true);
 promise=scene.play('repair');await advance(3200);await promise;assert.equal(scene.snapshot.leak,false);
+// Câmera de ação: zoom nas tarefas, câmera normal nos eventos.
+for(const [kind,zoomed] of [['power',true],['clean',true],['sample',true],['storm',false],['explore',false],['eclipse',false]]) {
+ promise=scene.play(kind,{shield:'ready',clearance:0});await advance(1400);
+ assert.equal(+canvas.dataset.zoom>1.5,zoomed,'zoom '+kind);
+ await advance(22000);await promise;
+}
+motion.matches=true;promise=scene.play('power');await advance(100);assert.equal(+canvas.dataset.zoom,1,'sem zoom com movimento reduzido');await promise;motion.matches=false;
 for(const kind of ['storm','meteors','explore','sample','oxygen','prepare','observe','research','eclipse','power','airlock']) {
  promise=scene.play(kind,{shield:'ready'});await advance(22000);await promise;assert.equal(scene.snapshot.kind,'idle',kind);
 }
