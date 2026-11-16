@@ -125,6 +125,23 @@
   <div id="tutorialBody"></div>
 </section>
 <div id="studyWindows"></div>
+<!-- Aviso antes de abrir um site fora do jogo -->
+<div id="extWarn" class="ext-warn hidden" role="dialog" aria-modal="true" aria-labelledby="extWarnTitle" aria-describedby="extWarnText">
+  <section class="ext-box">
+    <div class="report-bar"><span class="report-symbol" aria-hidden="true">!</span><strong id="extWarnTitle"></strong></div>
+    <div class="ext-body">
+      <p id="extWarnText"></p>
+      <p class="ext-host" id="extWarnHost"></p>
+      <div class="ext-actions">
+        <button type="button" id="extWarnCancel"></button>
+        <button type="button" id="extWarnGo"></button>
+      </div>
+    </div>
+  </section>
+</div>
+<!-- Pergunta bônus: suspense e revelação da resposta -->
+<div id="quizStage" class="quiz-stage hidden" role="dialog" aria-modal="true" aria-live="assertive"></div>
+<div id="quizBanner" class="quiz-banner" aria-hidden="true"><span></span></div>
 <footer data-t="footer"></footer>
 </main>
 
@@ -1028,6 +1045,22 @@ const SFX = {
     tone(1318.51, .27, .28, 'sine', .018);
   },
   disc: () => [523, 659, 784].forEach((f, i) => tone(f, i * .09, .14)),
+  quizIn: () => [659.25, 987.77, 1318.51].forEach((f, i) => tone(f, i * .07, .16, 'square', .022)),
+  // Suspense: batidas que aceleram e sobem de tom durante ~3,9 s.
+  quizWait: () => {
+    let t = 0, gap = .42, f = 196;
+    while (t < 3.75) { tone(f, t, .09, 'square', .03); tone(f / 2, t, .12, 'triangle', .04); t += gap; gap = Math.max(.07, gap * .88); f *= 1.035; }
+  },
+  quizOk: () => {
+    [523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98, 2093].forEach((f, i) => tone(f, i * .06, .3, 'square', .03));
+    [523.25, 659.25, 783.99, 1046.5].forEach(f => tone(f, .46, .9, 'triangle', .035, true));
+    filteredNoise(6000, .5, .05, 0, 'highpass');
+  },
+  loot: () => { tone(1318.51, 0, .1, 'square', .035); tone(1975.53, .07, .18, 'square', .03); },
+  tick: () => tone(1760, 0, .04, 'square', .02),
+  combo: () => [783.99, 1046.5, 1318.51, 1567.98, 2093, 2637].forEach((f, i) => tone(f, .5 + i * .05, .2, 'square', .028)),
+  lootIn: () => [1567.98, 2093].forEach((f, i) => tone(f, i * .05, .12, 'square', .03)),
+  quizNo: () => [392, 349.23].forEach((f, i) => tone(f, i * .14, .22, 'sine', .04, true)),
   alert: () => [329.63, 293.66, 329.63].forEach((f,i) => tone(f, i * .26, .23, 'sine', .055, true)),
   storm: () => filteredNoise(130, .75, .13, 0, 'lowpass'),
   fall: () => {
@@ -1410,15 +1443,21 @@ function renderCard(animate) {
   const shiftStart = c.kind === 'day';
   card.classList.toggle('shift-start', shiftStart);
   card.classList.toggle('solar-alert', solarAlert);
-  $('reportBar').classList.toggle('hidden', !solarAlert && !shiftStart);
-  $('reportSymbol').textContent = shiftStart ? '' : '!';
-  $('reportTitle').textContent = shiftStart ? tr({pt: 'Início do turno', en: 'Shift start'}) : tr({pt: 'Alerta solar', en: 'Solar alert'});
+  const quiz = !!c.quiz;
+  card.classList.toggle('quiz-card', quiz);
+  $('game').classList.toggle('quiz-on', quiz);
+  $('reportBar').classList.toggle('hidden', !solarAlert && !shiftStart && !quiz);
+  $('reportSymbol').textContent = shiftStart ? '' : quiz ? '★' : '!';
+  $('reportTitle').textContent = shiftStart ? tr({pt: 'Início do turno', en: 'Shift start'})
+    : quiz ? tr({pt: 'Pergunta bônus!', en: 'Bonus question!'}) + (quizStreak > 0 ? '  🔥x' + quizStreak : '')
+    : tr({pt: 'Alerta solar', en: 'Solar alert'});
+  if (quiz && animate) { sfx('quizIn'); quizBanner(); }
   $('reportClose').classList.add('hidden');
   $('cTxt').removeAttribute('tabindex');
   $('cArt').textContent = solarAlert || shiftStart ? '' : c.art;
   $('cTxt').textContent = cardText(c);
   $('cNote').textContent = cardNote(c);
-  const real = cardReal(c);
+  const real = quiz ? tr({pt: '🎁 Acertou = ', en: '🎁 Correct = '}) + `+${R.QUIZ_OK_AIR} 🫧  +${R.QUIZ_OK_PW} ⚡` : cardReal(c);
   $('cReal').textContent = real; $('cReal').classList.toggle('hidden', !real);
   $('choices').classList.toggle('single', !!c.single);
   $('btnL').classList.toggle('hidden', !!c.single);
@@ -1554,11 +1593,14 @@ async function act(side) {
   if (locked(G, opt)) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); toast(t('locked')); sfx('lock'); lockHits++; tip(['locked']); return; }
   busy = true;
   flyCard(side);
+  const before = { air: G.air, pw: G.pw };
   const out = choose(G, side);
   sfx(out.storm ? 'storm' : c.kind === 'day' ? 'shift' : 'swipe');
   preview(null);
   await playTaskScene(out);
-  renderMeters();
+  let quizReview = false;
+  if (c.quiz) quizReview = await quizReveal(c, out, G.air - before.air, G.pw - before.pw);
+  else renderMeters();
   if (out.found?.length) {
     const unlocked = new Set(getUnlocked());
     discoveryReveal = out.found.map(entry => ({ entry, first: !unlocked.has(entry.id), night: !!out.nightDisc }));
@@ -1585,19 +1627,169 @@ async function act(side) {
   }
   if (c.quiz) {
     if (out.quizOk) {
-      showLearn(() => `<span>🎉 <b>${lang === 'pt' ? 'Você lembrou! A solução recupera ar, com um pequeno custo de energia.' : 'You remembered! Your solution restores air and reduces radiation at a small power cost.'}</b><br>${tr(c.disc.fact)}</span>`, true);
-      sfx('disc');
+      showLearn(() => `<span>🎉 <b>${lang === 'pt' ? 'Você lembrou! A base ganhou ar e energia.' : 'You remembered! The base gained air and power.'}</b><br>${tr(c.disc.fact)}</span>`, true);
     } else {
-      showLearn(() => `<span><b>${tr({pt:'Quase! A base gastou um pouco de ar e energia.', en:'Close! The base spent a little air and power.'})}</b><br>${tr(c.disc.fact)} ${G.card.quiz ? '' : `<button class="study-review" type="button" data-review="${c.disc.id}">${tr({pt:'Rever no painel',en:'Review in terminal'})}</button>`}</span>`, false);
+      showLearn(() => `<span><b>${tr({pt:'Quase! A base gastou um pouco de ar e energia.', en:'Close! The base spent a little air and power.'})}</b><br>${tr(c.disc.fact)} ${G.card.quiz ? '' : `<button class="study-review pulse" type="button" data-review="${c.disc.id}">${tr({pt:'Rever no painel',en:'Review in terminal'})}</button>`}</span>`, false);
     }
   }
   if (G.card.kind === 'flare') sfx('alert');
   renderCard(true);
   busy = false;
+  if (quizReview) reviewDiscovery(c.disc.id);
+}
+
+/* Pergunta bônus.
+   Entrada: uma faixa dourada cruza a tela. Suspense (~4 s): a caixa de suprimentos treme e os símbolos giram.
+   Acerto: a caixa abre, sobem estrelas, os prêmios contam de 0 até o valor e depois bolhas de ar e faíscas
+   de energia voam até os medidores.
+   Sequências viram combo (com recorde guardado no navegador). Erro: mostra a resposta certa e oferece o relatório.
+   Devolve true se a criança pediu para rever o relatório. */
+let quizStreak = 0, quizStats = { right: 0, total: 0, best: 0 };
+const quizStill = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const buzz = pattern => { try { if (!quizStill()) navigator.vibrate?.(pattern); } catch (e) {} };
+function quizBanner() {
+  const el = $('quizBanner');
+  el.firstElementChild.textContent = tr({ pt: '★ PERGUNTA BÔNUS ★', en: '★ BONUS QUESTION ★' });
+  el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
+  buzz(40);
+}
+// Bolhas (ar) ou faíscas (energia) saem do centro da tela e entram no medidor; o medidor pula e mostra o ganho.
+function flyLoot(meterId, amount, delay) {
+  const target = $(meterId).getBoundingClientRect();
+  const tx = target.left + target.width / 2, ty = target.top + target.height / 2;
+  const sx = innerWidth / 2, sy = innerHeight / 2;
+  const n = 8;
+  for (let i = 0; i < n; i++) {
+    const bit = document.createElement('i');
+    bit.className = 'qs-fly ' + (meterId === 'm_air' ? 'air' : 'pw');
+    document.body.append(bit);
+    const mx = sx + (Math.random() - .5) * 160, my = sy + 40 + Math.random() * 60;
+    bit.animate([
+      { transform: `translate(${sx}px, ${sy}px) scale(1)`, opacity: 1 },
+      { transform: `translate(${mx}px, ${my}px) scale(1.4)`, opacity: 1, offset: .3 },
+      { transform: `translate(${tx}px, ${ty}px) scale(.6)`, opacity: 1 },
+    ], { duration: 520, delay: delay + i * 45, easing: 'steps(9, end)', fill: 'both' });
+    setTimeout(() => bit.remove(), delay + i * 45 + 560);
+  }
+  setTimeout(() => {
+    sfx('lootIn');
+    const m = $(meterId);
+    m.classList.remove('quiz-gain'); void m.offsetWidth; m.classList.add('quiz-gain');
+    setTimeout(() => m.classList.remove('quiz-gain'), 1300);
+    const tag = document.createElement('b');
+    tag.className = 'qs-float'; tag.textContent = '+' + amount;
+    tag.style.left = tx + 'px'; tag.style.top = target.top + 'px';
+    document.body.append(tag);
+    tag.animate([{ transform: 'translate(-50%, 0)', opacity: 1 }, { transform: 'translate(-50%, -46px)', opacity: 0 }],
+      { duration: 1100, easing: 'steps(8, end)', fill: 'both' });
+    setTimeout(() => tag.remove(), 1150);
+  }, delay + 520);
+}
+async function quizReveal(c, out, dAir, dPw) {
+  const ok = !!out.quizOk, pt = lang === 'pt', stage = $('quizStage'), still = quizStill();
+  const picked = tr(out.opt.label), right = tr((c.L.ok ? c.L : c.R).label);
+  stage.className = 'quiz-stage wait';
+  stage.innerHTML = `<div class="qs-stars"></div><div class="qs-box">
+    <p class="qs-kicker">${pt ? 'Você respondeu' : 'Your answer'}</p><p class="qs-picked"></p>
+    <div class="qs-crate"><svg viewBox="0 -4 16 18" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+      <g class="qs-base"><path fill="#F3F3FF" d="M0 6h16v7h-1v1H1v-1H0z"/><path class="qs-in" fill="#8591DC" d="M1 7h14v5H1z"/>
+        <path class="qs-shade" fill="#303DB1" d="M1 11h14v1H1zM1 7h1v4H1zM14 7h1v4h-1z"/></g>
+      <g class="qs-lid"><path fill="#F3F3FF" d="M1 1h14v1h1v5H0V2h1z"/><path fill="#303DB1" d="M1 2h14v4H1z"/>
+        <path fill="#8591DC" d="M2 2h12v1H2z"/><path fill="#FFCF72" d="M7 5h2v3H7z"/><path fill="#171B4B" d="M7 6h2v1H7z"/></g>
+    </svg><span class="qs-body">?</span></div>
+    <p class="qs-status">${pt ? 'Analisando a resposta' : 'Checking your answer'}<span class="qs-dots"><i>.</i><i>.</i><i>.</i></span></p>
+    <div class="qs-lamps"><i></i><i></i><i></i></div>
+    <div class="qs-result"></div></div>`;
+  stage.querySelector('.qs-picked').textContent = picked;
+  sfx('quizWait');
+  // Símbolos girando dentro da caixa, como uma roleta de itens.
+  const body = stage.querySelector('.qs-body'), symbols = ['?', '★', '◆', '?', '●', '▲'];
+  let spin = 0;
+  const roulette = still ? 0 : setInterval(() => { body.textContent = symbols[++spin % symbols.length]; }, 95);
+  const lamps = stage.querySelectorAll('.qs-lamps i');
+  for (let i = 0; i < 3; i++) { await wait(1150); lamps[i].classList.add('on'); stage.classList.add('p' + (i + 2)); buzz(25 + i * 15); }
+  await wait(450);
+  clearInterval(roulette);
+
+  // Revelação
+  quizStreak = ok ? quizStreak + 1 : 0;
+  quizStats.total++; if (ok) quizStats.right++;
+  quizStats.best = Math.max(quizStats.best, quizStreak);
+  const oldRecord = +store.get('lb_quiz_best') || 0, record = ok && quizStreak > 1 && quizStreak > oldRecord;
+  if (quizStreak > oldRecord) store.set('lb_quiz_best', quizStreak);
+  const combo = quizStreak >= 5 ? (pt ? 'LENDA LUNAR' : 'LUNAR LEGEND') : quizStreak >= 3 ? 'SUPER COMBO' : quizStreak === 2 ? 'COMBO' : '';
+  stage.className = 'quiz-stage ' + (ok ? 'win' : 'miss') + (quizStreak >= 3 ? ' super' : '');
+  body.textContent = ok ? '★' : '…';
+  sfx(ok ? 'quizOk' : 'quizNo');
+  if (ok && combo) sfx('combo');
+  buzz(ok ? [70, 40, 70, 40, 180] : 120);
+  const sign = n => (n > 0 ? '+' : '') + n;
+  const result = stage.querySelector('.qs-result');
+  const canReview = !ok && !G.card?.quiz && !G.over;
+  const prizes = [[dAir, '🫧', pt ? 'ar' : 'air'], [dPw, '⚡', pt ? 'energia' : 'power']].filter(p => p[0]);
+  if (ok) {
+    result.innerHTML = `<h2 class="qs-title">${pt ? 'ACERTOU!' : 'CORRECT!'}</h2>
+      ${combo ? `<p class="qs-streak">🔥 ${combo} x${quizStreak}</p>` : ''}
+      ${record ? `<p class="qs-record">🏆 ${pt ? 'Novo recorde!' : 'New record!'}</p>` : ''}
+      <ul class="qs-loot">${prizes.length
+        ? prizes.map((p, i) => `<li style="--i:${i}"><b data-n="${p[0]}">+0</b> ${p[1]} ${p[2]}</li>`).join('')
+        : `<li style="--i:0">${pt ? 'Tanques cheios!' : 'Tanks full!'}</li>`}</ul>
+      <button type="button" class="qs-btn gold" id="qsGo">${pt ? 'Continuar' : 'Continue'}</button>`;
+    if (!still) {
+      // Estrelas subindo da caixa (mais estrelas a partir do terceiro acerto seguido).
+      const colors = ['#ffcf72', '#f3f3ff', '#8591dc', '#ffcf72', '#f3f3ff', '#303db1'];
+      stage.querySelector('.qs-stars').innerHTML = Array.from({ length: quizStreak >= 3 ? 80 : 48 }, (_, i) =>
+        `<i style="--x:${Math.round((Math.random() - .5) * 340)}px;--h:${Math.round(160 + Math.random() * 260)}px;--d:${Math.round(Math.random() * 1500)}ms;color:${colors[i % colors.length]}"${i % 3 ? '' : ' class="plus"'}></i>`).join('');
+    }
+    // Cada prêmio conta de 0 até o valor, com um tique por ponto e uma batida na tela ao chegar.
+    const box = stage.querySelector('.qs-box');
+    result.querySelectorAll('.qs-loot b[data-n]').forEach((el, i) => {
+      const total = +el.dataset.n, t0 = still ? 0 : 560 + i * 380;
+      for (let k = 1; k <= total; k++) setTimeout(() => {
+        if (!el.isConnected) return;
+        el.textContent = '+' + k;
+        sfx(k === total ? 'loot' : 'tick');
+        if (k === total) { box.classList.remove('thump'); void box.offsetWidth; box.classList.add('thump'); buzz(30); }
+      }, still ? 0 : t0 + k * 110);
+    });
+  } else {
+    result.innerHTML = `<h2 class="qs-title">${pt ? 'Quase!' : 'So close!'}</h2>
+      <p class="qs-right"><small>${pt ? 'A resposta certa era' : 'The right answer was'}</small><span></span></p>
+      ${prizes.length ? `<p class="qs-loss">${prizes.map(p => `${sign(p[0])} ${p[1]} ${p[2]}`).join(' &nbsp; ')}</p>` : ''}
+      ${canReview
+        ? `<button type="button" class="qs-btn gold" id="qsReview">📂 ${pt ? 'Rever o relatório' : 'Review the report'}<small></small></button>`
+        : `<p class="qs-hint">${pt ? 'Dica: reveja seus relatórios no monitor do topo da tela.' : 'Tip: review your reports on the monitor at the top of the screen.'}</p>`}
+      <button type="button" class="qs-btn ghost" id="qsGo">${pt ? 'Continuar' : 'Continue'}</button>`;
+    result.querySelector('.qs-right span').textContent = right;
+    const label = result.querySelector('#qsReview small');
+    if (label) label.textContent = '“' + tr(c.disc.name) + '”';
+  }
+  const main = stage.querySelector(canReview ? '#qsReview' : '#qsGo');
+  setTimeout(() => main.focus(), still ? 0 : 1100);
+  const choice = await new Promise(resolve => {
+    stage.querySelector('#qsGo').onclick = () => resolve('go');
+    const review = stage.querySelector('#qsReview');
+    if (review) review.onclick = () => resolve('review');
+    setTimeout(() => resolve('go'), ok ? 4800 : 15000);   // segue sozinho se ninguém tocar
+  });
+  stage.className = 'quiz-stage hidden'; stage.innerHTML = '';
+  const gains = ok && !still ? [['m_air', dAir], ['m_pw', dPw]].filter(g => g[1] > 0) : [];
+  if (gains.length && choice !== 'review') {
+    gains.forEach(([id, n], i) => flyLoot(id, n, i * 220));
+    setTimeout(renderMeters, 520);     // o medidor sobe quando as bolhas e faíscas chegam
+  } else {
+    renderMeters();
+    for (const id of ['m_air', 'm_pw']) {
+      const m = $(id); m.classList.remove('quiz-gain', 'quiz-loss'); void m.offsetWidth; m.classList.add(ok ? 'quiz-gain' : 'quiz-loss');
+      setTimeout(() => m.classList.remove('quiz-gain', 'quiz-loss'), 1300);
+    }
+  }
+  return choice === 'review';
 }
 
 function start(eventCard, reviewPreview = false) {
   startMusic();
+  quizStreak = 0; quizStats = { right: 0, total: 0, best: 0 };
   busy=false; lunarScene.reset();
   discoveryReveal = []; G = newGame(eventCard, getUnlocked()); lockHits = 0; prog = null; showLearn(null);
   if (reviewPreview) {
@@ -1749,7 +1941,7 @@ function renderEnd() {
   const pt = lang === 'pt', st = stars(G), sciMin = R.SCI_MIN || 4;
   const sciOk = G.sci >= R.SCI_GOAL, healthOk = G.rad < R.RAD_SAFE;
   $('stars').textContent = G.over === 'win' ? '⭐'.repeat(st) + '☆'.repeat(3 - st) : '';
-  $('endSum').innerHTML = `<span>🔬 ${G.sci}</span><span>☢️ ${Math.min(100, G.rad)}%</span><span>📅 ${Math.min(G.day + (G.over === 'win' ? 0 : 1), R.DAYS)}/${R.DAYS}</span>`;
+  $('endSum').innerHTML = `<span>🔬 ${G.sci}</span><span>☢️ ${Math.min(100, G.rad)}%</span><span>📅 ${Math.min(G.day + (G.over === 'win' ? 0 : 1), R.DAYS)}/${R.DAYS}</span>${quizStats.total ? `<span>🧠 ${quizStats.right}/${quizStats.total}${quizStats.best > 1 ? ' · 🔥x' + quizStats.best : ''}</span>` : ''}`;
   let art, title, text;
   if (G.over === 'win') {
     art = '🧑‍🚀🎉🌍'; title = pt ? 'Missão cumprida!' : 'Mission complete!';
@@ -2059,15 +2251,72 @@ function animateStudy(element, closing = false) {
   });
   return animation.finished.catch(() => {});
 }
+// Abre o painel de descobertas já no relatório da pergunta que a criança errou.
+function reviewDiscovery(id) {
+  if (busy || G?.card?.quiz) return;
+  openAlbum('game');
+  $('albumGrid').querySelector('[data-study="' + id + '"]')?.click();
+}
 $('learn').addEventListener('click', event => {
   const button = event.target.closest('[data-review]');
-  if (!button || busy || G?.card?.quiz) return;
-  openAlbum('game');
-  $('albumGrid').querySelector('[data-study="' + button.dataset.review + '"]')?.click();
+  if (button) reviewDiscovery(button.dataset.review);
 });
 document.querySelector('main').addEventListener('dragstart', event => {
   if (event.target instanceof HTMLImageElement) event.preventDefault();
 });
+/* Aviso de site externo: todo link que abre fora do jogo (fontes da NASA nas pesquisas, DONKI na tela final)
+   passa por esta janela antes de abrir. */
+let extHref = null, extReturn = null;
+function closeExtWarn() {
+  $('extWarn').classList.add('hidden');
+  extHref = null;
+  extReturn?.focus();
+  extReturn = null;
+}
+function openExtWarn(link) {
+  const pt = lang === 'pt';
+  let host = link.href;
+  try { host = new URL(link.href).hostname; } catch (e) {}
+  extHref = link.href;
+  extReturn = link;
+  $('extWarnTitle').textContent = pt ? 'Saindo do jogo' : 'Leaving the game';
+  $('extWarnText').textContent = pt
+    ? 'Este link vai abrir um site externo, fora do jogo. O jogo não controla o que aparece lá: acesse por sua conta e risco. Se você for criança, chame um adulto para ver junto.'
+    : 'This link will open an external website, outside the game. The game does not control what appears there: visit it at your own risk. If you are a kid, ask an adult to look at it with you.';
+  $('extWarnHost').textContent = '🌐 ' + host;
+  $('extWarnCancel').textContent = pt ? 'Voltar ao jogo' : 'Back to the game';
+  $('extWarnGo').textContent = pt ? 'Abrir o site ↗' : 'Open the website ↗';
+  $('extWarn').classList.remove('hidden');
+  $('extWarnCancel').focus();
+}
+document.addEventListener('click', event => {
+  const link = event.target.closest('a[href]');
+  if (!link || link.closest('#extWarn')) return;
+  let url;
+  try { url = new URL(link.href, location.href); } catch (e) { return; }
+  if (!/^https?:$/.test(url.protocol) || url.origin === location.origin) return;
+  event.preventDefault();
+  event.stopPropagation();
+  openExtWarn(link);
+}, true);
+$('extWarnCancel').addEventListener('click', closeExtWarn);
+$('extWarnGo').addEventListener('click', () => {
+  const href = extHref;
+  closeExtWarn();
+  if (href) window.open(href, '_blank', 'noopener');
+});
+$('extWarn').addEventListener('click', event => { if (event.target === $('extWarn')) closeExtWarn(); });
+document.addEventListener('keydown', event => {
+  if ($('extWarn').classList.contains('hidden')) return;
+  if (event.key === 'Escape') { event.preventDefault(); closeExtWarn(); }
+  if (event.key === 'Tab') {   // mantém o foco dentro do aviso
+    const a = $('extWarnCancel'), b = $('extWarnGo');
+    if (event.shiftKey && document.activeElement === a) { event.preventDefault(); b.focus(); }
+    else if (!event.shiftKey && document.activeElement === b) { event.preventDefault(); a.focus(); }
+  }
+  event.stopImmediatePropagation();
+}, true);
+
 const studyWindows = $('studyWindows');
 let studyDepth = 5;
 function placeStudy(panel, x, y) {
