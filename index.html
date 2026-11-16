@@ -1133,7 +1133,7 @@ function filteredNoise(frequency, duration, volume, delay, type) {
 }
 const shelterAudio = new Audio('assets/audio/corrida-queda.mp3');
 shelterAudio.preload = 'auto';
-shelterAudio.volume = .35;
+shelterAudio.volume = .125;
 function playShelterCall(call) {
   if (call !== 1 || muted || document.hidden) return;
   shelterAudio.currentTime = 0;
